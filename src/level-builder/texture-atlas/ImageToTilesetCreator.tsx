@@ -34,7 +34,7 @@ const ImageToTilesetCreator: Component<{
   /**
    * A callback to write to the image
    */
-  overwriteImage: (x: HTMLImageElement) => void,
+  overwriteImage: (x: HTMLImageElement) => void;
 }> = (props) => {
   let [state, setState] = createStore<{
     offsetXText: string;
@@ -108,7 +108,7 @@ const ImageToTilesetCreator: Component<{
     }
     return h32(_hashTileBuffer2, 0);
   };
-  let tileHashToFrameIdMap = new Map<string,string>();
+  let tileHashToFrameIdMap = new Map<string, string>();
   let performMatch = () => {
     let image = props.image;
     let offsetX2 = offsetX();
@@ -138,7 +138,9 @@ const ImageToTilesetCreator: Component<{
     let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     let imageData2 = imageData.data;
     //
-    for (let frameId of props.world.entitiesWithComponentType(frameComponentType)) {
+    for (let frameId of props.world.entitiesWithComponentType(
+      frameComponentType,
+    )) {
       props.world.destroyEntity(frameId);
     }
     //
@@ -180,9 +182,9 @@ const ImageToTilesetCreator: Component<{
   };
   let collapseTiles = () => {
     let nextId = 1;
-    let tileHashToIdMap = new Map<string,number>();
-    let tileIdToHashMap = new Map<number,string>();
-    let tileHashToXY = new Map<string, { x: number, y: number, }>();
+    let tileHashToIdMap = new Map<string, number>();
+    let tileIdToHashMap = new Map<number, string>();
+    let tileHashToXY = new Map<string, { x: number; y: number }>();
     for (let tileHash of tileHashToFrameIdMap.keys()) {
       let tileId = nextId++;
       tileHashToIdMap.set(tileHash, tileId);
@@ -249,10 +251,7 @@ const ImageToTilesetCreator: Component<{
       }
     }
     let numTilesPerRow = Math.ceil(Math.sqrt(nextId));
-    let result = collapseTileset(
-      numTilesPerRow,
-      map,
-    );
+    let result = collapseTileset(numTilesPerRow, map);
     if (result.length == 0) {
       return;
     }
@@ -294,42 +293,33 @@ const ImageToTilesetCreator: Component<{
           );
           let frameId = tileHashToFrameIdMap.get(tileHash);
           if (frameId != undefined) {
-            let frameComponent = props.world.getComponent(frameId, frameComponentType);
+            let frameComponent = props.world.getComponent(
+              frameId,
+              frameComponentType,
+            );
             if (frameComponent != undefined) {
-              frameComponent.setState(
-                "pos",
-                Vec2.create(
-                  atX,
-                  atY,
-                ),
-              );
+              frameComponent.setState("pos", Vec2.create(atX, atY));
             }
           }
         }
       }
     }
-    resultCanvas.toBlob(
-      (blob) => {
-        if (blob == null) {
-          return;
-        }
-        let url = URL.createObjectURL(blob);
-        let resultImage = new Image(
-          resultCanvas.width,
-          resultCanvas.height
-        );
-        resultImage.src = url;
-        resultImage.onload = () => {
-          URL.revokeObjectURL(url);
-          console.log(resultImage);
-          props.overwriteImage(resultImage);
-        };
-        resultImage.onerror = () => {
-          URL.revokeObjectURL(url);
-        };
-      },
-      "image/png",
-    );
+    resultCanvas.toBlob((blob) => {
+      if (blob == null) {
+        return;
+      }
+      let url = URL.createObjectURL(blob);
+      let resultImage = new Image(resultCanvas.width, resultCanvas.height);
+      resultImage.src = url;
+      resultImage.onload = () => {
+        URL.revokeObjectURL(url);
+        console.log(resultImage);
+        props.overwriteImage(resultImage);
+      };
+      resultImage.onerror = () => {
+        URL.revokeObjectURL(url);
+      };
+    }, "image/png");
     console.log(result);
   };
   return (

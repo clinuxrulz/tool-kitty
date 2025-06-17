@@ -201,8 +201,8 @@ function runTest2() {
 
 async function runTest3() {
   type State = {
-    a: number,
-    b: number[][],
+    a: number;
+    b: number[][];
   };
   let stateTypeSchema: TypeSchema<State> = {
     type: "Object",
@@ -221,9 +221,9 @@ async function runTest3() {
   let docHandle = repo.create({
     a: 5,
     b: [
-      [0,0,0,0],
-      [0,0,0,0],
-      [0,0,0,0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
     ],
   });
   let r = new Promise<void>((resolve) => {
@@ -234,29 +234,37 @@ async function runTest3() {
         docHandle.change.bind(docHandle),
         stateTypeSchema,
       );
-      let [ state, setState, ] = createStore(s);
+      let [state, setState] = createStore(s);
       let z = 0;
-      createComputed(on(
-        () => doc.a,
-        () => {
-          z = doc.a;
-        },
-        { defer: true, },
-      ));
+      createComputed(
+        on(
+          () => doc.a,
+          () => {
+            z = doc.a;
+          },
+          { defer: true },
+        ),
+      );
       setState("a", 7);
       expect(z).toBe(7);
-      createComputed(on(
-        () => doc.b[1][1],
-        () => {
-          z = doc.b[1][1];
-        },
-        { defer: true, }
-      ));
+      createComputed(
+        on(
+          () => doc.b[1][1],
+          () => {
+            z = doc.b[1][1];
+          },
+          { defer: true },
+        ),
+      );
       setState("b", 1, 1, 42);
       expect(z).toBe(42);
-      setState("b", 1, produce((x) => {
-        x.push(42);
-      }));
+      setState(
+        "b",
+        1,
+        produce((x) => {
+          x.push(42);
+        }),
+      );
       expect(doc.b[1][4]).toBe(42);
       dispose();
       resolve();

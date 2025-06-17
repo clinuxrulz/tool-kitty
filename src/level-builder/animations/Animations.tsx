@@ -1,25 +1,28 @@
-import { Component, ComponentProps, createMemo, mergeProps, splitProps } from "solid-js";
+import {
+  Component,
+  ComponentProps,
+  createMemo,
+  mergeProps,
+  splitProps,
+} from "solid-js";
 import { IEcsWorld } from "../../ecs/IEcsWorld";
 import { Overwrite } from "@bigmistqke/solid-fs-components";
 import { createPanZoomManager } from "../../PanZoomManager";
 import { createStore } from "solid-js/store";
 import { Vec2 } from "../../math/Vec2";
 
-const Animations: Component<Overwrite<
-  ComponentProps<'div'>,
-  {
-    world: IEcsWorld,
-  }
->> = (props_) => {
-  const [props, rest,] = splitProps(
-    props_,
-    [
-      "world",
-    ],
-  );
-  let [ state, setState, ] = createStore<{
-    pan: Vec2,
-    scale: number,
+const Animations: Component<
+  Overwrite<
+    ComponentProps<"div">,
+    {
+      world: IEcsWorld;
+    }
+  >
+> = (props_) => {
+  const [props, rest] = splitProps(props_, ["world"]);
+  let [state, setState] = createStore<{
+    pan: Vec2;
+    scale: number;
   }>({
     pan: Vec2.zero,
     scale: 2.0,
@@ -31,7 +34,8 @@ const Animations: Component<Overwrite<
     scale: () => state.scale,
     setScale: (x) => setState("scale", x),
     setPointerCapture: (pointerId) => svgElement.setPointerCapture(pointerId),
-    releasePointerCapture: (pointerId) => svgElement.releasePointerCapture(pointerId),
+    releasePointerCapture: (pointerId) =>
+      svgElement.releasePointerCapture(pointerId),
   });
   let transform = createMemo(
     () => `scale(${state.scale}) translate(${-state.pan.x} ${-state.pan.y})`,
@@ -48,12 +52,7 @@ const Animations: Component<Overwrite<
         onWheel={(e) => panZoomManager.onWheel(e)}
       >
         <g transform={transform()}>
-          <circle
-            cx={50}
-            cy={50}
-            r={5}
-            fill="red"
-          />
+          <circle cx={50} cy={50} r={5} fill="red" />
         </g>
       </svg>
     </div>

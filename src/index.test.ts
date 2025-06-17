@@ -308,37 +308,40 @@ describe("new projection", () => {
       dispose();
     });
   });
-  test("test2", () => new Promise<void>((resolve) => {
-    type State = {
-      a: number,
-    };
-    let stateTypeSchema: TypeSchema<State> = {
-      type: "Object",
-      properties: {
-        a: "Number",
-      },
-    };
-    let repo = new Repo();
-    let docHandle = repo.create({
-      a: 5,
-    });
-    createRoot((dispose) => {
-      let doc = makeDocumentProjection(docHandle);
-      let s = projectMutableOverAutomergeDoc<State>(
-        doc,
-        docHandle.change.bind(docHandle),
-        stateTypeSchema,
-      );
-      let [ state, setState, ] = createStore(s);
-      createComputed(on(
-        () => doc.a,
-        () => {
-          dispose();
-          resolve();
+  test("test2", () =>
+    new Promise<void>((resolve) => {
+      type State = {
+        a: number;
+      };
+      let stateTypeSchema: TypeSchema<State> = {
+        type: "Object",
+        properties: {
+          a: "Number",
         },
-        { defer: true, },
-      ));
-      setState("a", 7);
-    });
-  }));
+      };
+      let repo = new Repo();
+      let docHandle = repo.create({
+        a: 5,
+      });
+      createRoot((dispose) => {
+        let doc = makeDocumentProjection(docHandle);
+        let s = projectMutableOverAutomergeDoc<State>(
+          doc,
+          docHandle.change.bind(docHandle),
+          stateTypeSchema,
+        );
+        let [state, setState] = createStore(s);
+        createComputed(
+          on(
+            () => doc.a,
+            () => {
+              dispose();
+              resolve();
+            },
+            { defer: true },
+          ),
+        );
+        setState("a", 7);
+      });
+    }));
 });

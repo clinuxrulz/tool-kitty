@@ -98,7 +98,7 @@ export class TextureAtlas {
     let [imageUrlDispose, setImageUrlDispose] = createSignal<() => void>(
       () => {},
     );
-    let [ imageFileId, setImageFileId, ] = createSignal<string>();
+    let [imageFileId, setImageFileId] = createSignal<string>();
     let [image, setImage] = createSignal<HTMLImageElement>();
     let [size, setSize] = createSignal<Vec2>();
     onCleanup(() => {
@@ -332,7 +332,10 @@ export class TextureAtlas {
           return;
         }
         let rect = svg2.getBoundingClientRect();
-        setState("mousePos", Vec2.create(e.clientX - rect.left, e.clientY - rect.top));
+        setState(
+          "mousePos",
+          Vec2.create(e.clientX - rect.left, e.clientY - rect.top),
+        );
         if (panZoomManager.numTouches() == 1) {
           mode().dragStart?.();
         }
@@ -361,7 +364,10 @@ export class TextureAtlas {
           return;
         }
         let rect = svg2.getBoundingClientRect();
-        setState("mousePos", Vec2.create(e.clientX - rect.left, e.clientY - rect.top));
+        setState(
+          "mousePos",
+          Vec2.create(e.clientX - rect.left, e.clientY - rect.top),
+        );
       };
       let onPointerLeave = (e: PointerEvent) => {
         e.preventDefault();
@@ -478,29 +484,32 @@ export class TextureAtlas {
                                 return;
                               }
                               let imageFile = imagesFolder2.openFileById<{
-                                mimeType: string,
-                                data: Uint8Array,
+                                mimeType: string;
+                                data: Uint8Array;
                               }>(imageFileId2);
-                              let imageFile2 = await new Promise<AutomergeVfsFile<{
-                                mimeType: string,
-                                data: Uint8Array,
-                              }>>((resolve, reject) => createRoot((dispose) => {
-                                createComputed(on(
-                                  imageFile,
-                                  (imageFile) => {
-                                    if (imageFile.type == "Pending") {
-                                      return;
-                                    }
-                                    if (imageFile.type == "Failed") {
-                                      reject(imageFile.message);
+                              let imageFile2 = await new Promise<
+                                AutomergeVfsFile<{
+                                  mimeType: string;
+                                  data: Uint8Array;
+                                }>
+                              >((resolve, reject) =>
+                                createRoot((dispose) => {
+                                  createComputed(
+                                    on(imageFile, (imageFile) => {
+                                      if (imageFile.type == "Pending") {
+                                        return;
+                                      }
+                                      if (imageFile.type == "Failed") {
+                                        reject(imageFile.message);
+                                        dispose();
+                                        return;
+                                      }
+                                      resolve(imageFile.value);
                                       dispose();
-                                      return;
-                                    }
-                                    resolve(imageFile.value);
-                                    dispose();
-                                  },
-                                ));
-                              }));
+                                    }),
+                                  );
+                                }),
+                              );
                               let canvas = document.createElement("canvas");
                               canvas.width = newImage.naturalWidth;
                               canvas.height = newImage.naturalHeight;
@@ -509,20 +518,17 @@ export class TextureAtlas {
                                 return;
                               }
                               ctx.drawImage(newImage, 0, 0);
-                              canvas.toBlob(
-                                async (blob) => {
-                                  if (blob == null) {
-                                    return;
-                                  }
-                                  let data = await blob.bytes();
-                                  imageFile2.docHandle.change((doc) => {
-                                    doc.mimeType = "image/png";
-                                    doc.data = data;
-                                  });
-                                  setImage(newImage);
-                                },
-                                "image/png",
-                              );
+                              canvas.toBlob(async (blob) => {
+                                if (blob == null) {
+                                  return;
+                                }
+                                let data = await blob.bytes();
+                                imageFile2.docHandle.change((doc) => {
+                                  doc.mimeType = "image/png";
+                                  doc.data = data;
+                                });
+                                setImage(newImage);
+                              }, "image/png");
                             }}
                           />
                         )}
@@ -545,12 +551,12 @@ export class TextureAtlas {
                       <Animations
                         world={state.world}
                         style={{
-                          "width": "100%",
-                          "height": "100%",
+                          width: "100%",
+                          height: "100%",
                         }}
                       />
                     ),
-                  })
+                  }),
                 );
               }}
             >

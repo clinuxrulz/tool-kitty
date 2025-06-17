@@ -26,7 +26,7 @@ export const tileCollisionComponentType =
         frameName: "String",
         width: "Number",
         height: "Number",
-        metaData: jsonTypeSchema
+        metaData: jsonTypeSchema,
       },
     },
   });
