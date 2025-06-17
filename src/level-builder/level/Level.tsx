@@ -40,6 +40,7 @@ import { EcsWorldAutomergeProjection } from "../../ecs/EcsWorldAutomergeProjecti
 import { IEcsWorld } from "../../ecs/IEcsWorld";
 import { NoTrack } from "../../util";
 import ImageTileMatcher from "./ImageTileMatcher";
+import { createPanZoomManager } from "../../PanZoomManager";
 
 const AUTO_SAVE_TIMEOUT = 2000;
 
@@ -76,16 +77,6 @@ export class Level {
       pan: Vec2;
       scale: number;
       //
-      touches: {
-        id: number;
-        pos: Vec2;
-      }[];
-      // panning/zoom states
-      isTouchPanZoom: boolean;
-      touchPanZoomFrom: Vec2 | undefined;
-      touchPanZoomInitScale: number | undefined;
-      touchPanZoomInitGap: number | undefined;
-      //
       mkMode: (() => Mode) | undefined;
       //
       autoSaving: boolean;
@@ -100,13 +91,8 @@ export class Level {
       mousePos: undefined,
       pan: Vec2.create(-1, -1),
       scale: 30.0,
-      touches: [],
-      isTouchPanZoom: false,
-      touchPanZoomFrom: undefined,
-      touchPanZoomInitScale: undefined,
-      touchPanZoomInitGap: undefined,
-      autoSaving: false,
       mkMode: undefined,
+      autoSaving: false,
       world: new EcsWorld(),
       overlayApp: undefined,
     });
@@ -396,181 +382,63 @@ export class Level {
     let disableOneFingerPan = createMemo(
       () => mode().disableOneFingerPan?.() ?? false,
     );
-    let zoomByFactor = (factor: number) => {
-      if (state.mousePos == undefined) {
-        return;
-      }
-      let pt = screenPtToWorldPt(state.mousePos);
-      if (pt == undefined) {
-        return;
-      }
-      let newScale = state.scale * factor;
-      let newPan = pt.sub(state.mousePos.multScalar(1.0 / newScale));
-      batch(() => {
-        setState("pan", newPan);
-        setState("scale", state.scale * factor);
-      });
-    };
-    createComputed(
-      on(
-        [
-          () => state.isTouchPanZoom,
-          () => state.touchPanZoomFrom,
-          () => state.touchPanZoomInitGap,
-          () => state.touchPanZoomInitScale,
-          () => state.touches,
-          () => state.mousePos,
-          disableOneFingerPan,
-        ],
-        () => {
-          if (!state.isTouchPanZoom) {
-            return;
-          }
-          if (state.touchPanZoomFrom == undefined) {
-            return;
-          }
-          if (state.mousePos == undefined) {
-            return;
-          }
-          if (state.touchPanZoomInitScale == undefined) {
-            return;
-          }
-          if (disableOneFingerPan() && state.touches.length == 1) {
-            return;
-          }
-          let pt = screenPtToWorldPt(state.mousePos);
-          if (pt == undefined) {
-            return;
-          }
-          let gap: number | undefined;
-          if (state.touches.length != 2) {
-            gap = undefined;
-          } else {
-            gap = state.touches[1].pos.sub(state.touches[0].pos).length();
-          }
-          let delta = state.touchPanZoomFrom.sub(pt);
-          let initScale = state.touchPanZoomInitScale;
-          batch(() => {
-            setState("pan", (pan) => pan.add(delta));
-            if (state.touchPanZoomInitGap != undefined && gap != undefined) {
-              let newScale = (initScale * gap) / state.touchPanZoomInitGap;
-              setState("scale", newScale);
-            }
-          });
-        },
-      ),
-    );
-    let startTouchPanZoom = () => {
-      if (state.touches.length == 0) {
-        return;
-      }
-      if (state.mousePos == undefined) {
-        return;
-      }
-      let initGap: number | undefined;
-      if (state.touches.length != 2) {
-        initGap = undefined;
-      } else {
-        initGap = state.touches[1].pos.sub(state.touches[0].pos).length();
-      }
-      let pt = screenPtToWorldPt(state.mousePos);
-      if (pt == undefined) {
-        return;
-      }
-      batch(() => {
-        setState("isTouchPanZoom", true);
-        setState("touchPanZoomFrom", pt);
-        setState("touchPanZoomInitGap", initGap);
-        setState("touchPanZoomInitScale", state.scale);
-      });
-    };
-    let stopTouchPanZoom = () => {
-      batch(() => {
-        setState("isTouchPanZoom", false);
-        setState("touchPanZoomFrom", undefined);
-        setState("touchPanZoomInitGap", undefined);
-        setState("touchPanZoomInitScale", undefined);
-      });
-    };
+    let panZoomManager = createPanZoomManager({
+      pan: () => state.pan,
+      setPan: (x) => setState("pan", x),
+      scale: () => state.scale,
+      setScale: (x) => setState("scale", x),
+      disableOneFingerPan,
+      setPointerCapture: (pointerId) => {
+        svg()?.setPointerCapture(pointerId);
+      },
+      releasePointerCapture: (pointerId) => {
+        svg()?.releasePointerCapture(pointerId);
+      },
+    });
     let onWheel = (e: WheelEvent) => {
-      if (e.deltaY > 0) {
-        zoomByFactor(1.0 / 1.1);
-      } else if (e.deltaY < 0) {
-        zoomByFactor(1.1 / 1.0);
-      }
+      panZoomManager.onWheel(e);
     };
     let onPointerDown = (e: PointerEvent) => {
+      panZoomManager.onPointerDown(e);
       e.preventDefault();
       let svg2 = svg();
       if (svg2 == undefined) {
         return;
       }
-      svg2.setPointerCapture(e.pointerId);
       let rect = svg2.getBoundingClientRect();
-      let id = e.pointerId;
-      let pos = Vec2.create(e.clientX - rect.left, e.clientY - rect.top);
-      let newTouches = [...state.touches, { id, pos }];
-      batch(() => {
-        setState("touches", newTouches);
-        setState("mousePos", newTouches[0].pos);
-      });
-      startTouchPanZoom();
-      if (newTouches.length == 1) {
+      setState("mousePos", Vec2.create(e.clientX - rect.left, e.clientY - rect.top));
+      if (panZoomManager.numTouches() == 1) {
         mode().dragStart?.();
       }
     };
     let onPointerUp = (e: PointerEvent) => {
+      panZoomManager.onPointerUp(e);
       e.preventDefault();
       let svg2 = svg();
       if (svg2 == undefined) {
         return;
       }
-      svg2.releasePointerCapture(e.pointerId);
-      let id = e.pointerId;
-      let newTouches = state.touches.filter(({ id: id2 }) => id2 != id);
-      stopTouchPanZoom();
-      if (newTouches.length == 0) {
+      if (panZoomManager.numTouches() == 0) {
         mode().dragEnd?.();
         onClick();
-      }
-      batch(() => {
-        setState("touches", newTouches);
-        if (e.pointerType != "mouse") {
-          setState(
-            "mousePos",
-            newTouches.length != 0 ? newTouches[0].pos : undefined,
-          );
-        }
-      });
-      if (newTouches.length != 0) {
-        startTouchPanZoom();
       }
     };
     let onPointerCanceled = (e: PointerEvent) => {
       onPointerUp(e);
     };
     let onPointerMove = (e: PointerEvent) => {
+      panZoomManager.onPointerMove(e);
       e.preventDefault();
       let svg2 = svg();
       if (svg2 == undefined) {
         return;
       }
       let rect = svg2.getBoundingClientRect();
-      let id = e.pointerId;
-      let touchIdx = state.touches.findIndex(({ id: id2 }) => id2 == id);
-      let pos = Vec2.create(e.clientX - rect.left, e.clientY - rect.top);
-      if (touchIdx != -1) {
-        setState("touches", touchIdx, "pos", () => {
-          return pos;
-        });
-      }
-      if (touchIdx == 0 || touchIdx == -1) {
-        setState("mousePos", pos);
-      }
+      setState("mousePos", Vec2.create(e.clientX - rect.left, e.clientY - rect.top));
     };
     let onPointerLeave = (e: PointerEvent) => {
       e.preventDefault();
-      if (state.touches.length == 0) {
+      if (panZoomManager.numTouches() == 0) {
         setState("mousePos", undefined);
       }
     };
