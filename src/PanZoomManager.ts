@@ -9,8 +9,6 @@ import {
 import { Vec2 } from "./math/Vec2";
 import { ReactiveMap } from "@solid-primitives/map";
 
-let x: SVGSVGElement;
-
 export function createPanZoomManager(params: {
   pan: Accessor<Vec2>;
   setPan: (x: Vec2) => void;
