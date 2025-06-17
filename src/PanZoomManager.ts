@@ -1,13 +1,15 @@
 import { Accessor, batch, createComputed, createMemo, on, untrack } from "solid-js";
 import { Vec2 } from "./math/Vec2";
-import { createStore } from "solid-js/store";
 import { ReactiveMap } from "@solid-primitives/map";
+
+let x: SVGSVGElement;
 
 export function createPanZoomManager(params: {
     pan: Accessor<Vec2>,
     setPan: (x: Vec2) => void,
     scale: Accessor<number>,
     setScale: (x: number) => void,
+    disableOneFingerPan?: Accessor<boolean>,
     setPointerCapture: (pointerId: number) => void,
     releasePointerCapture: (pointerId: number) => void,
 }): {
@@ -16,7 +18,7 @@ export function createPanZoomManager(params: {
     onPointerCancel: (e: PointerEvent) => void,
     onPointerMove: (e: PointerEvent) => void,
     onWheel: (e: WheelEvent) => void,
-    debugPointers: Accessor<string>,
+    numTouches: Accessor<number>,
 } {
     let pointersDown = new ReactiveMap<number, Vec2>();
     let pointersDownArray = createMemo(() => {
@@ -27,12 +29,12 @@ export function createPanZoomManager(params: {
         result.sort((a, b) => a.id - b.id);
         return result;
     });
-    let debugPointers = createMemo(() =>
-        pointersDownArray().map((x) => JSON.stringify(x)).join(";")
-    );
     { // One Finger Pan
         let hasOnePointerDown = createMemo(() => pointersDownArray().length == 1);
         createComputed(() => {
+            if (params.disableOneFingerPan?.() ?? false) {
+                return;
+            }
             if (!hasOnePointerDown()) {
                 return;
             }
@@ -89,11 +91,21 @@ export function createPanZoomManager(params: {
     }
     return {
         onPointerDown(e) {
+            let left: number;
+            let top: number;
+            if (e.currentTarget instanceof Element) {
+                let rect = e.currentTarget.getBoundingClientRect();
+                left = rect.left;
+                top = rect.top;
+            } else {
+                left = 0;
+                top = 0;
+            }
             pointersDown.set(
                 e.pointerId,
                 Vec2.create(
-                    e.offsetX,
-                    e.offsetY,
+                    e.clientX - left,
+                    e.clientY - top,
                 ),
             );
         },
@@ -109,34 +121,54 @@ export function createPanZoomManager(params: {
             if (!pointersDown.has(e.pointerId)) {
                 return;
             }
+            let left: number;
+            let top: number;
+            if (e.currentTarget instanceof Element) {
+                let rect = e.currentTarget.getBoundingClientRect();
+                left = rect.left;
+                top = rect.top;
+            } else {
+                left = 0;
+                top = 0;
+            }
             pointersDown.set(
                 e.pointerId,
                 Vec2.create(
-                    e.offsetX,
-                    e.offsetY,
+                    e.clientX - left,
+                    e.clientY - top,
                 ),
             );
         },
         onWheel(e) {
+            let left: number;
+            let top: number;
+            if (e.currentTarget instanceof Element) {
+                let rect = e.currentTarget.getBoundingClientRect();
+                left = rect.left;
+                top = rect.top;
+            } else {
+                left = 0;
+                top = 0;
+            }
             let m = Vec2.create(
-                e.offsetX,
-                e.offsetY,
+                e.clientX - left,
+                e.clientY - top,
             );
-            let pt = m.multScalar(1.0 / params.scale()).add(params.pan());
+            let initScale = params.scale();
             let newScale = params.scale();
-            if (e.deltaY > 0) {
+            if (e.deltaY < 0) {
                 newScale *= 1.1;
-            } else if (e.deltaY < 0) {
+            } else if (e.deltaY > 0) {
                 newScale /= 1.1;
             } else {
                 return;
             }
-            let newPan = pt.sub(m.multScalar(1.0 / newScale));
+            let newPan = params.pan().add(m.multScalar(1.0 / initScale - 1.0 / newScale));
             batch(() => {
                 params.setPan(newPan);
                 params.setScale(newScale);
             });
         },
-        debugPointers,
+        numTouches: createMemo(() => pointersDownArray().length),
     };
 }
