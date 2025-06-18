@@ -540,28 +540,33 @@ export class TextureAtlas {
             >
               Auto Frames
             </button>
-            <button
-              class="btn"
-              onClick={() => {
-                setState(
-                  "overlayApp",
-                  new NoTrack({
-                    Title: () => "Animations",
-                    View: () => (
-                      <Animations
-                        world={state.world}
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                        }}
-                      />
-                    ),
-                  }),
-                );
-              }}
-            >
-              Animations
-            </button>
+            <Show when={image()}>
+              {(image2) => (
+                <button
+                  class="btn"
+                  onClick={() => {
+                    setState(
+                      "overlayApp",
+                      new NoTrack({
+                        Title: () => "Animations",
+                        View: () => (
+                          <Animations
+                            image={image2()}
+                            world={state.world}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                            }}
+                          />
+                        ),
+                      }),
+                    );
+                  }}
+                >
+                  Animations
+                </button>
+              )}
+            </Show>
           </div>
           <div
             style={{

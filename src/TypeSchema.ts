@@ -61,6 +61,174 @@ export type TypeSchema<A> = undefined extends A
                         typeSchema: TypeSchema<A>;
                       };
 
+interface TypeSchemaV2MaybeUndefined<A> {
+  type: "MaybeUndefined",
+  element: TypeSchemaV2<A>,
+};
+
+interface TypeSchemaV2MaybeNull<A> {
+  type: "MaybeNull",
+  element: TypeSchemaV2<A>,
+};
+
+interface TypeSchemaV2Boolean {
+  type: "Boolean",
+};
+
+interface TypeSchemaV2Number {
+  type: "Number",
+};
+
+interface TypeSchemaV2String {
+  type: "String",
+};
+
+interface TypeSchemaV2Union<A extends { type: string; value: unknown }> {
+  type: "Union",
+  parts: {
+    [K in A["type"]]: TypeSchemaV2<
+      Extract<A, { type: K }>["value"]
+    >
+  },
+};
+
+interface TypeSchemaV2Object<A extends object> {
+  type: "Object",
+  properties: {
+    [K in keyof A]: TypeSchemaV2<A[K]>
+  },
+};
+
+interface TypeSchemaV2Invariant<A,B> {
+  type: "Invariant",
+  toFn: (a: A) => B,
+  fromFn: (b: B) => A,
+  inner: TypeSchemaV2<B>,
+}
+
+type TypeSchemaV2<A> =
+  undefined extends A ? TypeSchemaV2MaybeUndefined<NonNullable<A>> :
+  null extends A ? TypeSchemaV2MaybeNull<NonNullable<A>> :
+  A extends boolean ? TypeSchemaV2Boolean :
+  A extends number ? TypeSchemaV2Number :
+  A extends string ? TypeSchemaV2String :
+  A extends { type: string; value: unknown } ? TypeSchemaV2Union<A> :
+  A extends object ? TypeSchemaV2Object<A> :
+  never |
+  TypeSchemaV2Invariant<A,any>;
+
+type TypeSchemaV2Any =
+  TypeSchemaV2MaybeUndefined<any> |
+  TypeSchemaV2MaybeNull<any> |
+  TypeSchemaV2Boolean |
+  TypeSchemaV2Number |
+  TypeSchemaV2String |
+  TypeSchemaV2Union<any> |
+  TypeSchemaV2Object<any> |
+  TypeSchemaV2Invariant<any,any>;
+
+type TypeSchemaType<A> =
+  A extends TypeSchemaV2MaybeUndefined<infer B> ? B | undefined :
+  A extends TypeSchemaV2MaybeNull<infer B> ? B | null :
+  A extends TypeSchemaV2Boolean ? boolean :
+  A extends TypeSchemaV2Number ? number :
+  A extends TypeSchemaV2String ? string :
+  A extends TypeSchemaV2Union<infer B> ? B :
+  A extends TypeSchemaV2Object<infer B> ? B :
+  A extends TypeSchemaV2Invariant<infer B, any> ? B :
+  never;
+
+function tsMaybeUndefined<A>(element: TypeSchemaV2<A>): TypeSchemaV2MaybeUndefined<A> {
+  return {
+    type: "MaybeUndefined",
+    element: element,
+  };
+}
+
+function tsMaybeNull<A>(element: TypeSchemaV2<A>): TypeSchemaV2MaybeNull<A> {
+  return {
+    type: "MaybeNull",
+    element,
+  };
+}
+
+function tsBoolean() : TypeSchemaV2Boolean {
+  return { type: "Boolean", };
+}
+
+function tsNumber(): TypeSchemaV2Number {
+  return { type: "Number", };
+}
+
+function tsString(): TypeSchemaV2String {
+  return { type: "String", };
+}
+
+type UnionPart<T extends Record<string, TypeSchemaV2Any>> = {
+  [K in keyof T]: K extends string ? { type: K; value: TypeSchemaType<T[K]> } : never
+}[keyof T];
+
+function tsUnion<T extends Record<string, TypeSchemaV2Any>>(
+  parts: T
+): TypeSchemaV2Union<UnionPart<T>> {
+  return {
+    type: "Union",
+    parts: parts as any,
+  };
+}
+
+function tsObject<T>(
+  properties: T
+): TypeSchemaV2Object<{ [K in keyof T]: TypeSchemaType<T[K]> }> {
+  return {
+    type: "Object",
+    properties: properties as unknown as { [K in keyof T]: TypeSchemaV2<TypeSchemaType<T[K]>> },
+  };
+}
+
+function tsInvariant<T,U>(
+  toFn: (t: T) => U,
+  fromFn: (u: U) => T,
+  inner: TypeSchemaV2<U>
+): TypeSchemaV2Invariant<T,U> {
+  return {
+    type: "Invariant",
+    toFn,
+    fromFn,
+    inner,
+  };
+}
+
+let ts = tsObject({
+  abc: tsBoolean(),
+  xyz: tsNumber(),
+  def: tsString(),
+});
+
+type MyType = TypeSchemaType<typeof ts>;
+
+let ts2 = tsUnion({
+  up: tsNumber(),
+  down: tsBoolean(),
+  cat: tsObject({
+    x: tsNumber(),
+    y: tsNumber(),
+  }),
+});
+
+type MyType2 = TypeSchemaType<typeof ts2>;
+
+let ts3 = tsInvariant(
+  (a: Vec2) => ({ x: a.x, y: a.y, }),
+  (a) => Vec2.create(a.x, a.y),
+  tsObject({
+    x: tsNumber(),
+    y: tsNumber(),
+  }),
+);
+
+type MyType3 = TypeSchemaType<typeof ts3>;
+
 export function makeInvariantTypeSchema<A, B>(
   fn1: (a: B) => A,
   fn2: (a: A) => B,

@@ -13,7 +13,7 @@ export * from './ecs/components/SortOrderIndexComponent';
 export * from './TypeSchema';
 export { PixiRenderSystem } from './systems/PixiRenderSystem';
 export { createMonsterLogicSystem } from './systems/MonsterLogicSystem';
-export { createVirtualDPadSystem, } from './systems/VirtualDPadSystem';
+export { createVirtualDPadSystem } from './systems/VirtualDPadSystem';
 export * from 'solid-js';
 export * from './Cont';
 export * from './cont-do';
