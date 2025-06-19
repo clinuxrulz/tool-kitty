@@ -54,6 +54,7 @@ const AutomergeWebRtcTest = lazy(
   () => import("./automerge-webrtc-test/AutomergeWebRtcTest"),
 );
 const DebugProjection = lazy(() => import("./DebugProjection"));
+const AutoFormsTest = lazy(() => import("./AutoFormsTest"));
 
 const root = document.getElementById("root");
 
@@ -229,6 +230,10 @@ render(() => {
             )}
           </Show>
         )}
+      />
+      <Route
+        path="/auto-forms-test"
+        component={AutoFormsTest}
       />
     </HashRouter>
   );

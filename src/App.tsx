@@ -127,6 +127,9 @@ const App: Component<{
           <button class="btn" onClick={() => navigate("/app")}>
             App
           </button>
+          <button class="btn" onClick={() => navigate("/auto-forms-test")}>
+            Auto Forms Test
+          </button>
         </div>
       </div>
     </div>
