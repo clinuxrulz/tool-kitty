@@ -7,6 +7,10 @@ import {
   createJsonProjectionViaTypeSchema,
   createJsonProjectionViaTypeSchemaV2,
   saveToJsonViaTypeSchema,
+  tsArray,
+  tsNumber,
+  tsObject,
+  tsString,
   TypeSchema,
   vec2TypeSchema,
 } from "./TypeSchema";
@@ -90,25 +94,13 @@ describe("TypeSchema json projection for automerge", () => {
       targets: Vec2[];
       secretCodes: number[][];
     };
-    let objTypeSchema: TypeSchema<State> = {
-      type: "Object",
-      properties: {
-        firstName: "String",
-        lastName: "String",
-        location: vec2TypeSchema,
-        targets: {
-          type: "Array",
-          element: vec2TypeSchema,
-        },
-        secretCodes: {
-          type: "Array",
-          element: {
-            type: "Array",
-            element: "Number",
-          },
-        },
-      },
-    };
+    let objTypeSchema: TypeSchema<State> = tsObject({
+      firstName: tsString(),
+      lastName: tsString(),
+      location: vec2TypeSchema,
+      targets: tsArray(vec2TypeSchema),
+      secretCodes: tsArray(tsArray(tsNumber())),
+    });
     let repo = new Repo();
     let docHandle = repo.create({
       firstName: "John",
@@ -220,35 +212,21 @@ describe("new projection", () => {
       }[];
       g: Vec2[];
     };
-    let stateTypeSchema: TypeSchema<State> = {
-      type: "Object",
-      properties: {
-        a: "Number",
-        b: "Number",
-        c: "Number",
-        d: {
-          type: "Array",
-          element: "Number",
-        },
+    let stateTypeSchema: TypeSchema<State> = tsObject({
+        a: tsNumber(),
+        b: tsNumber(),
+        c: tsNumber(),
+        d: tsArray(tsNumber()),
         e: vec2TypeSchema,
-        f: {
-          type: "Array",
-          element: {
-            type: "Object",
-            properties: {
-              g: {
-                type: "Array",
-                element: vec2TypeSchema,
-              },
-            },
-          },
-        },
-        g: {
-          type: "Array",
-          element: vec2TypeSchema,
-        },
-      },
-    };
+        f: tsArray(
+          tsObject({
+            g: tsArray(
+              vec2TypeSchema,
+            ),
+          }),
+        ),
+        g: tsArray(vec2TypeSchema),
+    });
     let repo = new Repo();
     let docHandle = repo.create(
       saveToJsonViaTypeSchema(stateTypeSchema, {
@@ -313,12 +291,7 @@ describe("new projection", () => {
       type State = {
         a: number;
       };
-      let stateTypeSchema: TypeSchema<State> = {
-        type: "Object",
-        properties: {
-          a: "Number",
-        },
-      };
+      let stateTypeSchema: TypeSchema<State> = tsObject({ a: tsNumber(), });
       let repo = new Repo();
       let docHandle = repo.create({
         a: 5,

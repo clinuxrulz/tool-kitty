@@ -1,23 +1,15 @@
 import { EcsComponentType } from "../../ecs/EcsComponent";
-import { vec2TypeSchema } from "../../TypeSchema";
-import { Vec2 } from "../../math/Vec2";
+import { tsArray, tsBoolean, tsObject, TypeSchemaType, vec2TypeSchema } from "../../TypeSchema";
 
-export type CatmullRomSplineState = {
-  controlPoints: Vec2[];
-  isClosed: boolean;
-};
+const typeSchema = tsObject({
+  controlPoints: tsArray(vec2TypeSchema),
+  isClosed: tsBoolean(),
+});
+
+export type CatmullRomSplineState = TypeSchemaType<typeof typeSchema>;
 
 export const catmullRomSplineComponentType =
   new EcsComponentType<CatmullRomSplineState>({
     typeName: "CatmullRomSpline",
-    typeSchema: {
-      type: "Object",
-      properties: {
-        controlPoints: {
-          type: "Array",
-          element: vec2TypeSchema,
-        },
-        isClosed: "Boolean",
-      },
-    },
+    typeSchema,
   });

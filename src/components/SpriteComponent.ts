@@ -1,17 +1,14 @@
 import { EcsComponentType } from "../ecs/EcsComponent";
+import { tsObject, tsString, TypeSchemaType } from "../TypeSchema";
 
-export type SpriteState = {
-  textureAtlasFilename: string;
-  frameName: string;
-};
+const typeSchema = tsObject({
+  textureAtlasFilename: tsString(),
+  frameName: tsString(),
+});
+
+export type SpriteState = TypeSchemaType<typeof typeSchema>;
 
 export const spriteComponentType = new EcsComponentType<SpriteState>({
   typeName: "Sprite",
-  typeSchema: {
-    type: "Object",
-    properties: {
-      textureAtlasFilename: "String",
-      frameName: "String",
-    },
-  },
+  typeSchema,
 });

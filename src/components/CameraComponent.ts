@@ -1,18 +1,13 @@
-import { EcsComponentType } from "../lib";
+import { EcsComponentType } from "../ecs/EcsComponent";
+import { tsMaybeUndefined, tsObject, tsString, TypeSchemaType } from "../TypeSchema";
 
-export type CameraState = {
-  targetEntity: string | undefined;
-};
+const typeSchema = tsObject({
+  targetEntity: tsMaybeUndefined(tsString()),
+});
+
+export type CameraState = TypeSchemaType<typeof typeSchema>;
 
 export const cameraComponentType = new EcsComponentType<CameraState>({
   typeName: "Camera",
-  typeSchema: {
-    type: "Object",
-    properties: {
-      targetEntity: {
-        type: "MaybeUndefined",
-        element: "String",
-      },
-    },
-  },
+  typeSchema,
 });

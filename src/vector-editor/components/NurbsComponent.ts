@@ -1,29 +1,17 @@
 import { EcsComponentType } from "../../ecs/EcsComponent";
-import { vec2TypeSchema } from "../../TypeSchema";
+import { tsArray, tsBoolean, tsNumber, tsObject, TypeSchemaType, vec2TypeSchema } from "../../TypeSchema";
 import { Vec2 } from "../../math/Vec2";
 
-export type NurbsState = {
-  controlPoints: Vec2[];
-  weights: number[];
-  degree: number;
-  closed: boolean;
-};
+const typeSchema = tsObject({
+  controlPoints: tsArray(vec2TypeSchema),
+  weights: tsArray(tsNumber()),
+  degree: tsNumber(),
+  closed: tsBoolean(),
+});
+
+export type NurbsState = TypeSchemaType<typeof typeSchema>;
 
 export const nurbsComponentType = new EcsComponentType<NurbsState>({
   typeName: "Nurbs",
-  typeSchema: {
-    type: "Object",
-    properties: {
-      controlPoints: {
-        type: "Array",
-        element: vec2TypeSchema,
-      },
-      weights: {
-        type: "Array",
-        element: "Number",
-      },
-      degree: "Number",
-      closed: "Boolean",
-    },
-  },
+  typeSchema,
 });

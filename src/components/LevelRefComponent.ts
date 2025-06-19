@@ -1,15 +1,12 @@
-import { EcsComponentType } from "../lib";
+import { EcsComponentType, tsObject, tsString, TypeSchemaType } from "../lib";
 
-export type LevelRefState = {
-  levelFilename: string;
-};
+const typeSchema = tsObject({
+  levelFilename: tsString(),
+});
+
+export type LevelRefState = TypeSchemaType<typeof typeSchema>;
 
 export const levelRefComponentType = new EcsComponentType<LevelRefState>({
   typeName: "LevelRef",
-  typeSchema: {
-    type: "Object",
-    properties: {
-      levelFilename: "String",
-    },
-  },
+  typeSchema,
 });

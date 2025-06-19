@@ -1,49 +1,22 @@
 import { EcsComponentType } from "../../ecs/EcsComponent";
+import { tsArray, tsNumber, tsObject, tsString, TypeSchemaType } from "../../TypeSchema";
 
-export type LevelState = {
-  tileToShortIdTable: {
-    textureAtlasRef: string;
-    frames: {
-      frameId: string;
-      shortId: number;
-    }[];
-  }[];
+const typeSchema = tsObject({
+  tileToShortIdTable: tsArray(tsObject({
+    textureAtlasRef: tsString(),
+    frames: tsArray(tsObject({
+      frameId: tsString(),
+      shortId: tsNumber(),
+    })),
+  })),
   /** 2D Array of short IDs */
-  mapData: number[][];
-};
+  mapData: tsArray(tsArray(tsNumber())),
+});
+
+export type LevelState = TypeSchemaType<typeof typeSchema>;
 
 export const levelComponentType: EcsComponentType<LevelState> =
   new EcsComponentType({
     typeName: "Level",
-    typeSchema: {
-      type: "Object",
-      properties: {
-        tileToShortIdTable: {
-          type: "Array",
-          element: {
-            type: "Object",
-            properties: {
-              textureAtlasRef: "String",
-              frames: {
-                type: "Array",
-                element: {
-                  type: "Object",
-                  properties: {
-                    frameId: "String",
-                    shortId: "Number",
-                  },
-                },
-              },
-            },
-          },
-        },
-        mapData: {
-          type: "Array",
-          element: {
-            type: "Array",
-            element: "Number",
-          },
-        },
-      },
-    },
+    typeSchema,
   });

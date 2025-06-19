@@ -1,201 +1,197 @@
 import {
-  Accessor,
   createComputed,
-  createMemo,
-  mapArray,
   on,
-  untrack,
 } from "solid-js";
 import { err, ok, Result } from "./kitty-demo/Result";
 import { Vec2 } from "./math/Vec2";
-import { SetStoreFunction, Store } from "solid-js/store";
 
-export type TypeSchema<A> = undefined extends A
-  ? {
-      type: "MaybeUndefined";
-      element: TypeSchema<NonNullable<A>>;
-    }
-  : null extends A
-    ? {
-        type: "MaybeNull";
-        element: TypeSchema<NonNullable<A>>;
-      }
-    : A extends boolean
-      ? "Boolean"
-      : A extends number
-        ? "Number"
-        : A extends string
-          ? "String"
-          : A extends unknown[]
-            ? { type: "Array"; element: TypeSchema<A[0]> }
-            : A extends { type: string; value: unknown }
-              ? {
-                  type: "Union";
-                  parts: {
-                    [K in A["type"]]: TypeSchema<
-                      Extract<A, { type: K }>["value"]
-                    >;
-                  };
-                }
-              : A extends object
-                ? {
-                    type: "Object";
-                    properties: {
-                      [K in keyof A]: TypeSchema<A[K]>;
-                    };
-                  }
-                :
-                    | {
-                        type: "Recursive";
-                        typeSchema: () => TypeSchema<A>;
-                      }
-                    | {
-                        type: "Invariant";
-                        fn1: (a: unknown) => A;
-                        fn2: (a: A) => unknown;
-                        typeSchema: TypeSchema<unknown>;
-                      }
-                    | {
-                        type: "WithDefault";
-                        default_: A;
-                        typeSchema: TypeSchema<A>;
-                      };
-
-interface TypeSchemaV2MaybeUndefined<A> {
+interface TypeSchemaMaybeUndefined<A> {
   type: "MaybeUndefined",
-  element: TypeSchemaV2<A>,
+  element: TypeSchema<A>,
 };
 
-interface TypeSchemaV2MaybeNull<A> {
+interface TypeSchemaMaybeNull<A> {
   type: "MaybeNull",
-  element: TypeSchemaV2<A>,
+  element: TypeSchema<A>,
 };
 
-interface TypeSchemaV2Boolean {
+interface TypeSchemaBoolean {
   type: "Boolean",
 };
 
-interface TypeSchemaV2Number {
+interface TypeSchemaNumber {
   type: "Number",
 };
 
-interface TypeSchemaV2String {
+interface TypeSchemaString {
   type: "String",
 };
 
-interface TypeSchemaV2Union<A extends { type: string; value: unknown }> {
+interface TypeSchemaUnion<A extends { type: string; value: unknown }> {
   type: "Union",
   parts: {
-    [K in A["type"]]: TypeSchemaV2<
+    [K in A["type"]]: TypeSchema<
       Extract<A, { type: K }>["value"]
     >
   },
 };
 
-interface TypeSchemaV2Object<A extends object> {
+interface TypeSchemaObject<A extends object> {
   type: "Object",
   properties: {
-    [K in keyof A]: TypeSchemaV2<A[K]>
+    [K in keyof A]: TypeSchema<A[K]>
   },
 };
 
-interface TypeSchemaV2Invariant<A,B> {
+interface TypeSchemaArray<A> {
+  type: "Array",
+  element: TypeSchema<A>,
+};
+
+interface TypeSchemaInvariant<A,B> {
   type: "Invariant",
-  toFn: (a: A) => B,
   fromFn: (b: B) => A,
-  inner: TypeSchemaV2<B>,
-}
+  toFn: (a: A) => B,
+  inner: TypeSchema<B>,
+};
 
-type TypeSchemaV2<A> =
-  undefined extends A ? TypeSchemaV2MaybeUndefined<NonNullable<A>> :
-  null extends A ? TypeSchemaV2MaybeNull<NonNullable<A>> :
-  A extends boolean ? TypeSchemaV2Boolean :
-  A extends number ? TypeSchemaV2Number :
-  A extends string ? TypeSchemaV2String :
-  A extends { type: string; value: unknown } ? TypeSchemaV2Union<A> :
-  A extends object ? TypeSchemaV2Object<A> :
-  never |
-  TypeSchemaV2Invariant<A,any>;
+interface TypeSchemaDefault<A> {
+  type: "Default",
+  value: A,
+  inner: TypeSchema<A>,
+};
 
-type TypeSchemaV2Any =
-  TypeSchemaV2MaybeUndefined<any> |
-  TypeSchemaV2MaybeNull<any> |
-  TypeSchemaV2Boolean |
-  TypeSchemaV2Number |
-  TypeSchemaV2String |
-  TypeSchemaV2Union<any> |
-  TypeSchemaV2Object<any> |
-  TypeSchemaV2Invariant<any,any>;
+interface TypeSchemaRecursive<A> {
+  type: "Recursive",
+  inner: () => TypeSchema<A>,
+};
 
-type TypeSchemaType<A> =
-  A extends TypeSchemaV2MaybeUndefined<infer B> ? B | undefined :
-  A extends TypeSchemaV2MaybeNull<infer B> ? B | null :
-  A extends TypeSchemaV2Boolean ? boolean :
-  A extends TypeSchemaV2Number ? number :
-  A extends TypeSchemaV2String ? string :
-  A extends TypeSchemaV2Union<infer B> ? B :
-  A extends TypeSchemaV2Object<infer B> ? B :
-  A extends TypeSchemaV2Invariant<infer B, any> ? B :
+interface TypeSchemaJson {
+  type: "Json",
+};
+
+export type TypeSchema<A> =
+  TypeSchemaMaybeUndefined<NonNullable<A>> |
+  TypeSchemaMaybeNull<NonNullable<A>> |
+  TypeSchemaBoolean |
+  TypeSchemaNumber |
+  TypeSchemaString |
+  TypeSchemaUnion<Extract<A, { type: string, value: unknown, }>> |
+  TypeSchemaObject<Extract<A, object>> |
+  TypeSchemaArray<any> |
+  TypeSchemaInvariant<A,any> |
+  TypeSchemaDefault<A> |
+  TypeSchemaRecursive<A> |
+  TypeSchemaJson;
+
+export type TypeSchemaType<A> =
+  A extends TypeSchemaMaybeUndefined<infer B> ? B | undefined :
+  A extends TypeSchemaMaybeNull<infer B> ? B | null :
+  A extends TypeSchemaBoolean ? boolean :
+  A extends TypeSchemaNumber ? number :
+  A extends TypeSchemaString ? string :
+  A extends TypeSchemaUnion<infer B> ? B :
+  A extends TypeSchemaObject<infer B> ? B :
+  A extends TypeSchemaArray<infer B> ? B[] :
+  A extends TypeSchemaInvariant<infer B, any> ? B :
+  A extends TypeSchemaDefault<A> ? A :
+  A extends TypeSchemaRecursive<A> ? A :
+  A extends TypeSchemaJson ? any :
   never;
 
-function tsMaybeUndefined<A>(element: TypeSchemaV2<A>): TypeSchemaV2MaybeUndefined<A> {
+export function tsMaybeUndefined<TS>(element: TS): TypeSchemaMaybeUndefined<TypeSchemaType<TS>> {
   return {
     type: "MaybeUndefined",
-    element: element,
+    element: element as any,
   };
 }
 
-function tsMaybeNull<A>(element: TypeSchemaV2<A>): TypeSchemaV2MaybeNull<A> {
+export function tsMaybeNull<TS>(element: TS): TypeSchemaMaybeNull<TypeSchemaType<TS>> {
   return {
     type: "MaybeNull",
-    element,
+    element: element as any,
   };
 }
 
-function tsBoolean() : TypeSchemaV2Boolean {
+export function tsBoolean() : TypeSchemaBoolean {
   return { type: "Boolean", };
 }
 
-function tsNumber(): TypeSchemaV2Number {
+export function tsNumber(): TypeSchemaNumber {
   return { type: "Number", };
 }
 
-function tsString(): TypeSchemaV2String {
+export function tsString(): TypeSchemaString {
   return { type: "String", };
 }
 
-type UnionPart<T extends Record<string, TypeSchemaV2Any>> = {
+export type UnionPart<T extends Record<string, TypeSchema<any>>> = {
   [K in keyof T]: K extends string ? { type: K; value: TypeSchemaType<T[K]> } : never
 }[keyof T];
 
-function tsUnion<T extends Record<string, TypeSchemaV2Any>>(
+export function tsUnion<T extends Record<string, TypeSchema<any>>>(
   parts: T
-): TypeSchemaV2Union<UnionPart<T>> {
+): TypeSchemaUnion<UnionPart<T>> {
   return {
     type: "Union",
     parts: parts as any,
   };
 }
 
-function tsObject<T>(
+export function tsObject<T>(
   properties: T
-): TypeSchemaV2Object<{ [K in keyof T]: TypeSchemaType<T[K]> }> {
+): TypeSchemaObject<{ [K in keyof T]: TypeSchemaType<T[K]> }> {
   return {
     type: "Object",
-    properties: properties as unknown as { [K in keyof T]: TypeSchemaV2<TypeSchemaType<T[K]>> },
+    properties: properties as unknown as { [K in keyof T]: TypeSchema<TypeSchemaType<T[K]>> },
   };
 }
 
-function tsInvariant<T,U>(
-  toFn: (t: T) => U,
+export function tsArray<TS>(
+  element: TS
+): TypeSchemaArray<TypeSchemaType<TS>> {
+  return {
+    type: "Array",
+    element: element as any,
+  };
+}
+
+export function tsInvariant<T,U>(
   fromFn: (u: U) => T,
-  inner: TypeSchemaV2<U>
-): TypeSchemaV2Invariant<T,U> {
+  toFn: (t: T) => U,
+  inner: TypeSchema<U>
+): TypeSchemaInvariant<T,U> {
   return {
     type: "Invariant",
-    toFn,
     fromFn,
+    toFn,
     inner,
+  };
+}
+
+export function tsDefault<A>(
+  value: A,
+  inner: TypeSchema<A>,
+): TypeSchemaDefault<A> {
+  return {
+    type: "Default",
+    value,
+    inner,
+  };
+}
+
+export function tsRecursive<A>(
+  inner: () => TypeSchema<A>,
+): TypeSchemaRecursive<A> {
+  return {
+    type: "Recursive",
+    inner,
+  };
+}
+
+export function tsJson(): TypeSchemaJson {
+  return {
+    type: "Json",
   };
 }
 
@@ -219,8 +215,8 @@ let ts2 = tsUnion({
 type MyType2 = TypeSchemaType<typeof ts2>;
 
 let ts3 = tsInvariant(
-  (a: Vec2) => ({ x: a.x, y: a.y, }),
   (a) => Vec2.create(a.x, a.y),
+  (a) => ({ x: a.x, y: a.y, }),
   tsObject({
     x: tsNumber(),
     y: tsNumber(),
@@ -229,104 +225,38 @@ let ts3 = tsInvariant(
 
 type MyType3 = TypeSchemaType<typeof ts3>;
 
-export function makeInvariantTypeSchema<A, B>(
-  fn1: (a: B) => A,
-  fn2: (a: A) => B,
-  typeSchema: TypeSchema<B>,
-): TypeSchema<A> {
-  return {
-    type: "Invariant",
-    fn1,
-    fn2,
-    typeSchema,
-  } as unknown as TypeSchema<A>;
-}
-
-export function makeWithDefaultTypeSchema<A>(
-  default_: A,
-  typeSchema: TypeSchema<A>,
-): TypeSchema<A> {
-  return {
-    type: "WithDefault",
-    default_,
-    typeSchema,
-  } as unknown as TypeSchema<A>;
-}
-
-export const vec2TypeSchema: TypeSchema<Vec2> = makeInvariantTypeSchema(
+export const vec2TypeSchema: TypeSchema<Vec2> = tsInvariant(
   (a: { x: number; y: number }) => Vec2.create(a.x, a.y),
   (a: Vec2) => ({ x: a.x, y: a.y }),
-  {
-    type: "Object",
-    properties: {
-      x: "Number",
-      y: "Number",
-    },
-  },
+  tsObject({
+    x: tsNumber(),
+    y: tsNumber(),
+  }),
 );
-
-type Example = {
-  a: number;
-  b: number | undefined;
-  c:
-    | {
-        type: "X";
-        value: string;
-      }
-    | {
-        type: "Y";
-        value: {
-          x: number;
-          y: number;
-        };
-      };
-};
-
-const exampleTypeSchema: TypeSchema<Example> = {
-  type: "Object",
-  properties: {
-    a: "Number",
-    b: {
-      type: "MaybeUndefined",
-      element: "Number",
-    },
-    c: {
-      type: "Union",
-      parts: {
-        X: "String",
-        Y: {
-          type: "Object",
-          properties: {
-            x: "Number",
-            y: "Number",
-          },
-        },
-      },
-    },
-  },
-};
 
 export function loadFromJsonViaTypeSchema<A>(
   typeSchema: TypeSchema<A>,
   x: any,
 ): Result<A> {
-  if (typeSchema == "Boolean") {
-    if (typeof x !== "boolean") {
-      return err("Expected a boolean.");
-    }
-    return ok(x) as any;
-  } else if (typeSchema == "Number") {
-    if (typeof x !== "number") {
-      return err("Expected a number.");
-    }
-    return ok(x) as any;
-  } else if (typeSchema == "String") {
-    if (typeof x !== "string") {
-      return err("Expected a string.");
-    }
-    return ok(x) as any;
-  }
   switch (typeSchema.type) {
+    case "Boolean": {
+      if (typeof x !== "boolean") {
+        return err("Expected a boolean.");
+      }
+      return ok(x) as any;
+    }
+    case "Number": {
+      if (typeof x !== "number") {
+        return err("Expected a number.");
+      }
+      return ok(x) as any;
+    }
+    case "String": {
+      if (typeof x !== "string") {
+        return err("Expected a string.");
+      }
+      return ok(x) as any;
+    }
     case "MaybeUndefined": {
       if (x == null) {
         return ok(undefined) as any;
@@ -386,19 +316,19 @@ export function loadFromJsonViaTypeSchema<A>(
       return ok(res);
     }
     case "Recursive": {
-      let typeSchema2 = typeSchema.typeSchema();
+      let typeSchema2 = typeSchema.inner();
       return loadFromJsonViaTypeSchema(typeSchema2, x);
     }
     case "Invariant": {
-      let fn1 = typeSchema.fn1;
-      let value = loadFromJsonViaTypeSchema(typeSchema.typeSchema, x);
+      let fn1 = typeSchema.fromFn;
+      let value = loadFromJsonViaTypeSchema(typeSchema.inner, x);
       if (value.type == "Err") {
         return value;
       }
       return ok(fn1(value.value));
     }
-    case "WithDefault": {
-      let typeSchema2 = typeSchema.typeSchema;
+    case "Default": {
+      let typeSchema2 = typeSchema.inner;
       let r: Result<A>;
       try {
         r = loadFromJsonViaTypeSchema(typeSchema2, x);
@@ -406,22 +336,27 @@ export function loadFromJsonViaTypeSchema<A>(
         r = err("" + e);
       }
       if (r.type == "Err") {
-        return ok(typeSchema.default_);
+        return ok(typeSchema.value);
       }
       return ok(r.value);
+    }
+    case "Json": {
+      return ok(x);
     }
   }
 }
 
 export function makeDefaultViaTypeSchema<A>(typeSchema: TypeSchema<A>): A {
-  if (typeSchema == "Boolean") {
-    return false as A;
-  } else if (typeSchema == "Number") {
-    return 0.0 as A;
-  } else if (typeSchema == "String") {
-    return "" as A;
-  }
   switch (typeSchema.type) {
+    case "Boolean": {
+      return false as A;
+    }
+    case "Number": {
+      return 0.0 as A;
+    }
+    case "String": {
+      return "" as A;
+    }
     case "MaybeUndefined": {
       return undefined as A;
     }
@@ -447,16 +382,19 @@ export function makeDefaultViaTypeSchema<A>(typeSchema: TypeSchema<A>): A {
       return res as A;
     }
     case "Recursive": {
-      let typeSchema2 = typeSchema.typeSchema();
+      let typeSchema2 = typeSchema.inner();
       return makeDefaultViaTypeSchema(typeSchema2);
     }
     case "Invariant": {
-      let fn1 = typeSchema.fn1;
-      let value = makeDefaultViaTypeSchema(typeSchema.typeSchema);
+      let fn1 = typeSchema.fromFn;
+      let value = makeDefaultViaTypeSchema(typeSchema.inner);
       return fn1(value as any);
     }
-    case "WithDefault": {
-      return typeSchema.default_;
+    case "Default": {
+      return typeSchema.value;
+    }
+    case "Json": {
+      return null as A;
     }
   }
 }
@@ -465,14 +403,16 @@ export function saveToJsonViaTypeSchema<A>(
   typeSchema: TypeSchema<A>,
   x: A,
 ): any {
-  if (typeSchema == "Boolean") {
-    return x;
-  } else if (typeSchema == "Number") {
-    return x;
-  } else if (typeSchema == "String") {
-    return x;
-  }
   switch (typeSchema.type) {
+    case "Boolean": {
+      return x;
+    }
+    case "Number": {
+      return x;
+    }
+    case "String": {
+      return x;
+    }
     case "MaybeUndefined": {
       if (x == undefined) {
         return null;
@@ -509,16 +449,19 @@ export function saveToJsonViaTypeSchema<A>(
       );
     }
     case "Recursive": {
-      let typeSchema2 = typeSchema.typeSchema();
+      let typeSchema2 = typeSchema.inner();
       return saveToJsonViaTypeSchema(typeSchema2, x);
     }
     case "Invariant": {
-      let fn2 = typeSchema.fn2;
+      let fn2 = typeSchema.toFn;
       let x2 = fn2(x);
-      return saveToJsonViaTypeSchema(typeSchema.typeSchema, x2);
+      return saveToJsonViaTypeSchema(typeSchema.inner, x2);
     }
-    case "WithDefault": {
-      return saveToJsonViaTypeSchema(typeSchema.typeSchema, x);
+    case "Default": {
+      return saveToJsonViaTypeSchema(typeSchema.inner, x);
+    }
+    case "Json": {
+      return x;
     }
   }
 }
@@ -701,7 +644,7 @@ function createJsonArrayProjectionViaTypeSchemaV2<A>(
   return ok(result as A);
 }
 
-export function createJsonProjectionViaTypeSchema<A>(
+export function createJsonProjectionViaTypeSchema<A extends object>(
   typeSchema: TypeSchema<A>,
   json: any,
   changeJson: (callback: (json: any) => void) => void,

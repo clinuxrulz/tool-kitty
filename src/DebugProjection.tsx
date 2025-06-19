@@ -2,6 +2,10 @@ import { Component, createRoot, on } from "solid-js";
 import { Vec2 } from "./math/Vec2";
 import {
   createJsonProjectionViaTypeSchemaV2,
+  tsArray,
+  tsNumber,
+  tsObject,
+  tsString,
   TypeSchema,
   vec2TypeSchema,
 } from "./TypeSchema";
@@ -86,25 +90,13 @@ function runTest1() {
     targets: Vec2[];
     secretCodes: number[][];
   };
-  let objTypeSchema: TypeSchema<State> = {
-    type: "Object",
-    properties: {
-      firstName: "String",
-      lastName: "String",
-      location: vec2TypeSchema,
-      targets: {
-        type: "Array",
-        element: vec2TypeSchema,
-      },
-      secretCodes: {
-        type: "Array",
-        element: {
-          type: "Array",
-          element: "Number",
-        },
-      },
-    },
-  };
+  let objTypeSchema = tsObject({
+    firstName: tsString(),
+    lastName: tsString(),
+    location: vec2TypeSchema,
+    targets: tsArray(vec2TypeSchema),
+    secretCodes: tsArray(tsArray(tsNumber())),
+  }) as TypeSchema<State>;
   createRoot((dispose) => {
     let json = makeDocumentProjection(docHandle);
     let projection = createJsonProjectionViaTypeSchemaV2<State>(
@@ -204,19 +196,10 @@ async function runTest3() {
     a: number;
     b: number[][];
   };
-  let stateTypeSchema: TypeSchema<State> = {
-    type: "Object",
-    properties: {
-      a: "Number",
-      b: {
-        type: "Array",
-        element: {
-          type: "Array",
-          element: "Number",
-        },
-      },
-    },
-  };
+  let stateTypeSchema = tsObject({
+    a: "Number",
+    b: tsArray(tsArray(tsNumber())),
+  }) as TypeSchema<State>;
   let repo = new Repo();
   let docHandle = repo.create({
     a: 5,

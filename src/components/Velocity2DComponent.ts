@@ -1,15 +1,12 @@
-import { EcsComponentType, Vec2, vec2TypeSchema } from "../lib";
+import { EcsComponentType, tsObject, TypeSchemaType, Vec2, vec2TypeSchema } from "../lib";
 
-export type Velocity2DState = {
-  velocity: Vec2;
-};
+const typeSchema = tsObject({
+  velocity: vec2TypeSchema,
+});
+
+export type Velocity2DState = TypeSchemaType<typeof typeSchema>;
 
 export const velocity2DComponentType = new EcsComponentType<Velocity2DState>({
   typeName: "Velocity2D",
-  typeSchema: {
-    type: "Object",
-    properties: {
-      velocity: vec2TypeSchema,
-    },
-  },
+  typeSchema,
 });
