@@ -129,7 +129,7 @@ const AutoFormField: Component<{
                     </Match>
                     <Match when={props.formField.typeSchema.type == "Number"}>
                         {(() => {
-                            let [ value, setValue, ] = createSignal((props.formField.value() as number).toString());
+                            let [ value, setValue, ] = createSignal((untrack(() => props.formField.value()) as number).toString());
                             createComputed(() => {
                                 let x = Number.parseFloat(value());
                                 if (Number.isNaN(x)) {
