@@ -1,5 +1,5 @@
-import { Accessor, Component, createComputed, createSignal, For, Match, Show, Switch, untrack } from "solid-js";
-import { TypeSchema } from "./TypeSchema";
+import { Accessor, Component, createComputed, createSignal, For, Match, on, Show, Switch, untrack } from "solid-js";
+import { saveToJsonViaTypeSchema, TypeSchema } from "./TypeSchema";
 import { createStore, SetStoreFunction, Store } from "solid-js/store";
 
 export interface FormData<A extends object> {
@@ -58,7 +58,28 @@ const AutoFormObject: Component<{
             {(formData) => (
                 <For each={Object.entries(formData.properties)}>
                     {([fieldName, fieldTypeSchema]) => {
-                        if (fieldTypeSchema.type == "Object") {
+                        if (fieldTypeSchema.type == "Invariant" && fieldTypeSchema.inner.type == "Object") {
+                            let [ innerState, innerSetState, ] = createStore(
+                                fieldTypeSchema.toFn(props.formData.state[fieldName])
+                            );
+                            createComputed(on(
+                                () => saveToJsonViaTypeSchema(fieldTypeSchema.inner, innerState),
+                                (innerState) => {
+                                    props.formData.setState(fieldName, fieldTypeSchema.fromFn(innerState));
+                                },
+                                { defer: true, },
+                            ));
+                            return (
+                                <AutoFormObject
+                                    prefix={fieldName}
+                                    formData={{
+                                        typeSchema: fieldTypeSchema.inner,
+                                        state: innerState,
+                                        setState: innerSetState,
+                                    }}
+                                />
+                            );
+                        } else if (fieldTypeSchema.type == "Object") {
                             let [ _, innerSetState, ] = createStore(props.formData.state[fieldName]);
                             return (
                                 <AutoFormObject

@@ -4,10 +4,12 @@ import { createStore } from "solid-js/store";
 import AutoForm, { FormData } from "./AutoForm";
 import { registry as registry1 } from "./level-builder/components/registry";
 
-const registry = new EcsRegistry([
+let _componentTypesSet = new Set([
     ...registry1.componentTypes,
     ...registry2.componentTypes,
 ]);
+
+const registry = new EcsRegistry(Array.from(_componentTypesSet));
 
 const AutoFormsTest: Component = (props) => {
     let [ state, setState, ] = createStore<{
