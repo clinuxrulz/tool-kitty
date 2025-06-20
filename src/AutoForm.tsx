@@ -58,7 +58,7 @@ const AutoFormObject: Component<{
             {(formData) => (
                 <For each={Object.entries(formData.properties)}>
                     {([fieldName, fieldTypeSchema]) => {
-                        if (fieldTypeSchema.type == "Invariant" && fieldTypeSchema.inner.type == "Object") {
+                        if (fieldTypeSchema.type == "Invarant" && fieldTypeSchema.inner.type == "Object") {
                             let [ innerState, innerSetState, ] = createStore(
                                 fieldTypeSchema.toFn(props.formData.state[fieldName])
                             );

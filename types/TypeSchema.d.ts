@@ -39,7 +39,7 @@ interface TypeSchemaArray<A> {
     element: TypeSchema<A>;
 }
 interface TypeSchemaInvariant<A, B> {
-    type: "Invariant";
+    type: "Invarant";
     fromFn: (b: B) => A;
     toFn: (a: A) => B;
     inner: TypeSchema<B>;

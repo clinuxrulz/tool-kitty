@@ -27,12 +27,16 @@ interface TypeSchemaString {
   type: "String",
 };
 
-interface TypeSchemaUnion<A extends { type: string; value: unknown }> {
+interface TypeSchemaUnion<
+  A extends { [K in Key]: unknown },
+  Key extends string = "type"
+> {
   type: "Union",
+  selector: Key,
   parts: {
-    [K in A["type"]]: TypeSchema<
-      Extract<A, { type: K }>["value"]
-    >
+    [P in A[Key] & string]: TypeSchemaObject<
+      Extract<A, { [Q in Key]: P }>
+    >["properties"]
   },
 };
 
@@ -48,8 +52,8 @@ interface TypeSchemaArray<A> {
   element: TypeSchema<A>,
 };
 
-interface TypeSchemaInvariant<A,B> {
-  type: "Invariant",
+interface TypeSchemaInvarant<A,B> {
+  type: "Invarant",
   fromFn: (b: B) => A,
   toFn: (a: A) => B,
   inner: TypeSchema<B>,
@@ -76,10 +80,10 @@ export type TypeSchema<A> =
   TypeSchemaBoolean |
   TypeSchemaNumber |
   TypeSchemaString |
-  TypeSchemaUnion<Extract<A, { type: string, value: unknown, }>> |
+  TypeSchemaUnion<Extract<A, Record<string, unknown>>, any> |
   TypeSchemaObject<Extract<A, object>> |
   TypeSchemaArray<any> |
-  TypeSchemaInvariant<A,any> |
+  TypeSchemaInvarant<A,any> |
   TypeSchemaDefault<A> |
   TypeSchemaRecursive<A> |
   TypeSchemaJson;
@@ -90,10 +94,10 @@ export type TypeSchemaType<A> =
   A extends TypeSchemaBoolean ? boolean :
   A extends TypeSchemaNumber ? number :
   A extends TypeSchemaString ? string :
-  A extends TypeSchemaUnion<infer B> ? B :
+  A extends TypeSchemaUnion<infer B, any> ? B :
   A extends TypeSchemaObject<infer B> ? B :
   A extends TypeSchemaArray<infer B> ? B[] :
-  A extends TypeSchemaInvariant<infer B, any> ? B :
+  A extends TypeSchemaInvarant<infer B, any> ? B :
   A extends TypeSchemaDefault<A> ? A :
   A extends TypeSchemaRecursive<A> ? A :
   A extends TypeSchemaJson ? any :
@@ -125,15 +129,29 @@ export function tsString(): TypeSchemaString {
   return { type: "String", };
 }
 
-export type UnionPart<T extends Record<string, TypeSchema<any>>> = {
-  [K in keyof T]: K extends string ? { type: K; value: TypeSchemaType<T[K]> } : never
+type InferObjectSchema<T extends Record<string, TypeSchema<any>>> = {
+  [K in keyof T]: TypeSchemaType<T[K]>;
+};
+
+export type UnionPart<
+  T extends Record<string, Record<string, TypeSchema<any>>>,
+  Key extends string
+> = {
+  [P in keyof T]: P extends string
+    ? { [Q in Key]: P } & InferObjectSchema<T[P]>
+    : never
 }[keyof T];
 
-export function tsUnion<T extends Record<string, TypeSchema<any>>>(
+export function tsUnion<
+  T extends { [K in keyof T]: Record<string, TypeSchema<any>> },
+  Key extends string = "type"
+>(
+  selector: Key,
   parts: T
-): TypeSchemaUnion<UnionPart<T>> {
+): TypeSchemaUnion<UnionPart<T, Key>, Key> {
   return {
     type: "Union",
+    selector: selector,
     parts: parts as any,
   };
 }
@@ -156,13 +174,13 @@ export function tsArray<TS>(
   };
 }
 
-export function tsInvariant<T,U>(
+export function tsInvarant<T,U>(
   fromFn: (u: U) => T,
   toFn: (t: T) => U,
   inner: TypeSchema<U>
-): TypeSchemaInvariant<T,U> {
+): TypeSchemaInvarant<T,U> {
   return {
-    type: "Invariant",
+    type: "Invarant",
     fromFn,
     toFn,
     inner,
@@ -195,39 +213,72 @@ export function tsJson(): TypeSchemaJson {
   };
 }
 
-let ts = tsObject({
-  abc: tsBoolean(),
-  xyz: tsNumber(),
-  def: tsString(),
-});
-
-type MyType = TypeSchemaType<typeof ts>;
-
-let ts2 = tsUnion({
-  up: tsNumber(),
-  down: tsBoolean(),
-  cat: tsObject({
+let tsUnionExample = tsUnion("type", {
+  point: {
     x: tsNumber(),
     y: tsNumber(),
-  }),
+  },
+  circle: {
+    radius: tsNumber(),
+    color: tsString(),
+  },
+  rectangle: {
+    width: tsNumber(),
+    height: tsNumber(),
+  },
 });
 
-type MyType2 = TypeSchemaType<typeof ts2>;
+type MyUnionShapeType = TypeSchemaType<typeof tsUnionExample>;
+/*
+MyUnionShapeType will be:
+{ type: "point"; x: number; y: number; } |
+{ type: "circle"; radius: number; color: string; } |
+{ type: "rectangle"; width: number; height: number; }
+*/
 
-let ts3 = tsInvariant(
-  (a) => Vec2.create(a.x, a.y),
+let tsEventUnion = tsUnion("event", {
+  click: {
+    targetId: tsString(),
+    x: tsNumber(),
+    y: tsNumber(),
+  },
+  keypress: {
+    key: tsString(),
+    keyCode: tsNumber(),
+  },
+  scroll: {
+    deltaY: tsNumber(),
+  },
+});
+
+type MyEventType = TypeSchemaType<typeof tsEventUnion>;
+/*
+MyEventType will be:
+{ event: "click"; targetId: string; x: number; y: number; } |
+{ event: "keypress"; key: string; keyCode: number; } |
+{ event: "scroll"; deltaY: number; }
+*/
+
+// Original tsObject example (unrelated to the union simplification, still works)
+let tsObjectExample = tsObject({
+  name: tsString(),
+  age: tsNumber(),
+});
+type MyObjectType = TypeSchemaType<typeof tsObjectExample>;
+
+let tsInvarantExample = tsInvarant(
+  (a: { x: number, y: number }) => ({ x: a.x, y: a.y }),
   (a) => ({ x: a.x, y: a.y, }),
   tsObject({
     x: tsNumber(),
     y: tsNumber(),
   }),
 );
+type MyInvarantType = TypeSchemaType<typeof tsInvarantExample>;
 
-type MyType3 = TypeSchemaType<typeof ts3>;
-
-export const vec2TypeSchema: TypeSchema<Vec2> = tsInvariant(
-  (a: { x: number; y: number }) => Vec2.create(a.x, a.y),
-  (a: Vec2) => ({ x: a.x, y: a.y }),
+export const vec2TypeSchema = tsInvarant(
+  (a) => Vec2.create(a.x, a.y),
+  (a) => ({ x: a.x, y: a.y }),
   tsObject({
     x: tsNumber(),
     y: tsNumber(),
@@ -270,21 +321,21 @@ export function loadFromJsonViaTypeSchema<A>(
       return loadFromJsonViaTypeSchema(typeSchema.element, x);
     }
     case "Union": {
-      let type = x.type;
+      let type = x[typeSchema.selector];
       if (typeof type !== "string") {
         return err("Missing type param for union.");
       }
-      let value = x.value;
-      let element = (typeSchema as any).parts[type];
+      let value = { ...x, };
+      delete value[typeSchema.selector];
+      let element = tsObject((typeSchema as any).parts[type]);
       let res = loadFromJsonViaTypeSchema(element, value);
       if (res.type == "Err") {
         return err(`Problem parsing union part ${type}: ${res.message}`);
       }
       let x2 = res.value;
-      return ok({
-        type,
-        value: x2,
-      }) as any;
+      let result = { ...x2, };
+      result[typeSchema.selector] = type;
+      return ok(result) as any;
     }
     case "Array": {
       let res: any[] = [];
@@ -319,7 +370,7 @@ export function loadFromJsonViaTypeSchema<A>(
       let typeSchema2 = typeSchema.inner();
       return loadFromJsonViaTypeSchema(typeSchema2, x);
     }
-    case "Invariant": {
+    case "Invarant": {
       let fn1 = typeSchema.fromFn;
       let value = loadFromJsonViaTypeSchema(typeSchema.inner, x);
       if (value.type == "Err") {
@@ -365,10 +416,9 @@ export function makeDefaultViaTypeSchema<A>(typeSchema: TypeSchema<A>): A {
     }
     case "Union": {
       let type = Object.keys(typeSchema.parts)[0];
-      return {
-        type,
-        value: makeDefaultViaTypeSchema((typeSchema.parts as any)[type]),
-      } as A;
+      let result = makeDefaultViaTypeSchema(tsObject((typeSchema.parts as any)[type]));
+      (result as any)[typeSchema.selector] = type;
+      return result as A;
     }
     case "Array": {
       return [] as A;
@@ -385,7 +435,7 @@ export function makeDefaultViaTypeSchema<A>(typeSchema: TypeSchema<A>): A {
       let typeSchema2 = typeSchema.inner();
       return makeDefaultViaTypeSchema(typeSchema2);
     }
-    case "Invariant": {
+    case "Invarant": {
       let fn1 = typeSchema.fromFn;
       let value = makeDefaultViaTypeSchema(typeSchema.inner);
       return fn1(value as any);
@@ -426,12 +476,12 @@ export function saveToJsonViaTypeSchema<A>(
       return saveToJsonViaTypeSchema(typeSchema.element, x);
     }
     case "Union": {
-      let type = (x as any).type as string;
-      let value = (x as any)[type];
-      return {
-        type: type,
-        value: saveToJsonViaTypeSchema((typeSchema as any).parts[type], value),
-      };
+      let type = (x as any)[typeSchema.selector] as string;
+      let value = { ...(x as any), };
+      delete value[typeSchema.selector];
+      let result = saveToJsonViaTypeSchema(tsObject((typeSchema as any).parts[type]), value);
+      result[typeSchema.selector] = type;
+      return result;
     }
     case "Object": {
       let res: any = {};
@@ -452,7 +502,7 @@ export function saveToJsonViaTypeSchema<A>(
       let typeSchema2 = typeSchema.inner();
       return saveToJsonViaTypeSchema(typeSchema2, x);
     }
-    case "Invariant": {
+    case "Invarant": {
       let fn2 = typeSchema.toFn;
       let x2 = fn2(x);
       return saveToJsonViaTypeSchema(typeSchema.inner, x2);

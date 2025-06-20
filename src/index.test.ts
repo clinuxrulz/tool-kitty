@@ -6,12 +6,15 @@ import {
 import {
   createJsonProjectionViaTypeSchema,
   createJsonProjectionViaTypeSchemaV2,
+  loadFromJsonViaTypeSchema,
   saveToJsonViaTypeSchema,
   tsArray,
   tsNumber,
   tsObject,
   tsString,
+  tsUnion,
   TypeSchema,
+  TypeSchemaType,
   vec2TypeSchema,
 } from "./TypeSchema";
 import { createComputed, createRoot, createSignal, on } from "solid-js";
@@ -317,4 +320,43 @@ describe("new projection", () => {
         setState("a", 7);
       });
     }));
+});
+
+describe("typeschema union test", () => {
+  test("test1", () => {
+    let tsEventUnion = tsUnion("type", {
+      click: {
+        targetId: tsString(),
+        x: tsNumber(),
+        y: tsNumber(),
+      },
+      keypress: {
+        key: tsString(),
+        keyCode: tsNumber(),
+      },
+      scroll: {
+        deltaY: tsNumber(),
+      },
+    });
+    type Event = TypeSchemaType<typeof tsEventUnion>;
+    let event: Event = {
+      type: "click",
+      targetId: "mouse",
+      x: 50,
+      y: 50,
+    };
+    let eventJson = saveToJsonViaTypeSchema(tsEventUnion, event);
+    let event2 = loadFromJsonViaTypeSchema(tsEventUnion, eventJson);
+    if (event2.type == "Err") {
+      throw new Error(event2.message);
+    }
+    let event3 = event2.value;
+    if (event3.type != event.type) {
+      expect(event3.type).toBe(event.type);
+      return;
+    }
+    expect(event3.targetId).toBe(event.targetId);
+    expect(event3.x).toBe(event.x);
+    expect(event3.y).toBe(event.y);
+  });
 });

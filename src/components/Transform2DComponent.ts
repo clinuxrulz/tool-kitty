@@ -3,7 +3,7 @@ import { Complex } from "../math/Complex";
 import { Transform2D } from "../math/Transform2D";
 import { Vec2 } from "../math/Vec2";
 import {
-  tsInvariant,
+  tsInvarant,
   tsNumber,
   tsObject,
   TypeSchema,
@@ -11,7 +11,7 @@ import {
   vec2TypeSchema,
 } from "../TypeSchema";
 
-let complexTypeSchema: TypeSchema<Complex> = tsInvariant(
+let complexTypeSchema: TypeSchema<Complex> = tsInvarant(
   (a: { x: number; y: number }) => new Complex(a.x, a.y),
   (a: Complex) => ({ x: a.x, y: a.y }),
   tsObject({
@@ -20,7 +20,7 @@ let complexTypeSchema: TypeSchema<Complex> = tsInvariant(
   })
 );
 
-let transformTypeSchema: TypeSchema<Transform2D> = tsInvariant(
+let transformTypeSchema: TypeSchema<Transform2D> = tsInvarant(
   ({ origin, orientation, }) => Transform2D.create(
     origin,
     orientation,
