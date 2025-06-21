@@ -78,7 +78,7 @@ const Animations: Component<
     () => `scale(${state.scale}) translate(${-state.pan.x} ${-state.pan.y})`,
   );
   let onClick = () => {
-
+    mode().click?.();
   };
   let onPointerDown = (e: PointerEvent) => {
     panZoomManager.onPointerDown(e);
@@ -121,7 +121,7 @@ const Animations: Component<
         "width": "100%",
         "height": "100%",
         "display": "flex",
-        "flex-direction": "row",
+        "flex-direction": "column",
       }}>
         <div>
           <button
@@ -129,7 +129,7 @@ const Animations: Component<
             style={{
               "white-space": "nowrap",
             }}
-            onClick={() => newAnimation}
+            onClick={() => newAnimation()}
           >
             New Animation
           </button>
@@ -144,8 +144,8 @@ const Animations: Component<
               "position": "absolute",
               "left": "0",
               "top": "0",
-              "right": "0",
-              "bottom": "0",
+              "width": "100%",
+              "height": "100%",
               "touch-action": "none",
             }}
             onPointerDown={onPointerDown}
@@ -167,12 +167,12 @@ const Animations: Component<
           <Show when={mode().instructions} keyed>
             {(ModeInstructions) => (
               <div
+                class="bg-base-200/80"
                 style={{
                   "position": "absolute",
                   "left": "0",
                   "top": "0",
-                  "padding-left": "5px",
-                  "padding-top": "5px",
+                  "padding": "5px",
                 }}
               >
                 <ModeInstructions/>
