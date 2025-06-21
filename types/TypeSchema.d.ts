@@ -18,14 +18,14 @@ interface TypeSchemaString {
     type: "String";
 }
 interface TypeSchemaUnion<A extends {
-    type: string;
-    value: unknown;
-}> {
+    [K in Key]: unknown;
+}, Key extends string = "type"> {
     type: "Union";
+    selector: Key;
     parts: {
-        [K in A["type"]]: TypeSchema<Extract<A, {
-            type: K;
-        }>["value"]>;
+        [P in A[Key] & string]: TypeSchemaObject<Extract<A, {
+            [Q in Key]: P;
+        }>>["properties"];
     };
 }
 interface TypeSchemaObject<A extends object> {
@@ -38,7 +38,7 @@ interface TypeSchemaArray<A> {
     type: "Array";
     element: TypeSchema<A>;
 }
-interface TypeSchemaInvariant<A, B> {
+interface TypeSchemaInvarant<A, B> {
     type: "Invarant";
     fromFn: (b: B) => A;
     toFn: (a: A) => B;
@@ -56,32 +56,36 @@ interface TypeSchemaRecursive<A> {
 interface TypeSchemaJson {
     type: "Json";
 }
-export type TypeSchema<A> = TypeSchemaMaybeUndefined<NonNullable<A>> | TypeSchemaMaybeNull<NonNullable<A>> | TypeSchemaBoolean | TypeSchemaNumber | TypeSchemaString | TypeSchemaUnion<Extract<A, {
-    type: string;
-    value: unknown;
-}>> | TypeSchemaObject<Extract<A, object>> | TypeSchemaArray<any> | TypeSchemaInvariant<A, any> | TypeSchemaDefault<A> | TypeSchemaRecursive<A> | TypeSchemaJson;
-export type TypeSchemaType<A> = A extends TypeSchemaMaybeUndefined<infer B> ? B | undefined : A extends TypeSchemaMaybeNull<infer B> ? B | null : A extends TypeSchemaBoolean ? boolean : A extends TypeSchemaNumber ? number : A extends TypeSchemaString ? string : A extends TypeSchemaUnion<infer B> ? B : A extends TypeSchemaObject<infer B> ? B : A extends TypeSchemaArray<infer B> ? B[] : A extends TypeSchemaInvariant<infer B, any> ? B : A extends TypeSchemaDefault<A> ? A : A extends TypeSchemaRecursive<A> ? A : A extends TypeSchemaJson ? any : never;
+export type TypeSchema<A> = TypeSchemaMaybeUndefined<NonNullable<A>> | TypeSchemaMaybeNull<NonNullable<A>> | TypeSchemaBoolean | TypeSchemaNumber | TypeSchemaString | TypeSchemaUnion<Extract<A, Record<string, unknown>>, any> | TypeSchemaObject<Extract<A, object>> | TypeSchemaArray<any> | TypeSchemaInvarant<A, any> | TypeSchemaDefault<A> | TypeSchemaRecursive<A> | TypeSchemaJson;
+export type TypeSchemaType<A> = A extends TypeSchemaMaybeUndefined<infer B> ? B | undefined : A extends TypeSchemaMaybeNull<infer B> ? B | null : A extends TypeSchemaBoolean ? boolean : A extends TypeSchemaNumber ? number : A extends TypeSchemaString ? string : A extends TypeSchemaUnion<infer B, any> ? B : A extends TypeSchemaObject<infer B> ? B : A extends TypeSchemaArray<infer B> ? B[] : A extends TypeSchemaInvarant<infer B, any> ? B : A extends TypeSchemaDefault<A> ? A : A extends TypeSchemaRecursive<A> ? A : A extends TypeSchemaJson ? any : never;
 export declare function tsMaybeUndefined<TS>(element: TS): TypeSchemaMaybeUndefined<TypeSchemaType<TS>>;
 export declare function tsMaybeNull<TS>(element: TS): TypeSchemaMaybeNull<TypeSchemaType<TS>>;
 export declare function tsBoolean(): TypeSchemaBoolean;
 export declare function tsNumber(): TypeSchemaNumber;
 export declare function tsString(): TypeSchemaString;
-export type UnionPart<T extends Record<string, TypeSchema<any>>> = {
-    [K in keyof T]: K extends string ? {
-        type: K;
-        value: TypeSchemaType<T[K]>;
-    } : never;
+type InferObjectSchema<T extends Record<string, TypeSchema<any>>> = {
+    [K in keyof T]: TypeSchemaType<T[K]>;
+};
+export type UnionPart<T extends Record<string, Record<string, TypeSchema<any>>>, Key extends string> = {
+    [P in keyof T]: P extends string ? {
+        [Q in Key]: P;
+    } & InferObjectSchema<T[P]> : never;
 }[keyof T];
-export declare function tsUnion<T extends Record<string, TypeSchema<any>>>(parts: T): TypeSchemaUnion<UnionPart<T>>;
+export declare function tsUnion<T extends {
+    [K in keyof T]: Record<string, TypeSchema<any>>;
+}, Key extends string = "type">(selector: Key, parts: T): TypeSchemaUnion<UnionPart<T, Key>, Key>;
 export declare function tsObject<T>(properties: T): TypeSchemaObject<{
     [K in keyof T]: TypeSchemaType<T[K]>;
 }>;
 export declare function tsArray<TS>(element: TS): TypeSchemaArray<TypeSchemaType<TS>>;
-export declare function tsInvariant<T, U>(fromFn: (u: U) => T, toFn: (t: T) => U, inner: TypeSchema<U>): TypeSchemaInvariant<T, U>;
+export declare function tsInvarant<T, U>(fromFn: (u: U) => T, toFn: (t: T) => U, inner: TypeSchema<U>): TypeSchemaInvarant<T, U>;
 export declare function tsDefault<A>(value: A, inner: TypeSchema<A>): TypeSchemaDefault<A>;
 export declare function tsRecursive<A>(inner: () => TypeSchema<A>): TypeSchemaRecursive<A>;
 export declare function tsJson(): TypeSchemaJson;
-export declare const vec2TypeSchema: TypeSchema<Vec2>;
+export declare const vec2TypeSchema: TypeSchemaInvarant<Vec2, {
+    x: number;
+    y: number;
+}>;
 export declare function loadFromJsonViaTypeSchema<A>(typeSchema: TypeSchema<A>, x: any): Result<A>;
 export declare function makeDefaultViaTypeSchema<A>(typeSchema: TypeSchema<A>): A;
 export declare function saveToJsonViaTypeSchema<A>(typeSchema: TypeSchema<A>, x: A): any;
