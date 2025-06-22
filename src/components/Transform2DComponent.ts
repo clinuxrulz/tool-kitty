@@ -17,14 +17,11 @@ let complexTypeSchema: TypeSchema<Complex> = tsInvarant(
   tsObject({
     x: tsNumber(),
     y: tsNumber(),
-  })
+  }),
 );
 
 let transformTypeSchema: TypeSchema<Transform2D> = tsInvarant(
-  ({ origin, orientation, }) => Transform2D.create(
-    origin,
-    orientation,
-  ),
+  ({ origin, orientation }) => Transform2D.create(origin, orientation),
   (a) => ({ origin: a.origin, orientation: a.orientation }),
   tsObject({
     origin: vec2TypeSchema,

@@ -1,5 +1,10 @@
 import { EcsComponentType } from "../ecs/EcsComponent";
-import { tsMaybeUndefined, tsObject, tsString, TypeSchemaType } from "../TypeSchema";
+import {
+  tsMaybeUndefined,
+  tsObject,
+  tsString,
+  TypeSchemaType,
+} from "../TypeSchema";
 
 const typeSchema = tsObject({
   targetEntity: tsMaybeUndefined(tsString()),

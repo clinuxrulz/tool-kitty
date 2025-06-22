@@ -406,7 +406,10 @@ export class Level {
         return;
       }
       let rect = svg2.getBoundingClientRect();
-      setState("mousePos", Vec2.create(e.clientX - rect.left, e.clientY - rect.top));
+      setState(
+        "mousePos",
+        Vec2.create(e.clientX - rect.left, e.clientY - rect.top),
+      );
       if (panZoomManager.numTouches() == 1) {
         mode().dragStart?.();
       }
@@ -434,7 +437,10 @@ export class Level {
         return;
       }
       let rect = svg2.getBoundingClientRect();
-      setState("mousePos", Vec2.create(e.clientX - rect.left, e.clientY - rect.top));
+      setState(
+        "mousePos",
+        Vec2.create(e.clientX - rect.left, e.clientY - rect.top),
+      );
     };
     let onPointerLeave = (e: PointerEvent) => {
       e.preventDefault();

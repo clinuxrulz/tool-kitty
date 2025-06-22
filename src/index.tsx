@@ -231,10 +231,7 @@ render(() => {
           </Show>
         )}
       />
-      <Route
-        path="/auto-forms-test"
-        component={AutoFormsTest}
-      />
+      <Route path="/auto-forms-test" component={AutoFormsTest} />
     </HashRouter>
   );
 }, root!);

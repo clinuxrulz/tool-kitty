@@ -216,19 +216,17 @@ describe("new projection", () => {
       g: Vec2[];
     };
     let stateTypeSchema: TypeSchema<State> = tsObject({
-        a: tsNumber(),
-        b: tsNumber(),
-        c: tsNumber(),
-        d: tsArray(tsNumber()),
-        e: vec2TypeSchema,
-        f: tsArray(
-          tsObject({
-            g: tsArray(
-              vec2TypeSchema,
-            ),
-          }),
-        ),
-        g: tsArray(vec2TypeSchema),
+      a: tsNumber(),
+      b: tsNumber(),
+      c: tsNumber(),
+      d: tsArray(tsNumber()),
+      e: vec2TypeSchema,
+      f: tsArray(
+        tsObject({
+          g: tsArray(vec2TypeSchema),
+        }),
+      ),
+      g: tsArray(vec2TypeSchema),
     });
     let repo = new Repo();
     let docHandle = repo.create(
@@ -294,7 +292,7 @@ describe("new projection", () => {
       type State = {
         a: number;
       };
-      let stateTypeSchema: TypeSchema<State> = tsObject({ a: tsNumber(), });
+      let stateTypeSchema: TypeSchema<State> = tsObject({ a: tsNumber() });
       let repo = new Repo();
       let docHandle = repo.create({
         a: 5,

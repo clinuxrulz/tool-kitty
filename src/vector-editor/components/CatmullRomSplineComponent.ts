@@ -1,5 +1,11 @@
 import { EcsComponentType } from "../../ecs/EcsComponent";
-import { tsArray, tsBoolean, tsObject, TypeSchemaType, vec2TypeSchema } from "../../TypeSchema";
+import {
+  tsArray,
+  tsBoolean,
+  tsObject,
+  TypeSchemaType,
+  vec2TypeSchema,
+} from "../../TypeSchema";
 
 const typeSchema = tsObject({
   controlPoints: tsArray(vec2TypeSchema),

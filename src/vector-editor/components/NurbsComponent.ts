@@ -1,5 +1,12 @@
 import { EcsComponentType } from "../../ecs/EcsComponent";
-import { tsArray, tsBoolean, tsNumber, tsObject, TypeSchemaType, vec2TypeSchema } from "../../TypeSchema";
+import {
+  tsArray,
+  tsBoolean,
+  tsNumber,
+  tsObject,
+  TypeSchemaType,
+  vec2TypeSchema,
+} from "../../TypeSchema";
 import { Vec2 } from "../../math/Vec2";
 
 const typeSchema = tsObject({

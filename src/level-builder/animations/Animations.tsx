@@ -21,7 +21,7 @@ const Animations: Component<
   Overwrite<
     ComponentProps<"div">,
     {
-      image: HTMLImageElement,
+      image: HTMLImageElement;
       world: IEcsWorld;
     }
   >
@@ -97,10 +97,7 @@ const Animations: Component<
     let rect = svgElement.getBoundingClientRect();
     setState(
       "mousePos",
-      Vec2.create(
-        e.clientX - rect.left,
-        e.clientY - rect.top,
-      )
+      Vec2.create(e.clientX - rect.left, e.clientY - rect.top),
     );
   };
   let onPointerOut = (e: PointerEvent) => {
@@ -117,12 +114,14 @@ const Animations: Component<
   };
   return (
     <div {...rest}>
-      <div style={{
-        "width": "100%",
-        "height": "100%",
-        "display": "flex",
-        "flex-direction": "column",
-      }}>
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          "flex-direction": "column",
+        }}
+      >
         <div>
           <button
             class="btn"
@@ -134,18 +133,20 @@ const Animations: Component<
             New Animation
           </button>
         </div>
-        <div style={{
-          "flex-grow": "1",
-          "position": "relative",
-        }}>
+        <div
+          style={{
+            "flex-grow": "1",
+            position: "relative",
+          }}
+        >
           <svg
             ref={svgElement}
             style={{
-              "position": "absolute",
-              "left": "0",
-              "top": "0",
-              "width": "100%",
-              "height": "100%",
+              position: "absolute",
+              left: "0",
+              top: "0",
+              width: "100%",
+              height: "100%",
               "touch-action": "none",
             }}
             onPointerDown={onPointerDown}
@@ -158,9 +159,7 @@ const Animations: Component<
             <g transform={transform()}>
               <circle cx={50} cy={50} r={5} fill="red" />
               <Show when={mode().overlaySvg} keyed>
-                {(ModeOverlaySvg) => (
-                  <ModeOverlaySvg/>
-                )}
+                {(ModeOverlaySvg) => <ModeOverlaySvg />}
               </Show>
             </g>
           </svg>
@@ -169,20 +168,18 @@ const Animations: Component<
               <div
                 class="bg-base-200/80"
                 style={{
-                  "position": "absolute",
-                  "left": "0",
-                  "top": "0",
-                  "padding": "5px",
+                  position: "absolute",
+                  left: "0",
+                  top: "0",
+                  padding: "5px",
                 }}
               >
-                <ModeInstructions/>
+                <ModeInstructions />
               </div>
             )}
           </Show>
           <Show when={mode().overlayHtmlUi} keyed>
-            {(ModeOverlayHtmlUi) => (
-              <ModeOverlayHtmlUi/>
-            )}
+            {(ModeOverlayHtmlUi) => <ModeOverlayHtmlUi />}
           </Show>
         </div>
       </div>

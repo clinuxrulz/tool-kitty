@@ -1,132 +1,145 @@
-import {
-  createComputed,
-  on,
-} from "solid-js";
+import { createComputed, on } from "solid-js";
 import { err, ok, Result } from "./kitty-demo/Result";
 import { Vec2 } from "./math/Vec2";
 
 interface TypeSchemaMaybeUndefined<A> {
-  type: "MaybeUndefined",
-  element: TypeSchema<A>,
-};
+  type: "MaybeUndefined";
+  element: TypeSchema<A>;
+}
 
 interface TypeSchemaMaybeNull<A> {
-  type: "MaybeNull",
-  element: TypeSchema<A>,
-};
+  type: "MaybeNull";
+  element: TypeSchema<A>;
+}
 
 interface TypeSchemaBoolean {
-  type: "Boolean",
-};
+  type: "Boolean";
+}
 
 interface TypeSchemaNumber {
-  type: "Number",
-};
+  type: "Number";
+}
 
 interface TypeSchemaString {
-  type: "String",
-};
+  type: "String";
+}
 
 interface TypeSchemaUnion<
   A extends { [K in Key]: unknown },
-  Key extends string = "type"
+  Key extends string = "type",
 > {
-  type: "Union",
-  selector: Key,
+  type: "Union";
+  selector: Key;
   parts: {
     [P in A[Key] & string]: TypeSchemaObject<
       Extract<A, { [Q in Key]: P }>
-    >["properties"]
-  },
-};
+    >["properties"];
+  };
+}
 
 interface TypeSchemaObject<A extends object> {
-  type: "Object",
+  type: "Object";
   properties: {
-    [K in keyof A]: TypeSchema<A[K]>
-  },
-};
+    [K in keyof A]: TypeSchema<A[K]>;
+  };
+}
 
 interface TypeSchemaArray<A> {
-  type: "Array",
-  element: TypeSchema<A>,
-};
+  type: "Array";
+  element: TypeSchema<A>;
+}
 
-interface TypeSchemaInvarant<A,B> {
-  type: "Invarant",
-  fromFn: (b: B) => A,
-  toFn: (a: A) => B,
-  inner: TypeSchema<B>,
-};
+interface TypeSchemaInvarant<A, B> {
+  type: "Invarant";
+  fromFn: (b: B) => A;
+  toFn: (a: A) => B;
+  inner: TypeSchema<B>;
+}
 
 interface TypeSchemaDefault<A> {
-  type: "Default",
-  value: A,
-  inner: TypeSchema<A>,
-};
+  type: "Default";
+  value: A;
+  inner: TypeSchema<A>;
+}
 
 interface TypeSchemaRecursive<A> {
-  type: "Recursive",
-  inner: () => TypeSchema<A>,
-};
+  type: "Recursive";
+  inner: () => TypeSchema<A>;
+}
 
 interface TypeSchemaJson {
-  type: "Json",
-};
+  type: "Json";
+}
 
 export type TypeSchema<A> =
-  TypeSchemaMaybeUndefined<NonNullable<A>> |
-  TypeSchemaMaybeNull<NonNullable<A>> |
-  TypeSchemaBoolean |
-  TypeSchemaNumber |
-  TypeSchemaString |
-  TypeSchemaUnion<Extract<A, Record<string, unknown>>, any> |
-  TypeSchemaObject<Extract<A, object>> |
-  TypeSchemaArray<any> |
-  TypeSchemaInvarant<A,any> |
-  TypeSchemaDefault<A> |
-  TypeSchemaRecursive<A> |
-  TypeSchemaJson;
+  | TypeSchemaMaybeUndefined<NonNullable<A>>
+  | TypeSchemaMaybeNull<NonNullable<A>>
+  | TypeSchemaBoolean
+  | TypeSchemaNumber
+  | TypeSchemaString
+  | TypeSchemaUnion<Extract<A, Record<string, unknown>>, any>
+  | TypeSchemaObject<Extract<A, object>>
+  | TypeSchemaArray<any>
+  | TypeSchemaInvarant<A, any>
+  | TypeSchemaDefault<A>
+  | TypeSchemaRecursive<A>
+  | TypeSchemaJson;
 
 export type TypeSchemaType<A> =
-  A extends TypeSchemaMaybeUndefined<infer B> ? B | undefined :
-  A extends TypeSchemaMaybeNull<infer B> ? B | null :
-  A extends TypeSchemaBoolean ? boolean :
-  A extends TypeSchemaNumber ? number :
-  A extends TypeSchemaString ? string :
-  A extends TypeSchemaUnion<infer B, any> ? B :
-  A extends TypeSchemaObject<infer B> ? B :
-  A extends TypeSchemaArray<infer B> ? B[] :
-  A extends TypeSchemaInvarant<infer B, any> ? B :
-  A extends TypeSchemaDefault<A> ? A :
-  A extends TypeSchemaRecursive<A> ? A :
-  A extends TypeSchemaJson ? any :
-  never;
+  A extends TypeSchemaMaybeUndefined<infer B>
+    ? B | undefined
+    : A extends TypeSchemaMaybeNull<infer B>
+      ? B | null
+      : A extends TypeSchemaBoolean
+        ? boolean
+        : A extends TypeSchemaNumber
+          ? number
+          : A extends TypeSchemaString
+            ? string
+            : A extends TypeSchemaUnion<infer B, any>
+              ? B
+              : A extends TypeSchemaObject<infer B>
+                ? B
+                : A extends TypeSchemaArray<infer B>
+                  ? B[]
+                  : A extends TypeSchemaInvarant<infer B, any>
+                    ? B
+                    : A extends TypeSchemaDefault<A>
+                      ? A
+                      : A extends TypeSchemaRecursive<A>
+                        ? A
+                        : A extends TypeSchemaJson
+                          ? any
+                          : never;
 
-export function tsMaybeUndefined<TS>(element: TS): TypeSchemaMaybeUndefined<TypeSchemaType<TS>> {
+export function tsMaybeUndefined<TS>(
+  element: TS,
+): TypeSchemaMaybeUndefined<TypeSchemaType<TS>> {
   return {
     type: "MaybeUndefined",
     element: element as any,
   };
 }
 
-export function tsMaybeNull<TS>(element: TS): TypeSchemaMaybeNull<TypeSchemaType<TS>> {
+export function tsMaybeNull<TS>(
+  element: TS,
+): TypeSchemaMaybeNull<TypeSchemaType<TS>> {
   return {
     type: "MaybeNull",
     element: element as any,
   };
 }
 
-export function tsBoolean() : TypeSchemaBoolean {
-  return { type: "Boolean", };
+export function tsBoolean(): TypeSchemaBoolean {
+  return { type: "Boolean" };
 }
 
 export function tsNumber(): TypeSchemaNumber {
-  return { type: "Number", };
+  return { type: "Number" };
 }
 
 export function tsString(): TypeSchemaString {
-  return { type: "String", };
+  return { type: "String" };
 }
 
 type InferObjectSchema<T extends Record<string, TypeSchema<any>>> = {
@@ -135,20 +148,17 @@ type InferObjectSchema<T extends Record<string, TypeSchema<any>>> = {
 
 export type UnionPart<
   T extends Record<string, Record<string, TypeSchema<any>>>,
-  Key extends string
+  Key extends string,
 > = {
   [P in keyof T]: P extends string
     ? { [Q in Key]: P } & InferObjectSchema<T[P]>
-    : never
+    : never;
 }[keyof T];
 
 export function tsUnion<
   T extends { [K in keyof T]: Record<string, TypeSchema<any>> },
-  Key extends string = "type"
->(
-  selector: Key,
-  parts: T
-): TypeSchemaUnion<UnionPart<T, Key>, Key> {
+  Key extends string = "type",
+>(selector: Key, parts: T): TypeSchemaUnion<UnionPart<T, Key>, Key> {
   return {
     type: "Union",
     selector: selector,
@@ -157,28 +167,28 @@ export function tsUnion<
 }
 
 export function tsObject<T>(
-  properties: T
+  properties: T,
 ): TypeSchemaObject<{ [K in keyof T]: TypeSchemaType<T[K]> }> {
   return {
     type: "Object",
-    properties: properties as unknown as { [K in keyof T]: TypeSchema<TypeSchemaType<T[K]>> },
+    properties: properties as unknown as {
+      [K in keyof T]: TypeSchema<TypeSchemaType<T[K]>>;
+    },
   };
 }
 
-export function tsArray<TS>(
-  element: TS
-): TypeSchemaArray<TypeSchemaType<TS>> {
+export function tsArray<TS>(element: TS): TypeSchemaArray<TypeSchemaType<TS>> {
   return {
     type: "Array",
     element: element as any,
   };
 }
 
-export function tsInvarant<T,U>(
+export function tsInvarant<T, U>(
   fromFn: (u: U) => T,
   toFn: (t: T) => U,
-  inner: TypeSchema<U>
-): TypeSchemaInvarant<T,U> {
+  inner: TypeSchema<U>,
+): TypeSchemaInvarant<T, U> {
   return {
     type: "Invarant",
     fromFn,
@@ -267,8 +277,8 @@ let tsObjectExample = tsObject({
 type MyObjectType = TypeSchemaType<typeof tsObjectExample>;
 
 let tsInvarantExample = tsInvarant(
-  (a: { x: number, y: number }) => ({ x: a.x, y: a.y }),
-  (a) => ({ x: a.x, y: a.y, }),
+  (a: { x: number; y: number }) => ({ x: a.x, y: a.y }),
+  (a) => ({ x: a.x, y: a.y }),
   tsObject({
     x: tsNumber(),
     y: tsNumber(),
@@ -325,7 +335,7 @@ export function loadFromJsonViaTypeSchema<A>(
       if (typeof type !== "string") {
         return err("Missing type param for union.");
       }
-      let value = { ...x, };
+      let value = { ...x };
       delete value[typeSchema.selector];
       let element = tsObject((typeSchema as any).parts[type]);
       let res = loadFromJsonViaTypeSchema(element, value);
@@ -333,7 +343,7 @@ export function loadFromJsonViaTypeSchema<A>(
         return err(`Problem parsing union part ${type}: ${res.message}`);
       }
       let x2 = res.value;
-      let result = { ...x2, };
+      let result = { ...x2 };
       result[typeSchema.selector] = type;
       return ok(result) as any;
     }
@@ -416,7 +426,9 @@ export function makeDefaultViaTypeSchema<A>(typeSchema: TypeSchema<A>): A {
     }
     case "Union": {
       let type = Object.keys(typeSchema.parts)[0];
-      let result = makeDefaultViaTypeSchema(tsObject((typeSchema.parts as any)[type]));
+      let result = makeDefaultViaTypeSchema(
+        tsObject((typeSchema.parts as any)[type]),
+      );
       (result as any)[typeSchema.selector] = type;
       return result as A;
     }
@@ -477,9 +489,12 @@ export function saveToJsonViaTypeSchema<A>(
     }
     case "Union": {
       let type = (x as any)[typeSchema.selector] as string;
-      let value = { ...(x as any), };
+      let value = { ...(x as any) };
       delete value[typeSchema.selector];
-      let result = saveToJsonViaTypeSchema(tsObject((typeSchema as any).parts[type]), value);
+      let result = saveToJsonViaTypeSchema(
+        tsObject((typeSchema as any).parts[type]),
+        value,
+      );
       result[typeSchema.selector] = type;
       return result;
     }

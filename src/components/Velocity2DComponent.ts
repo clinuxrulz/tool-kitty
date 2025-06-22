@@ -1,4 +1,10 @@
-import { EcsComponentType, tsObject, TypeSchemaType, Vec2, vec2TypeSchema } from "../lib";
+import {
+  EcsComponentType,
+  tsObject,
+  TypeSchemaType,
+  Vec2,
+  vec2TypeSchema,
+} from "../lib";
 
 const typeSchema = tsObject({
   velocity: vec2TypeSchema,

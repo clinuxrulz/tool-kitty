@@ -5,11 +5,11 @@ import { IEcsWorld } from "../../ecs/IEcsWorld";
 import { AutomergeVirtualFileSystem } from "solid-fs-automerge";
 
 export type ModeParams = {
-    image: HTMLImageElement,
-    undoManager: UndoManager;
-    mousePos: Accessor<Vec2 | undefined>;
-    screenPtToWorldPt(screenPt: Vec2): Vec2 | undefined;
-    worldPtToScreenPt(worldPt: Vec2): Vec2 | undefined;
-    world: Accessor<IEcsWorld>;
-    onDone: () => void;
+  image: HTMLImageElement;
+  undoManager: UndoManager;
+  mousePos: Accessor<Vec2 | undefined>;
+  screenPtToWorldPt(screenPt: Vec2): Vec2 | undefined;
+  worldPtToScreenPt(worldPt: Vec2): Vec2 | undefined;
+  world: Accessor<IEcsWorld>;
+  onDone: () => void;
 };
