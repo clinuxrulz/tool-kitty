@@ -1,10 +1,16 @@
 import {
+  Accessor,
   Component,
   ComponentProps,
   createMemo,
+  createSignal,
+  For,
+  mapArray,
   mergeProps,
+  onCleanup,
   Show,
   splitProps,
+  untrack,
 } from "solid-js";
 import { IEcsWorld } from "../../ecs/IEcsWorld";
 import { Overwrite } from "@bigmistqke/solid-fs-components";
@@ -16,6 +22,9 @@ import { UndoManager } from "../../pixel-editor/UndoManager";
 import { Mode } from "./Mode";
 import { IdleMode } from "./modes/IdleMode";
 import { NewAnimationMode } from "./modes/NewAnimationMode";
+import { animationComponentType, AnimationState } from "../components/AnimationComponent";
+import { opToArr } from "../../kitty-demo/util";
+import { frameComponentType, FrameState } from "../components/FrameComponent";
 
 const Animations: Component<
   Overwrite<
@@ -42,6 +51,40 @@ const Animations: Component<
   let setMode = (mkMode: () => Mode) => {
     setState("mkMode", () => mkMode);
   };
+  let imageUrl: Accessor<string | undefined>;
+  {
+    let imageUrl_ = createMemo(() => {
+      let canvas = document.createElement("canvas");
+      canvas.width = props.image.naturalWidth;
+      canvas.height = props.image.naturalHeight;
+      let ctx = canvas.getContext("2d");
+      if (ctx == null) {
+        return undefined;
+      }
+      ctx.drawImage(props.image, 0, 0);
+      let scopeDone = false;
+      let [result, setResult] = createSignal<string>();
+      onCleanup(() => {
+        scopeDone = true;
+        let result2 = result();
+        if (result2 != undefined) {
+          URL.revokeObjectURL(result2);
+        }
+      });
+      canvas.toBlob((blob) => {
+        if (scopeDone) {
+          return;
+        }
+        if (blob == null) {
+          return;
+        }
+        let url = URL.createObjectURL(blob);
+        setResult(url);
+      }, "image/png");
+      return result;
+    });
+    imageUrl = createMemo(() => imageUrl_()?.());
+  }
   let modeParams: ModeParams = {
     image: props.image,
     undoManager,
@@ -112,6 +155,141 @@ const Animations: Component<
   let newAnimation = () => {
     setMode(() => new NewAnimationMode(modeParams));
   };
+  //
+  let animations: Accessor<{
+    entity: string;
+    animation: AnimationState,
+  }[]>;
+  {
+    let animations_ = createMemo(mapArray(
+      () => props.world.entitiesWithComponentType(animationComponentType),
+      (entity) => {
+        let animation = props.world.getComponent(entity, animationComponentType)?.state;
+        if (animation == undefined) {
+          return undefined;
+        }
+        return {
+          entity,
+          animation,
+        };
+      },
+    ));
+    animations = createMemo(() => animations_().flatMap((x) => opToArr(x)));
+  }
+  let frames: Accessor<{
+    entity: string,
+    frame: FrameState,
+  }[]>;
+  {
+    let frames_ = createMemo(mapArray(
+      () => props.world.entitiesWithComponentType(frameComponentType),
+      (entity) => {
+        let frame = props.world.getComponent(entity, frameComponentType)?.state;
+        if (frame == undefined) {
+          return undefined;
+        }
+        return {
+          entity,
+          frame,
+        };
+      },
+    ));
+    frames = createMemo(() => frames_().flatMap((x) => opToArr(x)));
+  }
+  let entityToFrameMap = createMemo(() => {
+    let result = new Map<string,FrameState>();
+    for (let { entity, frame, } of frames()) {
+      result.set(entity, frame);
+    }
+    return result;
+  });
+  let animationsWithSize = createMemo(mapArray(
+    animations,
+    (animation) => {
+      let size = createMemo(() => {
+        let width = 0;
+        let height = 0;
+        for (let frameId of animation.animation.frameIds) {
+          let frame = entityToFrameMap().get(frameId);
+          if (frame == undefined) {
+            continue;
+          }
+          width = Math.max(width, frame.size.x);
+          height = Math.max(height, frame.size.y);
+        }
+        return Vec2.create(width, height);
+      });
+      return {
+        ...animation,
+        size,
+      };
+    },
+  ));
+  let animationLayout = createMemo(() => {
+    let animationsWithSize2 = animationsWithSize();
+    let result: (typeof animationsWithSize2[number] & {
+      pos: Vec2,
+    })[] = [];
+    let numCols = 4;
+    let atX = 0;
+    let atY = 0;
+    let maxRowHeight = 0;
+    let atCol = 0;
+    let scale = 3.0;
+    let gap = 10;
+    for (let animation of animationsWithSize2) {
+      let pos = Vec2.create(atX, atY);
+      maxRowHeight = Math.max(maxRowHeight, animation.size().y);
+      atX += animation.size().x * scale + gap;
+      atCol++;
+      if (atCol == numCols) {
+        atX = 0;
+        atY += maxRowHeight * scale + gap;
+        atCol = 0;
+        maxRowHeight = 0;
+      }
+      result.push({
+        ...animation,
+        pos,
+      });
+    }
+    return result;
+  });
+  let animationCallbacks: ((t: number) => void)[] = [];
+  let scopeDone = false;
+  onCleanup(() => {
+    scopeDone = true;
+  });
+  let animating = false;
+  let animate = (t: number) => {
+    if (scopeDone) {
+      animating = false;
+      return;
+    }
+    if (animationCallbacks.length == 0) {
+      animating = false;
+      return;
+    }
+    for (let cb of animationCallbacks) {
+      cb(t);
+    }
+    requestAnimationFrame(animate);
+  };
+  let registerAnimation = (update: (t: number) => void) => {
+    animationCallbacks.push(update);
+    if (animationCallbacks.length == 1) {
+      if (!animating) {
+        animating = true;
+        requestAnimationFrame(animate);
+      }
+    }
+  };
+  let deregisterAnimation = (update: (t: number) => void) => {
+    let idx = animationCallbacks.indexOf(update);
+    if (idx != -1) {
+      animationCallbacks.splice(idx, 1);
+    }
+  };
   return (
     <div {...rest}>
       <div
@@ -157,6 +335,90 @@ const Animations: Component<
             onPointerOut={onPointerOut}
           >
             <g transform={transform()}>
+              <For each={animationLayout()}>
+                {(animation) => {
+                  let [ state2, setState2 ] = createStore<{
+                    atFrameIdx: number,
+                  }>({
+                    atFrameIdx: 0,
+                  });
+                  let frames_ = createMemo(mapArray(
+                    () => animation.animation.frameIds,
+                    (frameId) => {
+                      return props.world.getComponent(
+                        frameId,
+                        frameComponentType,
+                      )?.state;
+                    },
+                  ));
+                  let frames = createMemo(() => frames_().flatMap((x) => opToArr(x)));
+                  let incrementFrame = () => {
+                    untrack(() => {
+                      let nextFrame = state2.atFrameIdx + 1;
+                      if (nextFrame >= frames().length) {
+                        nextFrame = 0;
+                      }
+                      setState2("atFrameIdx", nextFrame);
+                    });
+                  };
+                  let t0: number | undefined = undefined;
+                  let atT = 0;
+                  let fps = 10;
+                  let frameDelayMs = 1000 / fps;
+                  let update = (t: number) => {
+                    if (t0 == undefined) {
+                      t0 = t;
+                      return;
+                    }
+                    let t2 = t - t0;
+                    while (atT < t2) {
+                      incrementFrame();
+                      atT += frameDelayMs;
+                    }
+                  };
+                  registerAnimation(update);
+                  onCleanup(() => {
+                    deregisterAnimation(update);
+                  });
+                  let currentFrame = createMemo(() => {
+                    let frames2 = frames();
+                    if (state2.atFrameIdx >= frames2.length) {
+                      return undefined;
+                    }
+                    return frames2[state2.atFrameIdx];
+                  });
+                  return (
+                    <Show when={currentFrame()}>
+                      {(frame) => {
+                        let scale = 3.0;
+                        let backgroundWidth = createMemo(() => props.image.naturalWidth * scale);
+                        let backgroundHeight = createMemo(() => props.image.naturalHeight * scale);
+                        return (
+                          <image
+                            x={animation.pos.x - frame().pos.x * scale}
+                            y={animation.pos.y - frame().pos.y * scale}
+                            width={backgroundWidth()}
+                            height={backgroundHeight()}
+                            style={{
+                              "image-rendering": "pixelated",
+                            }}
+                            href={imageUrl()}
+                            attr:clip-path={
+                              `inset(` +
+                              `${frame().pos.y * scale}px ` +
+                              `${(props.image.width - frame().pos.x - frame().size.x) * scale}px ` +
+                              `${(props.image.height - frame().pos.y - frame().size.y) * scale}px ` +
+                              `${frame().pos.x * scale}px` +
+                              `)`
+                            }
+                            preserveAspectRatio="none"
+                          />
+                        );
+                      }}
+                    </Show>
+                  );
+                }}
+              </For>
               <circle cx={50} cy={50} r={5} fill="red" />
               <Show when={mode().overlaySvg} keyed>
                 {(ModeOverlaySvg) => <ModeOverlaySvg />}
