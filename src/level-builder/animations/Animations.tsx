@@ -85,76 +85,6 @@ const Animations: Component<
     });
     imageUrl = createMemo(() => imageUrl_()?.());
   }
-  let modeParams: ModeParams = {
-    image: props.image,
-    undoManager,
-    mousePos: () => state.mousePos,
-    screenPtToWorldPt(screenPt) {
-      return Vec2.create(
-        state.pan.x + screenPt.x / state.scale,
-        state.pan.y + screenPt.y / state.scale,
-      );
-    },
-    worldPtToScreenPt(worldPt) {
-      return Vec2.create(
-        worldPt.x * state.scale - state.pan.x,
-        worldPt.y * state.scale - state.pan.y,
-      );
-    },
-    world: () => props.world,
-    onDone: () => {
-      setMode(() => new IdleMode(modeParams));
-    },
-  };
-  let mode = createMemo(() => state.mkMode());
-  let svgElement!: SVGSVGElement;
-  let panZoomManager = createPanZoomManager({
-    pan: () => state.pan,
-    setPan: (x) => setState("pan", x),
-    scale: () => state.scale,
-    setScale: (x) => setState("scale", x),
-    setPointerCapture: (pointerId) => svgElement.setPointerCapture(pointerId),
-    releasePointerCapture: (pointerId) =>
-      svgElement.releasePointerCapture(pointerId),
-  });
-  let transform = createMemo(
-    () => `scale(${state.scale}) translate(${-state.pan.x} ${-state.pan.y})`,
-  );
-  let onClick = () => {
-    mode().click?.();
-  };
-  let onPointerDown = (e: PointerEvent) => {
-    panZoomManager.onPointerDown(e);
-  };
-  let onPointerUp = (e: PointerEvent) => {
-    panZoomManager.onPointerUp(e);
-    if (panZoomManager.numTouches() == 0) {
-      onClick();
-    }
-  };
-  let onPointerCancel = (e: PointerEvent) => {
-    panZoomManager.onPointerCancel(e);
-  };
-  let onPointerMove = (e: PointerEvent) => {
-    panZoomManager.onPointerMove(e);
-    let rect = svgElement.getBoundingClientRect();
-    setState(
-      "mousePos",
-      Vec2.create(e.clientX - rect.left, e.clientY - rect.top),
-    );
-  };
-  let onPointerOut = (e: PointerEvent) => {
-    if (panZoomManager.numTouches() == 0) {
-      setState("mousePos", undefined);
-    }
-  };
-  let onWheel = (e: WheelEvent) => {
-    panZoomManager.onWheel(e);
-  };
-  //
-  let newAnimation = () => {
-    setMode(() => new NewAnimationMode(modeParams));
-  };
   //
   let animations: Accessor<{
     entity: string;
@@ -235,16 +165,15 @@ const Animations: Component<
     let atY = 0;
     let maxRowHeight = 0;
     let atCol = 0;
-    let scale = 3.0;
     let gap = 10;
     for (let animation of animationsWithSize2) {
       let pos = Vec2.create(atX, atY);
       maxRowHeight = Math.max(maxRowHeight, animation.size().y);
-      atX += animation.size().x * scale + gap;
+      atX += animation.size().x + gap;
       atCol++;
       if (atCol == numCols) {
         atX = 0;
-        atY += maxRowHeight * scale + gap;
+        atY += maxRowHeight + gap;
         atCol = 0;
         maxRowHeight = 0;
       }
@@ -290,6 +219,86 @@ const Animations: Component<
       animationCallbacks.splice(idx, 1);
     }
   };
+  //
+  let modeParams: ModeParams = {
+    image: props.image,
+    undoManager,
+    mousePos: () => state.mousePos,
+    screenPtToWorldPt(screenPt) {
+      return Vec2.create(
+        state.pan.x + screenPt.x / state.scale,
+        state.pan.y + screenPt.y / state.scale,
+      );
+    },
+    worldPtToScreenPt(worldPt) {
+      return Vec2.create(
+        (worldPt.x - state.pan.x) * state.scale,
+        (worldPt.y - state.pan.y) * state.scale,
+      );
+    },
+    world: () => props.world,
+    animationLayout,
+    onDone: () => {
+      setMode(() => new IdleMode(modeParams));
+    },
+  };
+  let mode = createMemo(() => state.mkMode());
+  let svgElement!: SVGSVGElement;
+  let panZoomManager = createPanZoomManager({
+    pan: () => state.pan,
+    setPan: (x) => setState("pan", x),
+    scale: () => state.scale,
+    setScale: (x) => setState("scale", x),
+    setPointerCapture: (pointerId) => svgElement.setPointerCapture(pointerId),
+    releasePointerCapture: (pointerId) =>
+      svgElement.releasePointerCapture(pointerId),
+  });
+  let transform = createMemo(
+    () => `scale(${state.scale}) translate(${-state.pan.x} ${-state.pan.y})`,
+  );
+  let onClick = () => {
+    mode().click?.();
+  };
+  let onPointerDown = (e: PointerEvent) => {
+    panZoomManager.onPointerDown(e);
+  };
+  let onPointerUp = (e: PointerEvent) => {
+    panZoomManager.onPointerUp(e);
+    if (panZoomManager.numTouches() == 0) {
+      onClick();
+    }
+  };
+  let onPointerCancel = (e: PointerEvent) => {
+    panZoomManager.onPointerCancel(e);
+  };
+  let onPointerMove = (e: PointerEvent) => {
+    panZoomManager.onPointerMove(e);
+    let rect = svgElement.getBoundingClientRect();
+    setState(
+      "mousePos",
+      Vec2.create(e.clientX - rect.left, e.clientY - rect.top),
+    );
+  };
+  let onPointerOut = (e: PointerEvent) => {
+    if (panZoomManager.numTouches() == 0) {
+      setState("mousePos", undefined);
+    }
+  };
+  let onWheel = (e: WheelEvent) => {
+    panZoomManager.onWheel(e);
+  };
+  //
+  let newAnimation = () => {
+    setMode(() => new NewAnimationMode(modeParams));
+  };
+  //
+  let highlightedObjectsByIdSet = createMemo(() =>
+    new Set(mode().highlightedObjectsById?.() ?? [])
+  );
+  let selectedObjectsByIdSet = createMemo(() =>
+    new Set(mode().selectedObjectsById?.() ?? [])
+  );
+  //
   return (
     <div {...rest}>
       <div
@@ -390,13 +399,14 @@ const Animations: Component<
                   return (
                     <Show when={currentFrame()}>
                       {(frame) => {
-                        let scale = 3.0;
-                        let backgroundWidth = createMemo(() => props.image.naturalWidth * scale);
-                        let backgroundHeight = createMemo(() => props.image.naturalHeight * scale);
-                        return (
+                        let backgroundWidth = createMemo(() => props.image.naturalWidth);
+                        let backgroundHeight = createMemo(() => props.image.naturalHeight);
+                        let isHighlighted = createMemo(() => highlightedObjectsByIdSet().has(animation.entity));
+                        let isSelected = createMemo(() => selectedObjectsByIdSet().has(animation.entity));
+                        return (<>
                           <image
-                            x={animation.pos.x - frame().pos.x * scale}
-                            y={animation.pos.y - frame().pos.y * scale}
+                            x={animation.pos.x - frame().pos.x}
+                            y={animation.pos.y - frame().pos.y}
                             width={backgroundWidth()}
                             height={backgroundHeight()}
                             style={{
@@ -405,15 +415,27 @@ const Animations: Component<
                             href={imageUrl()}
                             attr:clip-path={
                               `inset(` +
-                              `${frame().pos.y * scale}px ` +
-                              `${(props.image.width - frame().pos.x - frame().size.x) * scale}px ` +
-                              `${(props.image.height - frame().pos.y - frame().size.y) * scale}px ` +
-                              `${frame().pos.x * scale}px` +
+                              `${frame().pos.y}px ` +
+                              `${(props.image.width - frame().pos.x - frame().size.x)}px ` +
+                              `${(props.image.height - frame().pos.y - frame().size.y)}px ` +
+                              `${frame().pos.x}px` +
                               `)`
                             }
                             preserveAspectRatio="none"
                           />
-                        );
+                          <Show when={isHighlighted() || isSelected()}>
+                            <rect
+                              x={animation.pos.x}
+                              y={animation.pos.y}
+                              width={animation.size().x}
+                              height={animation.size().y}
+                              fill={isSelected() ? "green" : "blue"}
+                              stroke="none"
+                              opacity={0.5}
+                              pointer-events="none"
+                            />
+                          </Show>
+                        </>);
                       }}
                     </Show>
                   );

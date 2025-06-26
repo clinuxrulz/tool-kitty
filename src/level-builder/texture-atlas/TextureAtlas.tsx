@@ -522,10 +522,11 @@ export class TextureAtlas {
                                 if (blob == null) {
                                   return;
                                 }
-                                let data = await blob.bytes();
+                                let data = await blob.arrayBuffer();
+                                let data2 = new Uint8Array(data);
                                 imageFile2.docHandle.change((doc) => {
                                   doc.mimeType = "image/png";
-                                  doc.data = data;
+                                  doc.data = data2;
                                 });
                                 setImage(newImage);
                               }, "image/png");
