@@ -241,6 +241,11 @@ const Animations: Component<
     onDone: () => {
       setMode(() => new IdleMode(modeParams));
     },
+    setMode,
+    pan: () => state.pan,
+    setPan: (x) => setState("pan", x),
+    scale: () => state.scale,
+    setScale: (x) => setState("scale", x),
   };
   let mode = createMemo(() => state.mkMode());
   let svgElement!: SVGSVGElement;
@@ -441,7 +446,7 @@ const Animations: Component<
                   );
                 }}
               </For>
-              <circle cx={50} cy={50} r={5} fill="red" />
+              <circle cx={-10} cy={-10} r={5} fill="red" />
               <Show when={mode().overlaySvg} keyed>
                 {(ModeOverlaySvg) => <ModeOverlaySvg />}
               </Show>

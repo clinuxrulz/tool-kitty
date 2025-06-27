@@ -2,8 +2,8 @@ import { Accessor } from "solid-js";
 import { UndoManager } from "../../pixel-editor/UndoManager";
 import { Vec2 } from "../../math/Vec2";
 import { IEcsWorld } from "../../ecs/IEcsWorld";
-import { AutomergeVirtualFileSystem } from "solid-fs-automerge";
 import { AnimationState } from "../components/AnimationComponent";
+import { Mode } from "./Mode";
 
 export type ModeParams = {
   image: HTMLImageElement;
@@ -19,4 +19,9 @@ export type ModeParams = {
       pos: Vec2;
   })[]>;
   onDone: () => void;
+  setMode: (mkMode: () => Mode) => void;
+  pan: () => Vec2,
+  setPan: (x: Vec2) => void,
+  scale: () => number,
+  setScale: (x: number) => void,
 };

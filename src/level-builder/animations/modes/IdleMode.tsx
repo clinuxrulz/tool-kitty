@@ -3,6 +3,7 @@ import { Mode } from "../Mode";
 import { ModeParams } from "../ModeParams";
 import { opToArr } from "../../../kitty-demo/util";
 import { ReactiveSet } from "@solid-primitives/set";
+import { EditAnimationMode } from "./EditAnimationMode";
 
 export class IdleMode implements Mode {
   overlayHtmlUi: Component;
@@ -64,6 +65,12 @@ export class IdleMode implements Mode {
                       >
                         <button
                           class="btn btn-xs btn-primary"
+                          onClick={() => {
+                            modeParams.setMode(() => new EditAnimationMode({
+                              modeParams,
+                              animationId: objectId,
+                            }));
+                          }}
                         >
                           Edit
                         </button>

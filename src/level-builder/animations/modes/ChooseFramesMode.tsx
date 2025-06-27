@@ -1,5 +1,6 @@
 import {
   Accessor,
+  batch,
   Component,
   createComputed,
   createMemo,
@@ -8,6 +9,7 @@ import {
   mapArray,
   onCleanup,
   Show,
+  untrack,
 } from "solid-js";
 import { Mode } from "../Mode";
 import { ModeParams } from "../ModeParams";
@@ -34,23 +36,25 @@ export class ChooseFramesMode implements Mode {
       animationName: string,
       framesById: string[],
     }) => void;
+    onCancel: () => void,
   }) {
     let { modeParams, initFramesById, onSelectionDone } = params;
+    let { initPan, initScale, } = untrack(() => ({
+      initPan: modeParams.pan(),
+      initScale: modeParams.scale(),
+    }));
+    onCleanup(() => {
+      batch(() => {
+        modeParams.setPan(initPan);
+        modeParams.setScale(initScale);
+      });
+    });
     let [state, setState] = createStore<{
       animationName: string,
       selectedFramesById: string[];
     }>({
       animationName: params.initAnimationName,
       selectedFramesById: initFramesById,
-    });
-    let selectedFramesByIdTIndexMap = createMemo(() => {
-      let result = new Map<string, number>();
-      let idx = 0;
-      for (let frameId of state.selectedFramesById) {
-        result.set(frameId, idx);
-        ++idx;
-      }
-      return result;
     });
     let imageUrl_ = createMemo(() => {
       let canvas = document.createElement("canvas");
@@ -224,10 +228,23 @@ export class ChooseFramesMode implements Mode {
             let isHighlighted = createMemo(
               () => selectableFrameUnderMouse()?.frameId == frame.frameId,
             );
-            let selectedIndex = createMemo(() =>
-              selectedFramesByIdTIndexMap().get(frame.frameId),
-            );
-            let isSelected = createMemo(() => selectedIndex() != undefined);
+            let isSelected = createMemo(() => state.selectedFramesById.includes(frame.frameId));
+            let indices = createMemo(() => {
+              let result: number[] = [];
+              for (let i = 0; i < state.selectedFramesById.length; ++i) {
+                if (state.selectedFramesById[i] == frame.frameId) {
+                  result.push(i);
+                }
+              }
+              return result;
+            });
+            let frameNumbersText = createMemo(() => {
+              let indices2 = indices();
+              if (indices2 == undefined) {
+                return undefined;
+              }
+              return indices2.map((x) => (x + 1).toString()).join("/");
+            });
             return (
               <>
                 <rect
@@ -243,17 +260,8 @@ export class ChooseFramesMode implements Mode {
                   }
                   opacity={isSelected() || isHighlighted() ? 0.5 : 1.0}
                 />
-                <Show
-                  when={(() => {
-                    let selectedIndex2 = selectedIndex();
-                    if (selectedIndex2 == undefined) {
-                      return undefined;
-                    } else {
-                      return { value: selectedIndex2 };
-                    }
-                  })()}
-                >
-                  {(selectedIndex) => (
+                <Show when={frameNumbersText()}>
+                  {(frameNumbersText) => (
                     <text
                       x={frame.frame.pos.x + 0.5 * frame.frame.size.x}
                       y={frame.frame.pos.y + 0.5 * frame.frame.size.y}
@@ -264,7 +272,7 @@ export class ChooseFramesMode implements Mode {
                       stroke-width="3"
                       vector-effect="non-scaling-stroke"
                     >
-                      {selectedIndex().value + 1}
+                      {frameNumbersText()}
                     </text>
                   )}
                 </Show>
@@ -281,6 +289,15 @@ export class ChooseFramesMode implements Mode {
         <button
           class="btn btn-primary btn-sm"
           onClick={() => {
+            setState("selectedFramesById", []);
+          }}
+        >
+          Deselect Frames
+        </button>
+        <button
+          class="btn btn-primary btn-sm"
+          style="margin-left: 5px;"
+          onClick={() => {
             onSelectionDone({
               animationName: state.animationName,
               framesById: state.selectedFramesById,
@@ -288,6 +305,15 @@ export class ChooseFramesMode implements Mode {
           }}
         >
           Finish
+        </button>
+        <button
+          class="btn btn-secondary btn-sm"
+          style="margin-left: 5px;"
+          onClick={() => {
+            params.onCancel();
+          }}
+        >
+          Cancel
         </button>
       </>
     );
@@ -351,14 +377,7 @@ export class ChooseFramesMode implements Mode {
       if (frameId == undefined) {
         return;
       }
-      let has = selectedFramesByIdTIndexMap().has(frameId);
-      if (has) {
-        setState("selectedFramesById", (frameIds) =>
-          frameIds.filter((frameId2) => frameId2 !== frameId),
-        );
-      } else {
-        setState("selectedFramesById", (frameIds) => [...frameIds, frameId]);
-      }
+      setState("selectedFramesById", (frameIds) => [...frameIds, frameId]);
     };
   }
 }

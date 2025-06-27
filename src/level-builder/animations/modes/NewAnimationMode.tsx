@@ -25,6 +25,9 @@ export class NewAnimationMode implements Mode {
         ]);
         modeParams.onDone();
       },
+      onCancel: () => {
+        modeParams.onDone();
+      },
     });
     this.instructions = innerMode.instructions;
     this.overlaySvg = innerMode.overlaySvg;
