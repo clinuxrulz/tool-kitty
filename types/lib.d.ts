@@ -4,6 +4,7 @@ import { AutomergeVfsFolder, AutomergeVirtualFileSystem } from 'solid-fs-automer
 import { AsyncResult } from 'control-flow-as-value';
 import { TextureAtlasState } from './level-builder/components/TextureAtlasComponent';
 import { FrameState } from './level-builder/components/FrameComponent';
+import { AnimationState } from './level-builder/components/AnimationComponent';
 export * from './ecs/EcsComponent';
 export * from './ecs/EcsRegistry';
 export * from './ecs/EcsWorld';
@@ -24,6 +25,9 @@ declare let systems: {
         world: EcsWorld;
     }) => void;
     CollisionSystem: (params: {
+        world: EcsWorld;
+    }) => void;
+    AnimationSystem: (params: {
         world: EcsWorld;
     }) => void;
 };
@@ -65,5 +69,9 @@ export declare const createTextureAtlasWithImageAndFramesList: () => Accessor<As
     frames: {
         frameId: string;
         frame: FrameState;
+    }[];
+    animations: {
+        animationId: string;
+        animation: AnimationState;
     }[];
 }[]>>;

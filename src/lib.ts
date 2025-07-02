@@ -50,6 +50,8 @@ import {
   PixiRenderSystem as X,
 } from "./systems/PixiRenderSystem";
 import { CollisionSystem } from "./systems/CollisionSystem";
+import { animationComponentType, AnimationState } from "./level-builder/components/AnimationComponent";
+import { AnimationSystem } from "./systems/AnimationSystem";
 
 export * from "./ecs/EcsComponent";
 export * from "./ecs/EcsRegistry";
@@ -85,6 +87,9 @@ let systems = {
   },
   CollisionSystem: (params: { world: EcsWorld }) => {
     let _ = new CollisionSystem(params);
+  },
+  AnimationSystem: (params: { world: EcsWorld, }) => {
+    let _ = new AnimationSystem(params);
   },
 };
 
@@ -411,6 +416,7 @@ export const createTextureAtlasWithImageAndFramesList =
             textureAtlas: TextureAtlasState;
             image: HTMLImageElement;
             frames: { frameId: string; frame: FrameState }[];
+            animations: { animationId: string, animation: AnimationState, }[];
           }[]
         >
       >;
@@ -534,6 +540,15 @@ export const createTextureAtlasWithImageAndFramesList =
                           frame,
                         })),
                       );
+                      let animationEntities = world.entitiesWithComponentType(animationComponentType);
+                      let animations = animationEntities.flatMap((animationEntity) =>
+                        opToArr(
+                          world.getComponent(animationEntity, animationComponentType)?.state
+                        ).map((animation) => ({
+                          animationId: animationEntity,
+                          animation,
+                        })),
+                      );
                       let textureAtlas2 = textureAtlas;
                       let imageFilename = textureAtlas2.imageRef;
                       let imageFile = imageFilenameFileMap3.get(imageFilename);
@@ -579,6 +594,7 @@ export const createTextureAtlasWithImageAndFramesList =
                                 textureAtlas: textureAtlas2,
                                 image: image3,
                                 frames,
+                                animations,
                               });
                             }),
                           );
@@ -597,6 +613,7 @@ export const createTextureAtlasWithImageAndFramesList =
             textureAtlas: TextureAtlasState;
             image: HTMLImageElement;
             frames: { frameId: string; frame: FrameState }[];
+            animations: { animationId: string, animation: AnimationState, }[];
           }[] = [];
           let tmp = textureAtlases_();
           if (tmp.type != "Success") {
