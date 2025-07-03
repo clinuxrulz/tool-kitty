@@ -1,5 +1,10 @@
+import { TypeSchemaType } from '../../TypeSchema';
 import { EcsComponentType } from '../EcsComponent';
-export type SortOrderIndexState = {
+declare const typeSchema: import('../../TypeSchema').TypeSchemaObject<{
     orderIndex: number;
-};
-export declare const sortOrderIndexComponentType: EcsComponentType<SortOrderIndexState>;
+}>;
+export type SortOrderIndexState = TypeSchemaType<typeof typeSchema>;
+export declare const sortOrderIndexComponentType: EcsComponentType<{
+    orderIndex: number;
+}>;
+export {};

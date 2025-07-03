@@ -1,6 +1,14 @@
 import { EcsComponentType } from '../ecs/EcsComponent';
-export type AnimatedState = {
+import { TypeSchemaType } from '../TypeSchema';
+declare const typeSchema: import('../TypeSchema').TypeSchemaObject<{
+    textureAtlasFilename: string;
     animationName: string;
     frameIndex: number;
-};
-export declare const animatedComponentType: EcsComponentType<AnimatedState>;
+}>;
+export type AnimatedState = TypeSchemaType<typeof typeSchema>;
+export declare const animatedComponentType: EcsComponentType<{
+    textureAtlasFilename: string;
+    animationName: string;
+    frameIndex: number;
+}>;
+export {};

@@ -1,10 +1,18 @@
 import { EcsComponentType } from '../ecs/EcsComponent';
-export type TileCollisionState = {
+import { TypeSchemaType } from '../TypeSchema';
+declare const typeSchema: import('../TypeSchema').TypeSchemaObject<{
     textureAtlasFilename: string;
     frameName: string;
     width: number;
     height: number;
-    /** metaData is a json value */
     metaData: any;
-};
-export declare const tileCollisionComponentType: EcsComponentType<TileCollisionState>;
+}>;
+export type TileCollisionState = TypeSchemaType<typeof typeSchema>;
+export declare const tileCollisionComponentType: EcsComponentType<{
+    textureAtlasFilename: string;
+    frameName: string;
+    width: number;
+    height: number;
+    metaData: any;
+}>;
+export {};

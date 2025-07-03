@@ -1,5 +1,10 @@
 import { EcsComponentType } from '../ecs/EcsComponent';
-export type ScaleState = {
+import { TypeSchemaType } from '../TypeSchema';
+declare const typeSchema: import('../TypeSchema').TypeSchemaObject<{
     scale: number;
-};
-export declare const scaleComponentType: EcsComponentType<ScaleState>;
+}>;
+export type ScaleState = TypeSchemaType<typeof typeSchema>;
+export declare const scaleComponentType: EcsComponentType<{
+    scale: number;
+}>;
+export {};

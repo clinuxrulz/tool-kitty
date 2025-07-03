@@ -1,23 +1,23 @@
 import { Result } from './kitty-demo/Result';
 import { Vec2 } from './math/Vec2';
-interface TypeSchemaMaybeUndefined<A> {
+export interface TypeSchemaMaybeUndefined<A> {
     type: "MaybeUndefined";
     element: TypeSchema<A>;
 }
-interface TypeSchemaMaybeNull<A> {
+export interface TypeSchemaMaybeNull<A> {
     type: "MaybeNull";
     element: TypeSchema<A>;
 }
-interface TypeSchemaBoolean {
+export interface TypeSchemaBoolean {
     type: "Boolean";
 }
-interface TypeSchemaNumber {
+export interface TypeSchemaNumber {
     type: "Number";
 }
-interface TypeSchemaString {
+export interface TypeSchemaString {
     type: "String";
 }
-interface TypeSchemaUnion<A extends {
+export interface TypeSchemaUnion<A extends {
     [K in Key]: unknown;
 }, Key extends string = "type"> {
     type: "Union";
@@ -28,32 +28,32 @@ interface TypeSchemaUnion<A extends {
         }>>["properties"];
     };
 }
-interface TypeSchemaObject<A extends object> {
+export interface TypeSchemaObject<A extends object> {
     type: "Object";
     properties: {
         [K in keyof A]: TypeSchema<A[K]>;
     };
 }
-interface TypeSchemaArray<A> {
+export interface TypeSchemaArray<A> {
     type: "Array";
     element: TypeSchema<A>;
 }
-interface TypeSchemaInvarant<A, B> {
+export interface TypeSchemaInvarant<A, B> {
     type: "Invarant";
     fromFn: (b: B) => A;
     toFn: (a: A) => B;
     inner: TypeSchema<B>;
 }
-interface TypeSchemaDefault<A> {
+export interface TypeSchemaDefault<A> {
     type: "Default";
     value: A;
     inner: TypeSchema<A>;
 }
-interface TypeSchemaRecursive<A> {
+export interface TypeSchemaRecursive<A> {
     type: "Recursive";
     inner: () => TypeSchema<A>;
 }
-interface TypeSchemaJson {
+export interface TypeSchemaJson {
     type: "Json";
 }
 export type TypeSchema<A> = TypeSchemaMaybeUndefined<NonNullable<A>> | TypeSchemaMaybeNull<NonNullable<A>> | TypeSchemaBoolean | TypeSchemaNumber | TypeSchemaString | TypeSchemaUnion<Extract<A, Record<string, unknown>>, any> | TypeSchemaObject<Extract<A, object>> | TypeSchemaArray<any> | TypeSchemaInvarant<A, any> | TypeSchemaDefault<A> | TypeSchemaRecursive<A> | TypeSchemaJson;

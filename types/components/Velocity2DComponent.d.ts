@@ -1,5 +1,9 @@
-import { EcsComponentType, Vec2 } from '../lib';
-export type Velocity2DState = {
+import { EcsComponentType, TypeSchemaType, Vec2 } from '../lib';
+declare const typeSchema: import('../TypeSchema').TypeSchemaObject<{
     velocity: Vec2;
-};
-export declare const velocity2DComponentType: EcsComponentType<Velocity2DState>;
+}>;
+export type Velocity2DState = TypeSchemaType<typeof typeSchema>;
+export declare const velocity2DComponentType: EcsComponentType<{
+    velocity: Vec2;
+}>;
+export {};
