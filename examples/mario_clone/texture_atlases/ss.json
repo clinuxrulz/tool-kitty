@@ -1,0 +1,90 @@
+{
+  "3c67d6b6-dc55-4a9f-aa7a-d029cc94ea22": {
+    "TextureAtlas": {
+      "imageRef": "smb3-spritesheet.png"
+    }
+  },
+  "6187dee9-27b8-42d0-aac4-a60ac71985a9": {
+    "Animation": {
+      "frameIds": [
+        "7139b7d7-c9b0-4009-bb80-42e2c346ca2e",
+        "7a7a9f82-ff0b-4d4e-bd8e-c4b527356877",
+        "9627bb57-33c3-4017-82a7-568139138c36",
+        "7a7a9f82-ff0b-4d4e-bd8e-c4b527356877"
+      ],
+      "name": "walk"
+    }
+  },
+  "7139b7d7-c9b0-4009-bb80-42e2c346ca2e": {
+    "FrameState": {
+      "metaData": null,
+      "name": "a",
+      "numCells": {
+        "x": 1,
+        "y": 1
+      },
+      "pos": {
+        "x": 57,
+        "y": 421
+      },
+      "size": {
+        "x": 21,
+        "y": 29
+      }
+    }
+  },
+  "7a7a9f82-ff0b-4d4e-bd8e-c4b527356877": {
+    "FrameState": {
+      "metaData": null,
+      "name": "b",
+      "numCells": {
+        "x": 1,
+        "y": 1
+      },
+      "pos": {
+        "x": 81,
+        "y": 421
+      },
+      "size": {
+        "x": 22,
+        "y": 29
+      }
+    }
+  },
+  "9627bb57-33c3-4017-82a7-568139138c36": {
+    "FrameState": {
+      "metaData": null,
+      "name": "c",
+      "numCells": {
+        "x": 1,
+        "y": 1
+      },
+      "pos": {
+        "x": 106,
+        "y": 421
+      },
+      "size": {
+        "x": 23,
+        "y": 29
+      }
+    }
+  },
+  "a670a283-40fd-4613-89cb-a783be9ed63b": {
+    "FrameState": {
+      "metaData": "null",
+      "name": "mario1",
+      "numCells": {
+        "x": 1,
+        "y": 1
+      },
+      "pos": {
+        "x": 197,
+        "y": 48
+      },
+      "size": {
+        "x": 14,
+        "y": 27
+      }
+    }
+  }
+}

@@ -59,6 +59,7 @@ import {
 import CodeMirror, {
   mountAutomergeFolderToCodeMirrorVfsWhileMounted,
 } from "../code-mirror/CodeMirror";
+import ExamplesLoader from "./ExamplesLoader";
 
 const AppV2: Component<{
   vfsDocUrl: string;
@@ -435,6 +436,24 @@ const AppV2: Component<{
           </div>
         ),
       }),
+    );
+  };
+  const loadExample = () => {
+    setState(
+      "overlayApp",
+      new NoTrack({
+        Title: () => "Examples",
+        View: () => (
+          <ExamplesLoader
+            vfs={props.vfs}
+            onDone={async () => {
+              setState("overlayApp", undefined);
+              await props.flushRepo();
+              window.location.reload();
+            }}
+          />
+        ),
+      })
     );
   };
   let selectedImageFile_ = createMemo(() => {
@@ -861,7 +880,7 @@ const AppV2: Component<{
           <label>
             <input
               type="checkbox"
-              class="checkbox"
+              class="checkbox checkbox-xs"
               checked={state.showGame}
               style="display: inline-block;"
               onChange={(e) => {
@@ -873,7 +892,7 @@ const AppV2: Component<{
         </li>
         <li>
           <select
-            class="select"
+            class="select select-xs"
             value={state.useCodeMirror ? "codemirror" : "monaco"}
             onChange={(e) => {
               setState("useCodeMirror", e.currentTarget.value == "codemirror");
@@ -883,15 +902,23 @@ const AppV2: Component<{
             <option value="codemirror">Code Mirror</option>
           </select>
         </li>
+        <li>
+          <button
+            class="btn btn-xs btn-primary"
+            onClick={() => loadExample()}
+          >
+            Load Example...
+          </button>
+        </li>
         <Show when={!props.broadcastNetworkAdapterIsEnabled}>
           <li>
             <button
-              class="btn btn-secondary"
+              class="btn btn-xs btn-secondary"
               onClick={() => {
                 props.enableBroadcastNetworkAdapter();
               }}
             >
-              Enable Broadcast Network Adapter
+              Enable BNA
             </button>
           </li>
         </Show>
