@@ -13,6 +13,7 @@ export * from './ecs/components/ParentComponent';
 export * from './ecs/components/SortOrderIndexComponent';
 export * from './TypeSchema';
 export { PixiRenderSystem } from './systems/PixiRenderSystem';
+export { createGmeSystem } from './systems/GmeSystem';
 export { createMonsterLogicSystem } from './systems/MonsterLogicSystem';
 export { createVirtualDPadSystem } from './systems/VirtualDPadSystem';
 export { CollisionResolutionSystem, createCollisionResolutionSystem } from './systems/CollisionResolutionSystem';
