@@ -48,6 +48,7 @@ export declare const libUrl: string;
 export declare const world: EcsWorld;
 export { type AnimatedState, animatedComponentType, } from './components/AnimatedComponent';
 export { type CameraState, cameraComponentType, } from './components/CameraComponent';
+export { type FlipXState, flipXComponentType, } from './components/FlipXComponent';
 export { type LevelRefState, levelRefComponentType, } from './components/LevelRefComponent';
 export { type OnGroundState, onGroundComponentType, } from './components/OnGroundComponent';
 export { type ScaleState, scaleComponentType, } from './components/ScaleComponent';

@@ -2,6 +2,7 @@ import { EcsRegistry } from "../ecs/EcsRegistry";
 import { registry as baseRegistry } from "../ecs/components/registry";
 import { animatedComponentType } from "./AnimatedComponent";
 import { cameraComponentType } from "./CameraComponent";
+import { flipXComponentType } from "./FlipXComponent";
 import { levelRefComponentType } from "./LevelRefComponent";
 import { onGroundComponentType } from "./OnGroundComponent";
 import { scaleComponentType } from "./ScaleComponent";
@@ -14,6 +15,7 @@ export const registry = new EcsRegistry([
   ...baseRegistry.componentTypes,
   animatedComponentType,
   cameraComponentType,
+  flipXComponentType,
   levelRefComponentType,
   onGroundComponentType,
   scaleComponentType,

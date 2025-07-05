@@ -59,6 +59,7 @@ import { Cont } from "../Cont";
 import { AutomergeVfsFile, AutomergeVfsFolder } from "solid-fs-automerge";
 import { childrenComponentType } from "../ecs/components/ChildrenComponent";
 import { tileCollisionComponentType } from "../components/TileCollisionComponent";
+import { flipXComponentType } from "../components/FlipXComponent";
 
 TextureStyle.defaultOptions.scaleMode = "nearest";
 
@@ -430,6 +431,7 @@ export class PixiRenderSystem {
                   if (!hasFrame()) {
                     return;
                   }
+                  let flipX = createMemo(() => world.getComponent(spriteEntity, flipXComponentType) != undefined);
                   let spriteSheet2 = spriteSheet as Accessor<
                     NonNullable<ReturnType<typeof spriteSheet>>
                   >;
@@ -442,10 +444,7 @@ export class PixiRenderSystem {
                   let sprite = new Sprite();
                   sprite.zIndex = 1;
                   createComputed(() => {
-                    let scale2 = scale() ?? 1.0;
                     sprite.texture = spriteSheet2().textures[frameId2()];
-                    sprite.width = frame2().size.x * scale2;
-                    sprite.height = frame2().size.y * scale2;
                   });
                   createComputed(() => {
                     let space2 = cameraTransform().transformToSpace(
@@ -454,6 +453,13 @@ export class PixiRenderSystem {
                     sprite.x = space2.origin.x;
                     sprite.y = space2.origin.y;
                     sprite.angle = space2.orientation.getAngle();
+                    let scale2 = scale() ?? 1.0;
+                    if (flipX()) {
+                      sprite.scale.set(-scale2, scale2);
+                      sprite.x += frame2().size.x * scale2;
+                    } else {
+                      sprite.scale.set(scale2, scale2);
+                    }
                   });
                   pixiApp.stage.addChild(sprite);
                   onCleanup(() => pixiApp.stage.removeChild(sprite));

@@ -191,6 +191,10 @@ export {
   cameraComponentType,
 } from "./components/CameraComponent";
 export {
+  type FlipXState,
+  flipXComponentType,
+} from "./components/FlipXComponent";
+export {
   type LevelRefState,
   levelRefComponentType,
 } from "./components/LevelRefComponent";
