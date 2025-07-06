@@ -1,4 +1,30 @@
 {
+  "0d95424a-befa-4399-9fae-886b1c2ecc87": {
+    "Animation": {
+      "frameIds": [
+        "fa4a9d25-c974-442e-ae65-b87b79756aa5"
+      ],
+      "name": "racoon-fall"
+    }
+  },
+  "1f62aab2-6ee8-40d7-8661-ab1c9ca4d1f7": {
+    "FrameState": {
+      "metaData": null,
+      "name": "racoon-jump",
+      "numCells": {
+        "x": 1,
+        "y": 1
+      },
+      "pos": {
+        "x": 216,
+        "y": 421
+      },
+      "size": {
+        "x": 23,
+        "y": 29
+      }
+    }
+  },
   "3c67d6b6-dc55-4a9f-aa7a-d029cc94ea22": {
     "TextureAtlas": {
       "imageRef": "smb3-spritesheet.png"
@@ -31,6 +57,14 @@
         "7a7a9f82-ff0b-4d4e-bd8e-c4b527356877"
       ],
       "name": "walk"
+    }
+  },
+  "6a48b527-c925-46e5-ae87-ba729ebfa357": {
+    "Animation": {
+      "frameIds": [
+        "1f62aab2-6ee8-40d7-8661-ab1c9ca4d1f7"
+      ],
+      "name": "racoon-jump"
     }
   },
   "7139b7d7-c9b0-4009-bb80-42e2c346ca2e": {
@@ -87,6 +121,24 @@
       }
     }
   },
+  "980a67e9-e54d-4b66-a7d9-eb23da82c012": {
+    "FrameState": {
+      "metaData": null,
+      "name": "racoon-duck",
+      "numCells": {
+        "x": 1,
+        "y": 1
+      },
+      "pos": {
+        "x": 478,
+        "y": 420
+      },
+      "size": {
+        "x": 21,
+        "y": 29
+      }
+    }
+  },
   "998ea339-20d0-4059-a381-cfb18304eac7": {
     "Animation": {
       "frameIds": [
@@ -113,6 +165,14 @@
       }
     }
   },
+  "a9188e49-8642-423b-a70e-3fba54953ada": {
+    "Animation": {
+      "frameIds": [
+        "980a67e9-e54d-4b66-a7d9-eb23da82c012"
+      ],
+      "name": "racoon-duck"
+    }
+  },
   "bdf5c138-7b12-4bab-977c-f8219057979a": {
     "Animation": {
       "frameIds": [
@@ -121,27 +181,14 @@
       "name": "racoon-stand"
     }
   },
-  "1f62aab2-6ee8-40d7-8661-ab1c9ca4d1f7": {
+  "fa4a9d25-c974-442e-ae65-b87b79756aa5": {
     "FrameState": {
-      "name": "racoon-jump",
-      "pos": {
-        "x": 216,
-        "y": 421
-      },
-      "size": {
-        "x": 23,
-        "y": 29
-      },
+      "metaData": null,
+      "name": "racoon-fall",
       "numCells": {
         "x": 1,
         "y": 1
       },
-      "metaData": null
-    }
-  },
-  "fa4a9d25-c974-442e-ae65-b87b79756aa5": {
-    "FrameState": {
-      "name": "racoon-fall",
       "pos": {
         "x": 242,
         "y": 421
@@ -149,54 +196,7 @@
       "size": {
         "x": 23,
         "y": 29
-      },
-      "numCells": {
-        "x": 1,
-        "y": 1
-      },
-      "metaData": null
-    }
-  },
-  "6a48b527-c925-46e5-ae87-ba729ebfa357": {
-    "Animation": {
-      "name": "racoon-jump",
-      "frameIds": [
-        "1f62aab2-6ee8-40d7-8661-ab1c9ca4d1f7"
-      ]
-    }
-  },
-  "0d95424a-befa-4399-9fae-886b1c2ecc87": {
-    "Animation": {
-      "name": "racoon-fall",
-      "frameIds": [
-        "fa4a9d25-c974-442e-ae65-b87b79756aa5"
-      ]
-    }
-  },
-  "980a67e9-e54d-4b66-a7d9-eb23da82c012": {
-    "FrameState": {
-      "name": "racoon-duck",
-      "pos": {
-        "x": 478,
-        "y": 421
-      },
-      "size": {
-        "x": 21,
-        "y": 29
-      },
-      "numCells": {
-        "x": 1,
-        "y": 1
-      },
-      "metaData": null
-    }
-  },
-  "a9188e49-8642-423b-a70e-3fba54953ada": {
-    "Animation": {
-      "name": "racoon-duck",
-      "frameIds": [
-        "980a67e9-e54d-4b66-a7d9-eb23da82c012"
-      ]
+      }
     }
   }
 }

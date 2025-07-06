@@ -52,6 +52,7 @@ let keyState = {
   left: false,
   right: false,
   jump: false,
+  duck: false,
 };
 
 let cleanups: (() => void)[] = [];
@@ -68,6 +69,9 @@ setTimeout(() => {
     createComputed(() => {
       keyState.jump = dpad.upPressed();
     });
+    createComputed(() => {
+      keyState.duck = dpad.downPressed();
+    });
     return dispose;
   }));
 }, 3000);
@@ -76,6 +80,7 @@ let keyDownListener = (e: KeyboardEvent) => {
   switch (e.key) {
     case "ArrowLeft": keyState.left = true; break;
     case "ArrowRight": keyState.right = true; break;
+    case "ArrowDown": keyState.duck = true; break;
     case " ": keyState.jump = true; break;
   }
 };
@@ -84,6 +89,7 @@ let keyUpListener = (e: KeyboardEvent) => {
   switch (e.key) {
     case "ArrowLeft": keyState.left = false; break;
     case "ArrowRight": keyState.right = false; break;
+    case "ArrowDown": keyState.duck = false; break;
     case " ": keyState.jump = false; break;
   }
 };
@@ -184,7 +190,7 @@ function updateFrame(t: number) {
       }
     }
   }
-  if (!keyState.left && !keyState.right && $.world.getComponent(m, $.onGroundComponentType) != undefined) {
+  if (!keyState.left && !keyState.right && !keyState.duck && $.world.getComponent(m, $.onGroundComponentType) != undefined) {
     velocity = $.Vec2.create(velocity.x * groundFriction, velocity.y);
     if (velocity.x < 0.5) {
       if (animatedComponent != undefined) {
@@ -205,6 +211,13 @@ function updateFrame(t: number) {
     if (velocity.y > 0 && animatedComponent != undefined) {
       if (animatedComponent.state.animationName != "racoon-fall") {
           animatedComponent.setState("animationName", "racoon-fall");
+      }
+    }
+  }
+  if (keyState.duck) {
+    if ($.world.getComponent(m, $.onGroundComponentType) != undefined) {
+      if (animatedComponent.state.animationName != "racoon-duck") {
+        animatedComponent.setState("animationName", "racoon-duck");
       }
     }
   }
