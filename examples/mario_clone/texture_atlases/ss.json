@@ -4,6 +4,24 @@
       "imageRef": "smb3-spritesheet.png"
     }
   },
+  "40b2d944-44d7-4bf6-b79a-03317a2b50d9": {
+    "FrameState": {
+      "metaData": null,
+      "name": "racoon-slide",
+      "numCells": {
+        "x": 1,
+        "y": 1
+      },
+      "pos": {
+        "x": 132,
+        "y": 421
+      },
+      "size": {
+        "x": 17,
+        "y": 29
+      }
+    }
+  },
   "6187dee9-27b8-42d0-aac4-a60ac71985a9": {
     "Animation": {
       "frameIds": [
@@ -69,6 +87,14 @@
       }
     }
   },
+  "998ea339-20d0-4059-a381-cfb18304eac7": {
+    "Animation": {
+      "frameIds": [
+        "40b2d944-44d7-4bf6-b79a-03317a2b50d9"
+      ],
+      "name": "racoon-slide"
+    }
+  },
   "a670a283-40fd-4613-89cb-a783be9ed63b": {
     "FrameState": {
       "metaData": "null",
@@ -85,6 +111,92 @@
         "x": 14,
         "y": 27
       }
+    }
+  },
+  "bdf5c138-7b12-4bab-977c-f8219057979a": {
+    "Animation": {
+      "frameIds": [
+        "7139b7d7-c9b0-4009-bb80-42e2c346ca2e"
+      ],
+      "name": "racoon-stand"
+    }
+  },
+  "1f62aab2-6ee8-40d7-8661-ab1c9ca4d1f7": {
+    "FrameState": {
+      "name": "racoon-jump",
+      "pos": {
+        "x": 216,
+        "y": 421
+      },
+      "size": {
+        "x": 23,
+        "y": 29
+      },
+      "numCells": {
+        "x": 1,
+        "y": 1
+      },
+      "metaData": null
+    }
+  },
+  "fa4a9d25-c974-442e-ae65-b87b79756aa5": {
+    "FrameState": {
+      "name": "racoon-fall",
+      "pos": {
+        "x": 242,
+        "y": 421
+      },
+      "size": {
+        "x": 23,
+        "y": 29
+      },
+      "numCells": {
+        "x": 1,
+        "y": 1
+      },
+      "metaData": null
+    }
+  },
+  "6a48b527-c925-46e5-ae87-ba729ebfa357": {
+    "Animation": {
+      "name": "racoon-jump",
+      "frameIds": [
+        "1f62aab2-6ee8-40d7-8661-ab1c9ca4d1f7"
+      ]
+    }
+  },
+  "0d95424a-befa-4399-9fae-886b1c2ecc87": {
+    "Animation": {
+      "name": "racoon-fall",
+      "frameIds": [
+        "fa4a9d25-c974-442e-ae65-b87b79756aa5"
+      ]
+    }
+  },
+  "980a67e9-e54d-4b66-a7d9-eb23da82c012": {
+    "FrameState": {
+      "name": "racoon-duck",
+      "pos": {
+        "x": 478,
+        "y": 421
+      },
+      "size": {
+        "x": 21,
+        "y": 29
+      },
+      "numCells": {
+        "x": 1,
+        "y": 1
+      },
+      "metaData": null
+    }
+  },
+  "a9188e49-8642-423b-a70e-3fba54953ada": {
+    "Animation": {
+      "name": "racoon-duck",
+      "frameIds": [
+        "980a67e9-e54d-4b66-a7d9-eb23da82c012"
+      ]
     }
   }
 }

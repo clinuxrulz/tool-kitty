@@ -3,13 +3,29 @@ import { batch, createComputed, createRoot } from "prelude/solid-js";
 
 const gravity = 0.8;
 const dampingFactor = 0.98;
+const groundFriction = 0.9;
 const MAX_VEL_X = 10;
 const MAX_VEL_Y = 20;
+const MARIO_START_X = 100;
+const MARIO_START_Y = 1170;
+const MARIO_JUMP_SOUND = 39;
+const MARIO_SLIDE_SOUND = 54;
 
-const marioWidth = 14*3;
-const marioHeight = 26*3;
-const tileWidth = 16*3;
-const tileHeight = 16*3;
+let gmeReady = false;
+let gmePlaying = false;
+let gme = $.createGmeSystem({
+  fileUrl: "https://clinuxrulz.github.io/kitty/smb3.nsf",
+  onReady: () => {
+    gmeReady = true;
+  },
+});
+
+document.addEventListener("click", () => {
+  if (gmeReady && !gmePlaying) {
+    gme.playMusic(8);
+    gmePlaying = true;
+  }
+});
 
 let cr = createRoot((dispose) => {
   return new $.CollisionResolutionSystem({
@@ -82,7 +98,7 @@ let m = $.world.createEntity([
   }),
   $.transform2DComponentType.create({
     transform: $.Transform2D.create(
-      $.Vec2.create(0,0),
+      $.Vec2.create(MARIO_START_X,MARIO_START_Y),
       $.Complex.rot0,
     ),
   }),
@@ -94,7 +110,7 @@ let m = $.world.createEntity([
   }),
   $.animatedComponentType.create({
     textureAtlasFilename: "ss.json",
-    animationName: "walk",
+    animationName: "stand",
     frameIndex: 0,
   }),
 ]);
@@ -118,8 +134,10 @@ export function onUnload() {
   document.removeEventListener("keyup", keyUpListener);
 }
 
-function updateFrame() {
+let lastSlideSoundT: number = 0;
+function updateFrame(t: number) {
   cr.update();
+  let animatedComponent = $.world.getComponent(m, $.animatedComponentType);
   let velocityComponent = $.world.getComponent(m, $.velocity2DComponentType)!;
   let transformComponent = $.world.getComponent(m, $.transform2DComponentType)!;
   let velocity: $.Vec2 = velocityComponent.state.velocity;
@@ -130,13 +148,64 @@ function updateFrame() {
   //
   if (keyState.left) {
     velocity = velocity.add($.Vec2.create(-0.2, 0));
+    if (!$.world.getComponent(m, $.flipXComponentType)) {
+      $.world.setComponent(m, $.flipXComponentType.create({}));
+    }
+    if (velocity.x < 0) {
+      if (animatedComponent != undefined && $.world.getComponent(m, $.onGroundComponentType) != undefined) {
+        animatedComponent.setState("animationName", "walk");
+      }
+    } else {
+      if (animatedComponent != undefined) {
+        if (animatedComponent.state.animationName != "racoon-slide" || t - lastSlideSoundT > 100) {
+          animatedComponent.setState("animationName", "racoon-slide");
+          gme.playSound(MARIO_SLIDE_SOUND);
+          lastSlideSoundT = t;
+        }
+      }
+    }
   }
   if (keyState.right) {
     velocity = velocity.add($.Vec2.create(0.2, 0));
+    if ($.world.getComponent(m, $.flipXComponentType) != undefined) {
+      $.world.unsetComponent(m, $.flipXComponentType);
+    }
+    if (velocity.x > 0) {
+      if (animatedComponent != undefined && $.world.getComponent(m, $.onGroundComponentType) != undefined) {
+        animatedComponent.setState("animationName", "walk");
+      }
+    } else {
+      if (animatedComponent != undefined) {
+        if (animatedComponent.state.animationName != "racoon-slide" || t - lastSlideSoundT > 100) {
+          animatedComponent.setState("animationName", "racoon-slide");
+          gme.playSound(MARIO_SLIDE_SOUND);
+          lastSlideSoundT = t;
+        }
+      }
+    }
+  }
+  if (!keyState.left && !keyState.right && $.world.getComponent(m, $.onGroundComponentType) != undefined) {
+    velocity = $.Vec2.create(velocity.x * groundFriction, velocity.y);
+    if (velocity.x < 0.5) {
+      if (animatedComponent != undefined) {
+        animatedComponent.setState("animationName", "racoon-stand");
+      }
+    }
   }
   if (keyState.jump) {
     if ($.world.getComponent(m, $.onGroundComponentType) != undefined) {
+      if (animatedComponent != undefined) {
+        animatedComponent.setState("animationName", "racoon-jump");
+      }
       velocity = velocity.add($.Vec2.create(0,-100));
+      gme.playSound(MARIO_JUMP_SOUND);
+    }
+  }
+  if ($.world.getComponent(m, $.onGroundComponentType) == undefined) {
+    if (velocity.y > 0 && animatedComponent != undefined) {
+      if (animatedComponent.state.animationName != "racoon-fall") {
+          animatedComponent.setState("animationName", "racoon-fall");
+      }
     }
   }
   //
@@ -172,10 +241,11 @@ let animate = (t: number) => {
   }
   batch(() => {
     while (atT < t) {
-      updateFrame();
+      updateFrame(t);
       atT += frameDelayMs;
     }
   });
   requestAnimationFrame(animate);
 };
 setTimeout(() => requestAnimationFrame(animate), 5000);
+
