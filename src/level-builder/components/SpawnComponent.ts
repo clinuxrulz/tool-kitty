@@ -1,7 +1,8 @@
 import { EcsComponentType } from "../../ecs/EcsComponent";
-import { tsObject, tsString, TypeSchemaType } from "../../TypeSchema";
+import { tsObject, tsString, TypeSchemaType, vec2TypeSchema } from "../../TypeSchema";
 
 const typeSchema = tsObject({
+  pos: vec2TypeSchema,
   textureAtlasFilename: tsString(),
   frameId: tsString(),
 });

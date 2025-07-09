@@ -7,6 +7,7 @@ import {
 } from "../../components/LevelComponent";
 import { FrameState } from "../../components/FrameComponent";
 import { IEcsWorld } from "../../../ecs/IEcsWorld";
+import { spawnComponentType, SpawnState } from "../../components/SpawnComponent";
 
 export class RenderSystem {
   readonly Render: Component;
@@ -98,6 +99,24 @@ export class RenderSystem {
                 );
               }}
             </Index>
+            <For each={params.world().entitiesWithComponentType(spawnComponentType)}>
+              {(spawnEntity) => {
+                let spawn = createMemo(() => params.world().getComponent(spawnEntity, spawnComponentType)?.state);
+                return (
+                  <Show when={spawn()} keyed>
+                    {(spawn) => (
+                      <RenderSpawn
+                        spawn={spawn}
+                        renderParams={params.renderParams}
+                        imageFrameLookupMap={imageFrameLookupMap()}
+                        tileWidth={tileWidth()}
+                        tileHeight={tileHeight()}
+                      />
+                    )}
+                  </Show>
+                );
+              }}
+            </For>
             <For
               each={Array(level2().mapData.length + 1)
                 .fill(undefined)
@@ -218,6 +237,81 @@ const RenderCell: Component<{
             <image
               x={posX - frame3().pos.x * scaleX()}
               y={posY - frame3().pos.y * scaleY()}
+              width={backgroundWidth()}
+              height={backgroundHeight()}
+              style={{
+                "image-rendering": "pixelated",
+              }}
+              href={imageUrl()}
+              attr:clip-path={
+                `inset(` +
+                `${frame3().pos.y * scaleY()}px ` +
+                `${(image().width - frame3().pos.x - frame3().size.x) * scaleX()}px ` +
+                `${(image().height - frame3().pos.y - frame3().size.y) * scaleY()}px ` +
+                `${frame3().pos.x * scaleX()}px` +
+                `)`
+              }
+              preserveAspectRatio="none"
+            />
+          );
+        }}
+      </Show>
+    </>
+  );
+};
+
+const RenderSpawn: Component<{
+  renderParams: RenderParams;
+  spawn: SpawnState;
+  imageFrameLookupMap:
+    | Map<
+        string,
+        Map<
+          string,
+          {
+            image: HTMLImageElement;
+            frame: FrameState;
+          }
+        >
+      >
+    | undefined;
+  tileWidth: number;
+  tileHeight: number;
+}> = (props) => {
+  let imageFrameLookupMap = () => props.imageFrameLookupMap;
+  let frame = createMemo(() => {
+    let textureAtlasRef = props.spawn.textureAtlasFilename;
+    let frameRef = props.spawn.frameId;
+    let imageFrameLookupMap2 = imageFrameLookupMap();
+    if (imageFrameLookupMap2 == undefined) {
+      return undefined;
+    }
+    let tmp3 = imageFrameLookupMap2.get(textureAtlasRef)?.get(frameRef);
+    return tmp3;
+  });
+  return (
+    <>
+      <Show when={frame()}>
+        {(frame2) => {
+          let frame3 = () => frame2().frame;
+          let image = () => frame2().image;
+          let scaleX = createMemo(
+            () =>
+              (props.renderParams.tileWidth() * frame3().numCells.x) /
+              frame3().size.x,
+          );
+          let scaleY = createMemo(
+            () =>
+              (props.renderParams.tileHeight() * frame3().numCells.y) /
+              frame3().size.y,
+          );
+          let backgroundWidth = createMemo(() => image().width * scaleX());
+          let backgroundHeight = createMemo(() => image().height * scaleY());
+          let imageUrl = () => image().src;
+          return (
+            <image
+              x={props.spawn.pos.x- frame3().pos.x * scaleX()}
+              y={props.spawn.pos.y- frame3().pos.y * scaleY()}
               width={backgroundWidth()}
               height={backgroundHeight()}
               style={{

@@ -41,6 +41,7 @@ import { IEcsWorld } from "../../ecs/IEcsWorld";
 import { NoTrack } from "../../util";
 import ImageTileMatcher from "./ImageTileMatcher";
 import { createPanZoomManager } from "../../PanZoomManager";
+import { InsertSpawnMode } from "./modes/InsertSpawnMode";
 
 const AUTO_SAVE_TIMEOUT = 2000;
 
@@ -338,6 +339,9 @@ export class Level {
     const insertTile = () => {
       setMode(() => new InsertTileMode(modeParams));
     };
+    const insertSpawn = () => {
+      setMode(() => new InsertSpawnMode(modeParams));
+    };
     const launchImageTileMatcher = () => {
       setState(
         "overlayApp",
@@ -533,6 +537,12 @@ export class Level {
                   </>
                 );
               })()}
+            </button>
+            <button
+              class="btn"
+              onClick={() => insertSpawn()}
+            >
+              <i class="fa-solid fa-location-dot"/>
             </button>
             <button class="btn" onClick={() => launchImageTileMatcher()}>
               Image Tile Matcher
