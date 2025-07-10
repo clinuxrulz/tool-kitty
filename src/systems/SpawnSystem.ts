@@ -6,10 +6,11 @@ import { createStore } from "solid-js/store";
 import { EcsWorldAutomergeProjection } from "../ecs/EcsWorldAutomergeProjection";
 import { registry } from "../level-builder/components/registry";
 import { levelComponentType } from "../level-builder/components/LevelComponent";
+import { spawnComponentType, SpawnState } from "../level-builder/components/SpawnComponent";
 
 export function createSpawnSystem(params: {
   world: EcsWorld,
-  doSpawn: (metaData: any) =>  string | undefined,
+  doSpawn: (params: { spawn: SpawnState, }) =>  string | undefined,
 }): {
   dispose: () => void,
 } {
@@ -159,10 +160,17 @@ export function createSpawnSystem(params: {
         if (levelIds.length != 1) {
           return undefined;
         }
-        return level.getComponent(levelIds[0], levelComponentType);
+        let level2 = level.getComponent(levelIds[0], levelComponentType);
+        if (level2 == undefined) {
+          return undefined;
+        }
+        return {
+          levelWorld: level,
+          level: level2,
+        };
       }))
       .filterNonNullable()
-      .run((level) => {
+      .run(({ levelWorld, level, }) => {
         /**
          * key `${xCoordIdx}/${yCoordIdx}`
          * value entity
@@ -193,6 +201,7 @@ export function createSpawnSystem(params: {
           return result;
         });
         createComputed(() => {
+          let cameraPos2 = cameraPos();
           let shortIdToFrameIdMap2 = shortIdToFrameIdMap();
           let frameIdToFrameMap2 = frameIdToFrameMap();
           if (frameIdToFrameMap2 == undefined) {
@@ -205,50 +214,33 @@ export function createSpawnSystem(params: {
             }
           }
           toRemove.forEach((key) => alreadySpawnedMap.delete(key));
-          let rangeIdx2 = rangeIdx();
-          for (let yIdx = rangeIdx2.minYIdx; yIdx <= rangeIdx2.maxYIdx; ++yIdx) {
-            if (lastMinYIdx != undefined && lastMaxYIdx != undefined) {
-              if (lastMinYIdx <= yIdx && yIdx <= lastMaxYIdx) {
-                continue;
-              }
-            }
-            if (yIdx < 0 || yIdx >= level.state.mapData.length) {
+          let newlyVisibleSpawns: { spawnEntity: string, spawn: SpawnState, }[] = [];
+          for (let spawnEntity of levelWorld.entitiesWithComponentType(spawnComponentType)) {
+            if (alreadySpawnedMap.has(spawnEntity)) {
               continue;
             }
-            let row = level.state.mapData[yIdx];
-            for (let xIdx = rangeIdx2.minXIdx; xIdx <= rangeIdx2.maxXIdx; ++xIdx) {
-              if (lastMinXIdx != undefined && lastMaxXIdx != undefined) {
-                if (lastMinXIdx < xIdx && xIdx <= lastMaxXIdx) {
-                  continue;
-                }
-              }
-              if (xIdx < 0 || xIdx >= row.length) {
-                continue;
-              }
-              let shortId = row[xIdx];
-              let frameId = shortIdToFrameIdMap2.get(shortId);
-              if (frameId == undefined) {
-                continue;
-              }
-              let frame = frameIdToFrameMap2.get(frameId);
-              if (frame == undefined) {
-                continue;
-              }
-              //
-              let key = `${xIdx}/${yIdx}`;
-              if (alreadySpawnedMap.has(key)) {
-                continue;
-              }
-              let entity = doSpawn(frame.metaData);
-              if (entity != undefined) {
-                alreadySpawnedMap.set(key, entity);
-              }
+            let spawn = levelWorld.getComponent(spawnEntity, spawnComponentType)?.state;
+            if (spawn == undefined) {
+              continue;
+            }
+            let x = spawn.pos.x - cameraPos2.x;
+            let y = spawn.pos.y - cameraPos2.y;
+            if (x < 0 || y < 0 || x > state.windowWidth || y > state.windowHeight) {
+              continue;
+            }
+            newlyVisibleSpawns.push({
+              spawnEntity,
+              spawn,
+            });
+          }
+          for (let newSpawn of newlyVisibleSpawns) {
+            let entity = doSpawn({
+              spawn: newSpawn.spawn,
+            });
+            if (entity != undefined) {
+              alreadySpawnedMap.set(newSpawn.spawnEntity, entity);
             }
           }
-          lastMinXIdx = rangeIdx2.minXIdx;
-          lastMaxXIdx = rangeIdx2.maxXIdx;
-          lastMinYIdx = rangeIdx2.minYIdx;
-          lastMaxYIdx = rangeIdx2.maxYIdx;
         });
       });
     return { dispose, };

@@ -15,6 +15,7 @@ export * from './TypeSchema';
 export { PixiRenderSystem } from './systems/PixiRenderSystem';
 export { createGmeSystem } from './systems/GmeSystem';
 export { createMonsterLogicSystem } from './systems/MonsterLogicSystem';
+export { createSpawnSystem } from './systems/SpawnSystem';
 export { createVirtualDPadSystem } from './systems/VirtualDPadSystem';
 export { CollisionResolutionSystem, createCollisionResolutionSystem } from './systems/CollisionResolutionSystem';
 export * from 'solid-js';
