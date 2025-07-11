@@ -70,8 +70,8 @@ export class Level {
     // Short name
     let textureAtlases = params.textureAtlasWithImageAndFramesList;
     //
-    let tileWidth: Accessor<number> = () => 50;
-    let tileHeight: Accessor<number> = () => 50;
+    let tileWidth: Accessor<number> = () => 16*3;
+    let tileHeight: Accessor<number> = () => 16*3;
     //
     let [state, setState] = createStore<{
       mousePos: Vec2 | undefined;
