@@ -6,7 +6,9 @@ import {
   createSelector,
   For,
   JSX,
+  lazy,
   on,
+  Show,
   untrack,
 } from "solid-js";
 import { createStore, SetStoreFunction, Store } from "solid-js/store";
@@ -23,10 +25,14 @@ import {
 } from "solid-fs-automerge";
 import { makeDocumentProjection } from "solid-automerge";
 import { mkAccessorToPromise, uint8ArrayToBase64 } from "../util";
+import boxSvgUrl from "../assets/game-icons--cardboard-box.svg?url";
+import { Portal } from "solid-js/web";
+const BundledAssetFilePicker = lazy(() => import("./BundledAssetFilePicker"));
 
 type State = {
   textureAtlasFiles: [string, string][];
   selectedTextureAtlasByFileId: string | undefined;
+  overlayForm: Component | undefined,
 };
 
 export class TextureAtlasList {
@@ -46,7 +52,41 @@ export class TextureAtlasList {
     let [state, setState] = createStore<State>({
       selectedTextureAtlasByFileId: undefined,
       textureAtlasFiles: [],
+      overlayForm: undefined,
     });
+    let addTextureAtlasFromBundledAsset = () => {
+      setState(
+        "overlayForm",
+        () => () => (
+          <div
+            class="bg-base-200"
+            style={{
+              "position": "absolute",
+              "inset": "10px",
+              "display": "flex",
+              "flex-direction": "column",
+              "overflow": "hidden",
+            }}
+          >
+            <div
+              style="flex-grow: 1; overflow-y: scroll;"
+            >
+              <BundledAssetFilePicker/>
+            </div>
+            <div>
+              <button
+                class="btn btn-primary"
+                onClick={() => {
+                  setState("overlayForm", undefined);
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )
+      );
+    };
     //
     createEffect(
       on([params.textureAtlasesFolder], () => {
@@ -201,7 +241,7 @@ export class TextureAtlasList {
           setState("selectedTextureAtlasByFileId", undefined);
         }
       };
-      return (
+      return (<>
         <div style={props.style}>
           <div
             style={{
@@ -220,6 +260,9 @@ export class TextureAtlasList {
             </div>
             <button class="btn" onClick={() => addTextureAtlas()}>
               <i class="fa-solid fa-circle-plus"></i>
+            </button>
+            <button class="btn" onClick={() => addTextureAtlasFromBundledAsset()}>
+              <img src={boxSvgUrl} style="height: 24px;"/>
             </button>
             <input
               ref={addTextureAtlasInput}
@@ -265,7 +308,14 @@ export class TextureAtlasList {
             </For>
           </div>
         </div>
-      );
+        <Show when={state.overlayForm} keyed>
+          {(OverlayForm) => (
+            <Portal>
+              <OverlayForm/>
+            </Portal>
+          )}
+        </Show>
+      </>);
     };
   }
 }
