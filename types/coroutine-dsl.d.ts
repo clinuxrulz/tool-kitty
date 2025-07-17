@@ -1,0 +1,11 @@
+import { Cont } from './Cont';
+export declare const nop: Cont<void>;
+export declare function callCC(fn: (k: Cont<void>) => void): void;
+export type Label = () => Cont<void>;
+export declare function provideNextFrame(nextFrame: (k: Cont<void>) => void): (cb: () => void) => void;
+export declare function nextFrame(): void;
+export declare function toPerFrameUpdateFn(cb: () => void): () => void;
+export declare function makeLabel(): Label;
+export declare function goto(label: Label): void;
+export declare function while_(cond: Cont<boolean> | (() => boolean)): (body: () => void) => void;
+export declare function sideEffect(cb: () => void): void;

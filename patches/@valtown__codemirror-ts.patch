@@ -1,0 +1,44 @@
+diff --git a/dist/autocomplete/getAutocompletion.js b/dist/autocomplete/getAutocompletion.js
+index 113914eeacf0c16fe311eab4abced420f10bdf4f..99af28ab1edf28329ca3ad5e47dc6002d394f44a 100644
+--- a/dist/autocomplete/getAutocompletion.js
++++ b/dist/autocomplete/getAutocompletion.js
+@@ -1,8 +1,9 @@
+-import ts from "typescript";
++//import * as ts from "typescript";
+ import { DEFAULT_CODEMIRROR_TYPE_ICONS } from "./icons.js";
+ import { matchBefore } from "./matchBefore.js";
+ const TS_COMPLETE_BLOCKLIST = [
+-    ts.ScriptElementKind.warning,
++    "warning",
++    //ts.ScriptElementKind.warning,
+ ];
+ export async function getAutocompletion({ env, path, context, }) {
+     const { pos, explicit } = context;
+diff --git a/dist/lint/utils.js b/dist/lint/utils.js
+index 9a316247606d29fb67b8d1a8c0f14843d2b07b15..c9b1faefeb06e96ccf30dbea94ea9e6dd296af15 100644
+--- a/dist/lint/utils.js
++++ b/dist/lint/utils.js
+@@ -1,4 +1,4 @@
+-import ts from "typescript";
++import * as ts from "typescript";
+ /**
+  * TypeScript has a set of diagnostic categories,
+  * which maps roughly onto CodeMirror's categories.
+@@ -10,13 +10,13 @@ export function tsCategoryToSeverity(diagnostic) {
+         return "warning";
+     }
+     switch (diagnostic.category) {
+-        case ts.DiagnosticCategory.Error:
++        case 1: //ts.DiagnosticCategory.Error:
+             return "error";
+-        case ts.DiagnosticCategory.Message:
++        case 3: // ts.DiagnosticCategory.Message:
+             return "info";
+-        case ts.DiagnosticCategory.Warning:
++        case 0: //ts.DiagnosticCategory.Warning:
+             return "warning";
+-        case ts.DiagnosticCategory.Suggestion:
++        case 2: //ts.DiagnosticCategory.Suggestion:
+             return "info";
+     }
+ }

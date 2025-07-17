@@ -1,0 +1,5 @@
+packages:
+  - packages/*
+
+patchedDependencies:
+  '@valtown/codemirror-ts': patches/@valtown__codemirror-ts.patch
