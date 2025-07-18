@@ -1,3 +1,4 @@
+import JSZip from "jszip";
 import {
   Accessor,
   batch,
@@ -42,6 +43,7 @@ import { EcsWorldAutomergeProjection } from "../../ecs/EcsWorldAutomergeProjecti
 import ImageToTilesetCreator from "./ImageToTilesetCreator";
 import Animations from "../animations/Animations";
 import { createPanZoomManager } from "../../PanZoomManager";
+import { bundledAssets } from "../BundledAssetFilePicker";
 
 type State = {
   mousePos: Vec2 | undefined;
@@ -158,6 +160,48 @@ export class TextureAtlas {
               return;
             }
             let imageFilename = textureAtlas.imageRef;
+            // "bundled:"" path
+            {
+              let bundledResourceRegEx = /^bundled:(.*?\.zip)\/(.*)$/;
+              let match = bundledResourceRegEx.exec(imageFilename);
+              if (match != null) {
+                let zipFilename = match[1];
+                let resourcePath = match[2];
+                (async () => {
+                  let url = bundledAssets[zipFilename];
+                  if (url == undefined) {
+                    return;
+                  }
+                  let response = await fetch(/* @vite-ignore */url);
+                  let blob = await response.blob();
+                  let zip = await JSZip.loadAsync(blob);
+                  let file = zip.file(resourcePath);
+                  if (file == null) {
+                    return;
+                  }
+                  let blob2 = await file.async("blob");
+                  let imageUrl = URL.createObjectURL(blob2);
+                  imageUrlDispose()();
+                  setImageUrlDispose(() => () => {
+                    URL.revokeObjectURL(imageUrl);
+                  });
+                  let image = new Image();
+                  image.src = imageUrl;
+                  image.style.setProperty("image-rendering", "pixelated");
+                  image.onload = () => {
+                    batch(() => {
+                      setImageFileId(imageFilename);
+                      setImage(image);
+                      setSize(Vec2.create(image.width, image.height));
+                    });
+                  };
+                  setState("world", world);
+                  //
+                })();
+                return;
+              }
+            }
+            //
             let filesAndFolders = createMemo(() => imagesFolder2.contents);
             createEffect(
               on(filesAndFolders, () => {

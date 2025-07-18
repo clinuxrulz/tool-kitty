@@ -3,22 +3,23 @@ import { ReactiveSet } from "@solid-primitives/set";
 import { asyncFailed, asyncPending, AsyncResult, asyncSuccess, Result } from "control-flow-as-value";
 import { Accessor, Component, createMemo, createSignal, For, mapArray, Match, onMount, Show, Switch } from "solid-js";
 
-const bundledAssets = import.meta.glob(
+const bundledAssets_ = import.meta.glob(
   "../../bundled_assets/*.zip",
   {
     query: "?url",
     eager: true,
   }
 ) as Record<string,{ default: string, }>;
-let bundledAssets2: Record<string,string> = {};
+let bundledAssets_2: Record<string,string> = {};
 {
   let pathSkipSize = "../../bundled_assets/".length;
-  for (let [ path, url ] of Object.entries(bundledAssets)) {
+  for (let [ path, url ] of Object.entries(bundledAssets_)) {
     let url2 = url.default;
     let path2 = path.slice(pathSkipSize);
-    bundledAssets2[path2] = url2;
+    bundledAssets_2[path2] = url2;
   }
 }
+export const bundledAssets = bundledAssets_2;
 
 type TreeNode = {
   type: "Folder",
@@ -29,10 +30,14 @@ type TreeNode = {
   name: string,
 };
 
-const BundledAssetFilePicker: Component<{}> = (props) => {
+const BundledAssetFilePicker: Component<{
+  isFileChoosable: (filename: string) => boolean,
+  chooseText: string,
+  onChoose: (path: string) => void,
+}> = (props) => {
   let tree: Accessor<TreeNode[]>;
   {
-    let tree_ = Object.entries(bundledAssets2)
+    let tree_ = Object.entries(bundledAssets_2)
       .map(
         ([ filename, url ]) =>
           bundledZipToTreeNode({ filename, url, })
@@ -52,6 +57,12 @@ const BundledAssetFilePicker: Component<{}> = (props) => {
         expandedSet.delete(name);
       }
     },
+    atPath: undefined,
+    isFileChoosable: props.isFileChoosable,
+    get chooseText() {
+      return props.chooseText;
+    },
+    onChoose: props.onChoose,
   });
   return (<RenderTree/>);
 };
@@ -60,6 +71,10 @@ function createRenderTree(props: {
   tree: TreeNode[],
   isExpanded: (name: string) => boolean,
   setExpanded: (name: string, expanded: boolean) => void,
+  atPath: string | undefined,
+  isFileChoosable: (filename: string) => boolean,
+  chooseText: string,
+  onChoose: (path: string) => void,
 }): {
   firstRowHeight: Accessor<number | undefined>,
   height: Accessor<number | undefined>,
@@ -78,11 +93,29 @@ function createRenderTree(props: {
             folder: treeNode,
             isExpanded: props.isExpanded,
             setExpanded: props.setExpanded,
+            atPath:
+              props.atPath == undefined ?
+                treeNode.name :
+                `${props.atPath}/${treeNode.name}`,
+            isFileChoosable: props.isFileChoosable,
+            get chooseText() {
+              return props.chooseText;
+            },
+            onChoose: props.onChoose,
           });
         }
         case "File": {
           let tmp = createRenderFile({
             file: treeNode,
+            atPath:
+              props.atPath == undefined ?
+                treeNode.name :
+                `${props.atPath}/${treeNode.name}`,
+            isFileChoosable: props.isFileChoosable,
+            get chooseText() {
+              return props.chooseText;
+            },
+            onChoose: props.onChoose,
           });
           return {
             firstRowHeight: tmp.height,
@@ -155,6 +188,10 @@ function createRenderFolder(props: {
   folder: Extract<TreeNode, { type: "Folder", }>,
   isExpanded: (name: string) => boolean,
   setExpanded: (name: string, expanded: boolean) => void,
+  atPath: string,
+  isFileChoosable: (filename: string) => boolean,
+  chooseText: string,
+  onChoose: (path: string) => void,
 }): {
   firstRowHeight: Accessor<number | undefined>,
   height: Accessor<number | undefined>,
@@ -190,6 +227,12 @@ function createRenderFolder(props: {
         props.isExpanded(`${props.folder.name}/${name}`),
       setExpanded: (name, expanded) =>
         props.setExpanded(`${props.folder.name}/${name}`, expanded),
+      atPath: props.atPath,
+      isFileChoosable: props.isFileChoosable,
+      get chooseText() {
+        return props.chooseText;
+      },
+      onChoose: props.onChoose,
     });
   });
   let rowsWithHeights = createMemo(() => renderTree()?.rowsWithHeights?.() ?? []);
@@ -359,6 +402,10 @@ function createRenderFolder(props: {
 
 function createRenderFile(props: {
   file: Extract<TreeNode, { type: "File", }>,
+  atPath: string,
+  isFileChoosable: (filename: string) => boolean,
+  chooseText: string,
+  onChoose: (path: string) => void,
 }): {
   height: Accessor<number | undefined>,
   Render: Component,
@@ -372,7 +419,19 @@ function createRenderFile(props: {
         let rect = rowDiv.getBoundingClientRect();
         setHeight(rect.height);
       });
-      return (<div ref={rowDiv}>{props.file.name}</div>);
+      return (
+        <div ref={rowDiv}>
+          {props.file.name}
+          <Show when={props.isFileChoosable(props.file.name)}>
+            <button
+              class="btn btn-sm btn-primary"
+              onClick={() => props.onChoose(props.atPath)}
+            >
+              {props.chooseText}
+            </button>
+          </Show>
+        </div>
+      );
     },
   };
 }

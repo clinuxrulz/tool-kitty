@@ -71,7 +71,48 @@ export class TextureAtlasList {
             <div
               style="flex-grow: 1; overflow-y: scroll;"
             >
-              <BundledAssetFilePicker/>
+              <BundledAssetFilePicker
+                isFileChoosable={(filename) => filename.endsWith(".png")}
+                onChoose={async (path) => {
+                  let textureAtlasesFolder = params.textureAtlasesFolder();
+                  if (textureAtlasesFolder.type != "Success") {
+                    return;
+                  }
+                  let textureAtlasesFolder2 = textureAtlasesFolder.value;
+                  let textureAtlasName = window.prompt(
+                    "Enter filename for texture atlas",
+                  );
+                  if (textureAtlasName == null) {
+                    return;
+                  }
+                  textureAtlasName = textureAtlasName.trim();
+                  if (textureAtlasName.length == 0) {
+                    return;
+                  }
+                  if (!textureAtlasName.endsWith(".json")) {
+                    textureAtlasName += ".json";
+                  }
+                  let world = new EcsWorld();
+                  world.createEntity([
+                    textureAtlasComponentType.create({
+                      imageRef: "bundled:" + path,
+                    }),
+                  ]);
+                  let result = await textureAtlasesFolder2.createFile(
+                    textureAtlasName,
+                    world.toJson(),
+                  );
+                  if (result.type == "Err") {
+                    console.log(result.message);
+                    return;
+                  }
+                  let fileId = result.value.id;
+                  //
+                  setState("selectedTextureAtlasByFileId", fileId);
+                  setState("overlayForm", undefined);
+                }}
+                chooseText="Use This"
+              />
             </div>
             <div>
               <button
