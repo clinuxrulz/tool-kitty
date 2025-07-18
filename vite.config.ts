@@ -5,6 +5,7 @@ import solidPlugin from 'vite-plugin-solid';
 import wasmPlugin from "vite-plugin-wasm";
 import mkcertPlugin from "vite-plugin-mkcert";
 import dts from 'vite-plugin-dts';
+import solidSvg from 'vite-plugin-solid-svg';
 
 export default defineConfig({
   base: "",
@@ -12,6 +13,7 @@ export default defineConfig({
     //unocssPlugin(),
     tailwindcss(),
     solidPlugin(),
+    solidSvg(),
     wasmPlugin(),
     // mkcertPlugin(),
     dts({

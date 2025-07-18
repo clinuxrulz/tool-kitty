@@ -25,7 +25,7 @@ import {
 } from "solid-fs-automerge";
 import { makeDocumentProjection } from "solid-automerge";
 import { mkAccessorToPromise, uint8ArrayToBase64 } from "../util";
-import boxSvgUrl from "../assets/game-icons--cardboard-box.svg?url";
+import BoxSvg from "../assets/game-icons--cardboard-box.svg";
 import { Portal } from "solid-js/web";
 const BundledAssetFilePicker = lazy(() => import("./BundledAssetFilePicker"));
 
@@ -262,7 +262,7 @@ export class TextureAtlasList {
               <i class="fa-solid fa-circle-plus"></i>
             </button>
             <button class="btn" onClick={() => addTextureAtlasFromBundledAsset()}>
-              <img src={boxSvgUrl} style="height: 24px;"/>
+              <BoxSvg style={{ "color": "red", "scale": "0.08", }}/>
             </button>
             <input
               ref={addTextureAtlasInput}

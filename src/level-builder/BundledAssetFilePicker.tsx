@@ -1,8 +1,7 @@
-import JSZip, { file } from "jszip";
+import JSZip, { folder } from "jszip";
 import { ReactiveSet } from "@solid-primitives/set";
 import { asyncFailed, asyncPending, AsyncResult, asyncSuccess, Result } from "control-flow-as-value";
-import { Accessor, Component, createEffect, createMemo, createSignal, For, mapArray, Match, onMount, Show, Switch } from "solid-js";
-import { createSign } from "crypto";
+import { Accessor, Component, createMemo, createSignal, For, mapArray, Match, onMount, Show, Switch } from "solid-js";
 
 const bundledAssets = import.meta.glob(
   "../../bundled_assets/*.zip",
@@ -40,26 +39,27 @@ const BundledAssetFilePicker: Component<{}> = (props) => {
       );
     tree = () => tree_;
   }
-  let expandedSet = new ReactiveSet();
-  // test
-  for (let node of tree()) {
-    if (node.type == "Folder") {
-      let children = node.children();
-      createEffect(() => console.log(children()));
-    }
-  }
-  //
+  let expandedSet = new ReactiveSet<string>();
   let { Render: RenderTree } = createRenderTree({
     get tree() {
       return tree();
     },
+    isExpanded: (name) => expandedSet.has(name),
+    setExpanded: (name, expanded) => {
+      if (expanded) {
+        expandedSet.add(name);
+      } else {
+        expandedSet.delete(name);
+      }
+    },
   });
-  //
   return (<RenderTree/>);
 };
 
 function createRenderTree(props: {
   tree: TreeNode[],
+  isExpanded: (name: string) => boolean,
+  setExpanded: (name: string, expanded: boolean) => void,
 }): {
   firstRowHeight: Accessor<number | undefined>,
   height: Accessor<number | undefined>,
@@ -76,6 +76,8 @@ function createRenderTree(props: {
         case "Folder": {
           return createRenderFolder({
             folder: treeNode,
+            isExpanded: props.isExpanded,
+            setExpanded: props.setExpanded,
           });
         }
         case "File": {
@@ -151,6 +153,8 @@ function createRenderTree(props: {
 
 function createRenderFolder(props: {
   folder: Extract<TreeNode, { type: "Folder", }>,
+  isExpanded: (name: string) => boolean,
+  setExpanded: (name: string, expanded: boolean) => void,
 }): {
   firstRowHeight: Accessor<number | undefined>,
   height: Accessor<number | undefined>,
@@ -182,11 +186,18 @@ function createRenderFolder(props: {
       get tree() {
         return childrenSuccess()!;
       },
+      isExpanded: (name) =>
+        props.isExpanded(`${props.folder.name}/${name}`),
+      setExpanded: (name, expanded) =>
+        props.setExpanded(`${props.folder.name}/${name}`, expanded),
     });
   });
   let rowsWithHeights = createMemo(() => renderTree()?.rowsWithHeights?.() ?? []);
   let [ firstRowHeight, setFirstRowHeight, ] = createSignal<number>();
   let height = createMemo(() => {
+    if (!props.isExpanded(props.folder.name)) {
+      return firstRowHeight();
+    }
     let firstRowHeight2 = firstRowHeight();
     if (firstRowHeight2 == undefined) {
       return undefined;
@@ -267,51 +278,78 @@ function createRenderFolder(props: {
               {(firstRowHeight) => (<>
                 <div
                   style={{
+                    display: "flex",
                     "margin-top": `${0.5 * (firstRowHeight() - 15)}px`,
                     width: "15px",
                     height: "15px",
                     border: "1px solid green",
                     color: "green",
-                    "text-align": "center",
-                    "vertical-align": "middle",
-                    "padding": 0,
+                    "justify-content": "center",
+                    "align-items": "center",
+                    "cursor": "pointer",
+                  }}
+                  onClick={() => {
+                    props.setExpanded(
+                      props.folder.name,
+                      !props.isExpanded(
+                        props.folder.name,
+                      ),
+                    );
                   }}
                 >
+                  <span
+                    style={{
+                      "font-size": "20px",
+                      "line-height": "1",
+                    }}
+                  >
+                    <Switch
+                      fallback={"+"}
+                    >
+                      <Match when={props.isExpanded(props.folder.name)}>
+                        -
+                      </Match>
+                    </Switch>
+                  </span>
                 </div>
-                <Show when={vline()}>
-                  {(vline) => (
-                    <div>
-                      <div
-                        style={{
-                          "margin-left": `${0.5 * 15}px`,
-                          "margin-top": `${0}px`,
-                          "margin-right": "5px",
-                          height: `${vline().height - vline().offsetY - 0.5 * 15 + 0.5 * firstRowHeight() + 1}px`,
-                          width: "2px",
-                          "background-color": "green",
-                        }}
-                      />
-                    </div>
-                  )}
+                <Show when={props.isExpanded(props.folder.name)}>
+                  <Show when={vline()}>
+                    {(vline) => (
+                      <div>
+                        <div
+                          style={{
+                            "margin-left": `${0.5 * 15}px`,
+                            "margin-top": `${0}px`,
+                            "margin-right": "5px",
+                            height: `${vline().height - vline().offsetY - 0.5 * 15 + 0.5 * firstRowHeight() + 1}px`,
+                            width: "2px",
+                            "background-color": "green",
+                          }}
+                        />
+                      </div>
+                    )}
+                  </Show>
                 </Show>
               </>)}
             </Show>
           </div>
           <div>
             <div ref={rowDiv}>{props.folder.name}</div>
-            <div>
-              <Switch>
-                <Match when={children().type == "Pending"}>
-                  Loading...
-                </Match>
-                <Match when={childrenFailed()} keyed>
-                  {(error) => (<>Error: {error}</>)}
-                </Match>
-                <Match when={renderTree()} keyed>
-                  {(renderTree) => (<renderTree.Render/>)}
-                </Match>
-              </Switch>
-            </div>
+            <Show when={props.isExpanded(props.folder.name)}>
+              <div>
+                <Switch>
+                  <Match when={children().type == "Pending"}>
+                    Loading...
+                  </Match>
+                  <Match when={childrenFailed()} keyed>
+                    {(error) => (<>Error: {error}</>)}
+                  </Match>
+                  <Match when={renderTree()} keyed>
+                    {(renderTree) => (<renderTree.Render/>)}
+                  </Match>
+                </Switch>
+              </div>
+            </Show>
           </div>
         </div>
       );

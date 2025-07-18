@@ -8,7 +8,11 @@
     "esModuleInterop": true,
     "jsx": "preserve",
     "jsxImportSource": "solid-js",
-    "types": ["vite/client", "@testing-library/jest-dom"],
+    "types": [
+      "vite-plugin-solid-svg/types-component-solid",
+      "vite/client",
+      "@testing-library/jest-dom"
+    ],
     "noEmit": true,
     "isolatedModules": true,
     "skipLibCheck": true
