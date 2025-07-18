@@ -262,7 +262,7 @@ export class TextureAtlasList {
               <i class="fa-solid fa-circle-plus"></i>
             </button>
             <button class="btn" onClick={() => addTextureAtlasFromBundledAsset()}>
-              <BoxSvg style={{ "color": "red", "scale": "0.08", }}/>
+              <BoxSvg width="24" height="24" viewBox="0 0 512 512" style={{ "color": "red", }}/>
             </button>
             <input
               ref={addTextureAtlasInput}
