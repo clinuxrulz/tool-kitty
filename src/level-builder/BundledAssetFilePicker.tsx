@@ -63,6 +63,10 @@ function createRenderTree(props: {
 }): {
   firstRowHeight: Accessor<number | undefined>,
   height: Accessor<number | undefined>,
+  rowsWithHeights: Accessor<{
+    firstRowHeight: Accessor<number | undefined>,
+    height: Accessor<number | undefined>,
+  }[]>,
   Render: Component,
 } {
   let rowsWithHeights = createMemo(mapArray(
@@ -94,36 +98,6 @@ function createRenderTree(props: {
     }
     return rowsWithHeights2[0].firstRowHeight();
   });
-  let lastRowFirstRowHeight = createMemo(() => {
-    let rowsWithHeights2 = rowsWithHeights();
-    if (rowsWithHeights2.length == 0) {
-      return undefined;
-    }
-    return rowsWithHeights2[rowsWithHeights2.length-1].firstRowHeight();
-  });
-  let vlineHeight = createMemo(() => {
-    let rowsWithHeights2 = rowsWithHeights();
-    if (rowsWithHeights2.length == 0) {
-      return undefined;
-    }
-    let firstRowHeight2 = firstRowHeight();
-    if (firstRowHeight2 == undefined) {
-      return undefined;
-    }
-    let lastRowFirstRowHeight2 = lastRowFirstRowHeight();
-    if (lastRowFirstRowHeight2 == undefined) {
-      return undefined;
-    }
-    let total = -0.5 * firstRowHeight2 + 0.5 * lastRowFirstRowHeight2;
-    for (let i = 0; i < rowsWithHeights2.length-1; ++i) {
-      let height = rowsWithHeights2[i].height();
-      if (height == undefined) {
-        continue;
-      }
-      total += height;
-    }
-    return total;
-  });
   let height = createMemo(() => {
     let rowsWithHeights2 = rowsWithHeights();
     if (rowsWithHeights2.length == 0) {
@@ -133,54 +107,43 @@ function createRenderTree(props: {
     for (let entry of rowsWithHeights2) {
       let height = entry.height();
       if (height == undefined) {
-        continue;
+        return undefined;
       }
       total += height;
     }
     return total;
   });
-  let vline = createMemo(() => {
-    let firstRowHeight2 = firstRowHeight();
-    if (firstRowHeight2 == undefined) {
-      return undefined;
-    }
-    let vlineHeight2 = vlineHeight();
-    if (vlineHeight2 == undefined) {
-      return undefined;
-    }
-    return {
-      offsetY: 0.5 * firstRowHeight2,
-      height: vlineHeight2,
-    };
-  });
   return {
     firstRowHeight,
     height,
+    rowsWithHeights,
     Render: () => (
-      <div
-        style={{
-          display: "flex",
-          "flex-direction": "row",
-        }}
-      >
-        <Show when={vline()}>
-          {(vline) => (
+      <div>
+        <For each={rowsWithHeights()}>
+          {(row) => (
             <div
               style={{
-                "margin-top": `${vline().offsetY}px`,
-                "margin-right": "5px",
-                height: `${vline().height}px`,
-                width: "2px",
-                "background-color": "green",
+                display: "flex",
+                "flex-direction": "row",
               }}
-            />
+            >
+              <Show when={row.firstRowHeight()}>
+                {(height) => (
+                  <div
+                    style={{
+                      "margin-top": `${0.5 * height() - 1}px`,
+                      "margin-left": "-5px",
+                      height: "2px",
+                      width: "10px",
+                      "background-color": "green",
+                    }}
+                  />
+                )}
+              </Show>
+              <row.Render/>
+            </div>
           )}
-        </Show>
-        <div>
-          <For each={rowsWithHeights()}>
-            {(row) => (<row.Render/>)}
-          </For>
-        </div>
+        </For>
       </div>
     )
   };
@@ -221,12 +184,8 @@ function createRenderFolder(props: {
       },
     });
   });
+  let rowsWithHeights = createMemo(() => renderTree()?.rowsWithHeights?.() ?? []);
   let [ firstRowHeight, setFirstRowHeight, ] = createSignal<number>();
-  let rowDiv!: HTMLDivElement;
-  onMount(() => {
-    let rect = rowDiv.getBoundingClientRect();
-    setFirstRowHeight(rect.height);
-  });
   let height = createMemo(() => {
     let firstRowHeight2 = firstRowHeight();
     if (firstRowHeight2 == undefined) {
@@ -238,27 +197,121 @@ function createRenderFolder(props: {
     }
     return firstRowHeight2 + treeHeight;
   });
+  let lastRowFirstRowHeight = createMemo(() => {
+    let rowsWithHeights2 = rowsWithHeights();
+    if (rowsWithHeights2.length == 0) {
+      return undefined;
+    }
+    return rowsWithHeights2[rowsWithHeights2.length-1].firstRowHeight();
+  });
+  let vlineHeight = createMemo(() => {
+    let rowsWithHeights2 = rowsWithHeights();
+    if (rowsWithHeights2.length == 0) {
+      return undefined;
+    }
+    let firstRowHeight2 = firstRowHeight();
+    if (firstRowHeight2 == undefined) {
+      return undefined;
+    }
+    let lastRowFirstRowHeight2 = lastRowFirstRowHeight();
+    if (lastRowFirstRowHeight2 == undefined) {
+      return undefined;
+    }
+    let total = 0.5 * firstRowHeight2 + 0.5 * lastRowFirstRowHeight2;
+    for (let i = 0; i < rowsWithHeights2.length-1; ++i) {
+      let height = rowsWithHeights2[i].height();
+      if (height == undefined) {
+        return undefined;
+      }
+      total += height;
+    }
+    return total;
+  });
+  let vline = createMemo(() => {
+    let firstRowHeight2 = firstRowHeight();
+    if (firstRowHeight2 == undefined) {
+      return undefined;
+    }
+    let vlineHeight2 = vlineHeight();
+    if (vlineHeight2 == undefined) {
+      return undefined;
+    }
+    return {
+      offsetY: 0.5 * firstRowHeight2,
+      height: vlineHeight2,
+    };
+  });
   return {
     firstRowHeight,
     height,
     Render: () => {
+      let rowDiv!: HTMLDivElement;
+      onMount(() => {
+        let rect = rowDiv.getBoundingClientRect();
+        setFirstRowHeight(rect.height);
+      });
       return (
-        <div>
-          <div ref={rowDiv}>{props.folder.name}</div>
+        <div
+          style={{
+            display: "flex",
+            "flex-direction": "row",
+          }}
+        >
           <div
-            style="padding-left: 10px;"
+            style={{
+              display: "flex",
+              "flex-direction": "column",
+            }}
           >
-            <Switch>
-              <Match when={children().type == "Pending"}>
-                Loading...
-              </Match>
-              <Match when={childrenFailed()} keyed>
-                {(error) => (<>Error: {error}</>)}
-              </Match>
-              <Match when={renderTree()} keyed>
-                {(renderTree) => (<renderTree.Render/>)}
-              </Match>
-            </Switch>
+            <Show when={firstRowHeight()}>
+              {(firstRowHeight) => (<>
+                <div
+                  style={{
+                    "margin-top": `${0.5 * (firstRowHeight() - 15)}px`,
+                    width: "15px",
+                    height: "15px",
+                    border: "1px solid green",
+                    color: "green",
+                    "text-align": "center",
+                    "vertical-align": "middle",
+                    "padding": 0,
+                  }}
+                >
+                </div>
+                <Show when={vline()}>
+                  {(vline) => (
+                    <div>
+                      <div
+                        style={{
+                          "margin-left": `${0.5 * 15}px`,
+                          "margin-top": `${0}px`,
+                          "margin-right": "5px",
+                          height: `${vline().height - vline().offsetY - 0.5 * 15 + 0.5 * firstRowHeight() + 1}px`,
+                          width: "2px",
+                          "background-color": "green",
+                        }}
+                      />
+                    </div>
+                  )}
+                </Show>
+              </>)}
+            </Show>
+          </div>
+          <div>
+            <div ref={rowDiv}>{props.folder.name}</div>
+            <div>
+              <Switch>
+                <Match when={children().type == "Pending"}>
+                  Loading...
+                </Match>
+                <Match when={childrenFailed()} keyed>
+                  {(error) => (<>Error: {error}</>)}
+                </Match>
+                <Match when={renderTree()} keyed>
+                  {(renderTree) => (<renderTree.Render/>)}
+                </Match>
+              </Switch>
+            </div>
           </div>
         </div>
       );
