@@ -16,6 +16,7 @@ export class Sound {
     this.audioContext = new AudioContext();
     await this.audioContext.audioWorklet.addModule(sineWorkletUrl);
     await this.audioContext.audioWorklet.addModule(sawWorkletUrl);
+    await this.audioContext.audioWorklet.addModule(squareWorkletUrl);
     let gainNode = this.audioContext.createGain()
     gainNode.gain.value = 0.1 // 10 %
     gainNode.connect(this.audioContext.destination)
@@ -131,14 +132,13 @@ registerProcessor('square-processor', SquareProcessor);
 `;
 
 // Create a Blob URL for the worklet code
-const squireWorkletBlob = new Blob([squireWorkletCode], { type: 'application/javascript' });
-const squireWorkletUrl = URL.createObjectURL(squireWorkletBlob);
-
+const squareWorkletBlob = new Blob([squireWorkletCode], { type: 'application/javascript' });
+const squareWorkletUrl = URL.createObjectURL(squareWorkletBlob);
 
 window.addEventListener('beforeunload', () => {
-    if (sineWorkletUrl) {
-        URL.revokeObjectURL(sineWorkletUrl);
-        URL.revokeObjectURL(sawWorkletUrl);
-        URL.revokeObjectURL(squireWorkletUrl);
-    }
+  if (sineWorkletUrl) {
+    URL.revokeObjectURL(sineWorkletUrl);
+    URL.revokeObjectURL(sawWorkletUrl);
+    URL.revokeObjectURL(squareWorkletUrl);
+  }
 });
