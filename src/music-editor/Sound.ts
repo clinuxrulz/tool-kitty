@@ -29,6 +29,17 @@ export class Sound {
     //squareNode.connect(gainNode);
     let pianoNode = new AudioWorkletNode(this.audioContext, "piano-processor");
     pianoNode.connect(gainNode);
+    setTimeout(() => {
+      pianoNode.port.postMessage({
+        type: "noteOn",
+        frequency: 500,
+     });
+      setTimeout(() => {
+        pianoNode.port.postMessage({
+          type: "noteOff",
+        });
+      }, 1000);
+    }, 5000);
   }
 
   play() {
