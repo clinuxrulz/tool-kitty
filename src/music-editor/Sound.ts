@@ -43,7 +43,7 @@ export class Sound {
         pianoNode.port.postMessage({
           type: "noteOff",
         });
-      }, 1000);
+      }, 100);
     });
   }
 
