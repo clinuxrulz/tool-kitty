@@ -14,7 +14,7 @@ export class Sound {
         return;
     }
     this.audioContext = new AudioContext();
-    await this.audioContext.audioWorklet.addModule(workletUrl);
+    await this.audioContext.audioWorklet.addModule(sineWorkletUrl);
     let gainNode = this.audioContext.createGain()
     gainNode.gain.value = 0.1 // 10 %
     gainNode.connect(this.audioContext.destination)
@@ -27,7 +27,7 @@ export class Sound {
   }
 }
 
-const workletCode = `
+const sineWorkletCode = `
 class SineProcessor extends AudioWorkletProcessor {
   constructor() {
     super();
@@ -58,10 +58,10 @@ registerProcessor('sine-processor', SineProcessor);
 `;
 
 // Create a Blob URL for the worklet code
-const workletBlob = new Blob([workletCode], { type: 'application/javascript' });
-const workletUrl = URL.createObjectURL(workletBlob);
+const sineWorkletBlob = new Blob([sineWorkletCode], { type: 'application/javascript' });
+const sineWorkletUrl = URL.createObjectURL(sineWorkletBlob);
 window.addEventListener('beforeunload', () => {
-    if (workletUrl) {
-        URL.revokeObjectURL(workletUrl);
+    if (sineWorkletUrl) {
+        URL.revokeObjectURL(sineWorkletUrl);
     }
 });
