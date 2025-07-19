@@ -1,4 +1,33 @@
 
+const MIDDLE_C_HZ = 261.63;
+
+let ratiosAsFractions: number[] = [];
+
+for (let i = 0; i <= 12; ++i) {
+  for (let j = i; j <= 12; ++j) {
+    let fraction = i / j;
+    ratiosAsFractions.push(fraction);
+  }
+}
+ratiosAsFractions.sort((a, b) => a - b);
+for (let i = ratiosAsFractions.length-1; i > 0; --i) {
+  if (ratiosAsFractions[i] - ratiosAsFractions[i-1] <= 0.001) {
+    ratiosAsFractions.splice(i, 1);
+  }
+}
+
+let atFrequencyIdx = 0;
+let frequencies: number[] = ratiosAsFractions.map(
+  (fraction) =>
+    MIDDLE_C_HZ + MIDDLE_C_HZ * fraction
+);
+
+let nextFreq = () => {
+  let result = frequencies[atFrequencyIdx];
+  atFrequencyIdx = (atFrequencyIdx + 1) % frequencies.length;
+  return result;
+};
+
 export class Sound {
   audioContext: AudioContext | undefined = undefined;
 
@@ -37,7 +66,7 @@ export class Sound {
       }
       pianoNode.port.postMessage({
         type: "noteOn",
-        frequency: 500,
+        frequency: nextFreq(),
      });
       setTimeout(() => {
         pianoNode.port.postMessage({
