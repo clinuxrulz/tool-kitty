@@ -15,8 +15,11 @@ export class Sound {
     }
     this.audioContext = new AudioContext();
     await this.audioContext.audioWorklet.addModule(workletUrl);
+    let gainNode = this.audioContext.createGain()
+    gainNode.gain.value = 0.1 // 10 %
+    gainNode.connect(this.audioContext.destination)
     let sineNode = new AudioWorkletNode(this.audioContext, 'sine-processor');
-    sineNode.connect(this.audioContext.destination);
+    sineNode.connect(gainNode);
   }
 
   play() {
