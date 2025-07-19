@@ -10,6 +10,7 @@ const MusicEditor: Component<{}> = (props) => {
       }}
     >
       <button
+        class="btn btn-primary"
         onClick={() => {
           sound.init();
         }}
