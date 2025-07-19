@@ -36,6 +36,7 @@ import {
   AutomergeVirtualFileSystemState,
 } from "solid-fs-automerge";
 import { REQUIRED_FOR_KEEPING_MANUAL_CHUNKS } from "./lib";
+import MusicEditor from "./music-editor/MusicEditor";
 const CodeMirror = lazy(() => import("./code-mirror/CodeMirror"));
 const AppV2 = lazy(() => import("./app/AppV2"));
 const KittyDemoApp = lazy(() => import("./kitty-demo/KittyDemo"));
@@ -176,6 +177,7 @@ render(() => {
         component={() => <LevelBuilder vfs={vfs()} />}
       />
       <Route path="/script-editor" component={() => <ScriptEditor />} />
+      <Route path="/music-editor" component={MusicEditor}/>
       <Route path="/code-mirror" component={() => <CodeMirror />} />
       <Route
         path="/colour-picker"
