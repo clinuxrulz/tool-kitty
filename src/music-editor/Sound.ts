@@ -21,8 +21,10 @@ export class Sound {
     gainNode.connect(this.audioContext.destination)
     //let sineNode = new AudioWorkletNode(this.audioContext, 'sine-processor');
     //sineNode.connect(gainNode);
-    let sawNode = new AudioWorkletNode(this.audioContext, "saw-processor");
-    sawNode.connect(gainNode);
+    //let sawNode = new AudioWorkletNode(this.audioContext, "saw-processor");
+    //sawNode.connect(gainNode);
+    let squareNode = new AudioWorkletNode(this.audioContext, "square-processor");
+    squareNode.connect(gainNode);
   }
 
   play() {
@@ -98,10 +100,45 @@ registerProcessor('saw-processor', SawProcessor);
 const sawWorkletBlob = new Blob([sawWorkletCode], { type: 'application/javascript' });
 const sawWorkletUrl = URL.createObjectURL(sawWorkletBlob);
 
+const squireWorkletCode = `
+class SquareProcessor extends AudioWorkletProcessor {
+  constructor() {
+    super();
+    this.phase = 0;
+    this.frequency = 300; // Hz
+  }
+
+  process(inputs, outputs, parameters) {
+    const output = outputs[0]; // Get the first output channel
+    const outputChannel = output[0]; // Get the first channel (mono)
+
+    // Generate sine wave samples
+    for (let i = 0; i < outputChannel.length; i++) {
+      // Calculate the phase increment based on frequency and sample rate
+      // sampleRate is a global variable available in AudioWorkletGlobalScope
+      this.phase += (2 * Math.PI * this.frequency) / sampleRate;
+      outputChannel[i] = this.phase; // Generate sine wave sample
+    }
+
+    // Keep phase within [0, 2*PI] to prevent it from growing indefinitely
+    this.phase %= (2 * Math.PI);
+
+    return true; // Keep the processor alive
+  }
+}
+
+registerProcessor('square-processor', SquareProcessor);
+`;
+
+// Create a Blob URL for the worklet code
+const squireWorkletBlob = new Blob([squireWorkletCode], { type: 'application/javascript' });
+const squireWorkletUrl = URL.createObjectURL(squireWorkletBlob);
+
 
 window.addEventListener('beforeunload', () => {
     if (sineWorkletUrl) {
         URL.revokeObjectURL(sineWorkletUrl);
         URL.revokeObjectURL(sawWorkletUrl);
+        URL.revokeObjectURL(squireWorkletUrl);
     }
 });
