@@ -1,3 +1,4 @@
+import JSZip from "jszip";
 import {
   Accessor,
   createComputed,
@@ -10,6 +11,46 @@ import {
 } from "solid-js";
 import { AsyncResult } from "./AsyncResult";
 import { err, ok, Result } from "./kitty-demo/Result";
+import { bundledAssets } from "./level-builder/BundledAssetFilePicker";
+import { fixRelativeUrl } from "./lib";
+
+type BundledUrl = string & { __isBundledUrl: true, };
+
+export function isBundledUrl(url: string): url is BundledUrl {
+  return url.startsWith("bundled:");
+}
+
+const bundledAssetRegEx = /^bundled:(.*)$/;
+const insideZipAssetRegEx = /^(.*?\.zip)\/(.*)$/;
+export async function readBundledAsset(url: BundledUrl): Promise<Blob | undefined> {
+  let assetUrl = bundledAssetRegEx.exec(url)![1];
+  let match = insideZipAssetRegEx.exec(assetUrl);
+  let assetFilename: string;
+  let insideZipUrl: string | undefined;
+  if (match != null) {
+    assetFilename = match[1];
+    insideZipUrl = match[2];
+  } else {
+    assetFilename = assetUrl;
+    insideZipUrl = undefined;
+  }
+  let localUrl = bundledAssets[assetFilename];
+  if (localUrl == undefined) {
+    return undefined;
+  }
+  localUrl = fixRelativeUrl(localUrl);
+  let blob = (await fetch(localUrl).then((r) => r.blob()));
+  if (insideZipUrl == undefined) {
+    return blob;
+  } else {
+    let zip = await JSZip.loadAsync(blob);
+    let file = zip.file(insideZipUrl);
+    if (file == undefined) {
+      return undefined;
+    }
+    return file.async("blob");
+  }
+}
 
 export function makeRefCountedMakeReactiveObject<A>(
   fn: () => A,

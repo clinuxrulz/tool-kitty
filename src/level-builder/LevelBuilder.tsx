@@ -38,7 +38,7 @@ import {
 } from "solid-fs-automerge";
 import { makeDocumentProjection } from "solid-automerge";
 import { Doc } from "@automerge/automerge-repo";
-import { base64ToUint8Array } from "../util";
+import { base64ToUint8Array, isBundledUrl, readBundledAsset } from "../util";
 import { EcsWorldAutomergeProjection } from "../ecs/EcsWorldAutomergeProjection";
 
 type State = {
@@ -329,6 +329,58 @@ const LevelBuilder: Component<{
                   );
                   let textureAtlas2 = textureAtlas;
                   let imageFilename = textureAtlas2.imageRef;
+                  if (isBundledUrl(imageFilename)) {
+                    let [ imageBlob, ] = createResource(async () => {
+                      let blob = await readBundledAsset(imageFilename);
+                      if (blob == undefined) {
+                        return err("bundled image not found");
+                      }
+                      return ok(blob);
+                    });
+                    return asyncSuccess(createMemo(() => {
+                      let imageBlob2 = imageBlob();
+                      if (imageBlob2 == undefined) {
+                        return asyncPending();
+                      }
+                      if (imageBlob2.type == "Err") {
+                        return asyncFailed(imageBlob2.message);
+                      }
+                      let blob = imageBlob2.value;
+                      let imageUrl = URL.createObjectURL(blob);
+                      onCleanup(() => URL.revokeObjectURL(imageUrl));
+                      let [image] = createResource(
+                        () =>
+                          new Promise<Result<HTMLImageElement>>((resolve) => {
+                            let image2 = new Image();
+                            image2.src = imageUrl;
+                            image2.onerror = () => {
+                              resolve(err("Failed to load image."));
+                            };
+                            image2.onload = () => {
+                              resolve(ok(image2));
+                            };
+                          }),
+                      );
+                      return asyncSuccess(
+                        createMemo(() => {
+                          let image2 = image();
+                          if (image2 == undefined) {
+                            return asyncPending();
+                          }
+                          if (image2.type == "Err") {
+                            return asyncFailed(image2.message);
+                          }
+                          let image3 = image2.value;
+                          return asyncSuccess({
+                            textureAtlasFilename: textureAtlasFile.name,
+                            textureAtlas: textureAtlas2,
+                            image: image3,
+                            frames,
+                          });
+                        }),
+                      );
+                    }));
+                  }
                   let imageFile = imageFilenameFileMap3.get(imageFilename);
                   if (imageFile == undefined) {
                     return asyncFailed(
