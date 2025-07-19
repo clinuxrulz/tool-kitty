@@ -17,6 +17,7 @@ export class Sound {
     await this.audioContext.audioWorklet.addModule(sineWorkletUrl);
     await this.audioContext.audioWorklet.addModule(sawWorkletUrl);
     await this.audioContext.audioWorklet.addModule(squareWorkletUrl);
+    await this.audioContext.audioWorklet.addModule(pianoWorkletUrl);
     let gainNode = this.audioContext.createGain()
     gainNode.gain.value = 0.1 // 10 %
     gainNode.connect(this.audioContext.destination)
