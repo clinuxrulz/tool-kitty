@@ -28,6 +28,13 @@ let nextFreq = () => {
   return result;
 };
 
+let atFrequencyIdx2 = 0;
+let nextFreq2 = () => {
+  let idx = atFrequencyIdx2;
+  atFrequencyIdx2 = (atFrequencyIdx2 + 1) % 12;
+  return MIDDLE_C_HZ * Math.pow(2, (idx / 12));
+};
+
 export class Sound {
   audioContext: AudioContext | undefined = undefined;
 
@@ -66,7 +73,7 @@ export class Sound {
       }
       pianoNode.port.postMessage({
         type: "noteOn",
-        frequency: nextFreq(),
+        frequency: nextFreq2(),
      });
       setTimeout(() => {
         pianoNode.port.postMessage({
