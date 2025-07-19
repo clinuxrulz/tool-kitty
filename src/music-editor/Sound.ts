@@ -53,7 +53,7 @@ const notes: { name: string, type: "white" | "black", }[] = [
 
 export class Sound {
   audioContext: AudioContext | undefined = undefined;
-  pianoNode: AudioWorkletNode | undefined = undefined;
+  pianoNodes: AudioWorkletNode[] = [];
 
   constructor() {}
 
@@ -80,8 +80,12 @@ export class Sound {
     //sawNode.connect(gainNode);
     //let squareNode = new AudioWorkletNode(this.audioContext, "square-processor");
     //squareNode.connect(gainNode);
-    this.pianoNode = new AudioWorkletNode(this.audioContext, "piano-processor");
-    this.pianoNode.connect(gainNode);
+    this.pianoNodes = [];
+    for (let i = 0; i < 12; ++i) {
+      let pianoNode = new AudioWorkletNode(this.audioContext, "piano-processor");
+      pianoNode.connect(gainNode);
+      this.pianoNodes.push(pianoNode);
+    }
   }
 
   async noteOn(name: string) {
@@ -97,7 +101,7 @@ export class Sound {
       return;
     }
     let frequency = MIDDLE_C_HZ * Math.pow(2, noteIdx / 12);
-    this.pianoNode?.port.postMessage({
+    this.pianoNodes[noteIdx].port.postMessage({
       type: "noteOn",
       frequency,
     });
@@ -107,7 +111,11 @@ export class Sound {
     if (this.audioContext == undefined) {
       await this.init();
     }
-    this.pianoNode?.port.postMessage({
+    let noteIdx = notes.findIndex((note) => note.name == name);
+    if (noteIdx == -1) {
+      return;
+    }
+    this.pianoNodes[noteIdx].port.postMessage({
       type: "noteOff",
     });
   }
