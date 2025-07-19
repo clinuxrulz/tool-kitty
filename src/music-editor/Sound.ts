@@ -29,7 +29,12 @@ export class Sound {
     //squareNode.connect(gainNode);
     let pianoNode = new AudioWorkletNode(this.audioContext, "piano-processor");
     pianoNode.connect(gainNode);
-    setTimeout(() => {
+    document.body.addEventListener("click", async () => {
+      if (this.audioContext != undefined) {
+        if (this.audioContext.state === 'suspended') {
+            await this.audioContext.resume();
+        }
+      }
       pianoNode.port.postMessage({
         type: "noteOn",
         frequency: 500,
@@ -39,7 +44,7 @@ export class Sound {
           type: "noteOff",
         });
       }, 1000);
-    }, 5000);
+    });
   }
 
   play() {
@@ -250,7 +255,8 @@ class PianoProcessor extends AudioWorkletProcessor {
         }
 
         // Return false when the sound is completely silent to allow garbage collection
-        return this.envelopePhase !== 0 || this.currentGain > 0.001;
+        //return this.envelopePhase !== 0 || this.currentGain > 0.001;
+        return true;
     }
 }
 
