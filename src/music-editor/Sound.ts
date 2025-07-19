@@ -24,8 +24,10 @@ export class Sound {
     //sineNode.connect(gainNode);
     //let sawNode = new AudioWorkletNode(this.audioContext, "saw-processor");
     //sawNode.connect(gainNode);
-    let squareNode = new AudioWorkletNode(this.audioContext, "square-processor");
-    squareNode.connect(gainNode);
+    //let squareNode = new AudioWorkletNode(this.audioContext, "square-processor");
+    //squareNode.connect(gainNode);
+    let pianoNode = new AudioWorkletNode(this.audioContext, "piano-processor");
+    pianoNode.connect(gainNode);
   }
 
   play() {
@@ -135,10 +137,122 @@ registerProcessor('square-processor', SquareProcessor);
 const squareWorkletBlob = new Blob([squireWorkletCode], { type: 'application/javascript' });
 const squareWorkletUrl = URL.createObjectURL(squareWorkletBlob);
 
+const pianoWorkletCode = `
+class PianoProcessor extends AudioWorkletProcessor {
+    constructor() {
+        super();
+        this.phase = 0;
+        this.sampleRate = sampleRate; // Global sampleRate from AudioWorkletGlobalScope
+
+        // Define harmonics (fundamental + a few overtones) and their relative gains
+        // These values are simplified and can be tweaked for different piano sounds
+        this.harmonics = [
+            { freqMultiplier: 1, gain: 1.0 },   // Fundamental
+            { freqMultiplier: 2, gain: 0.6 },   // 1st overtone (octave)
+            { freqMultiplier: 3, gain: 0.4 },   // 2nd overtone (fifth above octave)
+            { freqMultiplier: 4, gain: 0.3 },   // 3rd overtone (two octaves)
+            { freqMultiplier: 5, gain: 0.2 },   // 4th overtone (major third)
+        ];
+
+        // ADSR envelope parameters (simplified)
+        this.attackTime = 0.01; // Very fast attack
+        this.decayTime = 0.1;
+        this.sustainLevel = 0.6;
+        this.releaseTime = 0.8;
+
+        this.envelopePhase = 0; // 0: idle, 1: attack, 2: decay, 3: sustain, 4: release
+        this.currentGain = 0;
+        this.noteOnTime = 0;
+        this.noteOffTime = 0;
+        this.frequency = 0; // Will be set via port.onmessage
+
+        this.port.onmessage = (event) => {
+            if (event.data.type === 'noteOn') {
+                this.frequency = event.data.frequency;
+                this.noteOnTime = currentTime; // Global currentTime from AudioWorkletGlobalScope
+                this.envelopePhase = 1; // Start attack
+                this.phase = 0; // Reset phase for new note
+            } else if (event.data.type === 'noteOff') {
+                this.noteOffTime = currentTime;
+                this.envelopePhase = 4; // Start release
+            }
+        };
+    }
+
+    process(inputs, outputs, parameters) {
+        const output = outputs[0]; // Assuming mono output for simplicity
+        const channel = output[0]; // Get the first channel
+
+        for (let i = 0; i < channel.length; ++i) {
+            let sample = 0;
+
+            // Update envelope
+            if (this.envelopePhase === 1) { // Attack
+                const timeElapsed = currentTime - this.noteOnTime;
+                if (timeElapsed < this.attackTime) {
+                    this.currentGain = timeElapsed / this.attackTime;
+                } else {
+                    this.currentGain = 1.0;
+                    this.envelopePhase = 2; // Move to decay
+                    this.decayStartTime = currentTime;
+                }
+            } else if (this.envelopePhase === 2) { // Decay
+                const timeElapsed = currentTime - this.decayStartTime;
+                if (timeElapsed < this.decayTime) {
+                    this.currentGain = 1.0 - (1.0 - this.sustainLevel) * (timeElapsed / this.decayTime);
+                } else {
+                    this.currentGain = this.sustainLevel;
+                    this.envelopePhase = 3; // Move to sustain
+                }
+            } else if (this.envelopePhase === 3) { // Sustain (maintain currentGain)
+                // Nothing to do, just hold the sustain level
+            } else if (this.envelopePhase === 4) { // Release
+                const timeElapsed = currentTime - this.noteOffTime;
+                if (timeElapsed < this.releaseTime) {
+                    this.currentGain = this.sustainLevel * (1.0 - (timeElapsed / this.releaseTime));
+                } else {
+                    this.currentGain = 0;
+                    this.envelopePhase = 0; // Go to idle
+                    this.frequency = 0; // Stop generating sound
+                }
+            }
+
+            // Generate sound if frequency and gain are active
+            if (this.frequency > 0 && this.currentGain > 0.001) { // Threshold to prevent silence from generating
+                for (const harmonic of this.harmonics) {
+                    const freq = this.frequency * harmonic.freqMultiplier;
+                    sample += Math.sin(this.phase * freq * 2 * Math.PI) * harmonic.gain;
+                }
+                sample *= this.currentGain; // Apply envelope gain
+            } else {
+                sample = 0; // No sound
+            }
+
+            channel[i] = sample;
+
+            // Advance phase for the next sample
+            this.phase += 1 / this.sampleRate;
+            if (this.phase >= 1) {
+                this.phase -= 1; // Keep phase within [0, 1)
+            }
+        }
+
+        // Return false when the sound is completely silent to allow garbage collection
+        return this.envelopePhase !== 0 || this.currentGain > 0.001;
+    }
+}
+
+registerProcessor('piano-processor', PianoProcessor);`;
+
+// Create a Blob URL for the worklet code
+const pianoWorkletBlob = new Blob([pianoWorkletCode], { type: 'application/javascript' });
+const pianoWorkletUrl = URL.createObjectURL(pianoWorkletBlob);
+
 window.addEventListener('beforeunload', () => {
   if (sineWorkletUrl) {
     URL.revokeObjectURL(sineWorkletUrl);
     URL.revokeObjectURL(sawWorkletUrl);
     URL.revokeObjectURL(squareWorkletUrl);
+    URL.revokeObjectURL(pianoWorkletUrl);
   }
 });
