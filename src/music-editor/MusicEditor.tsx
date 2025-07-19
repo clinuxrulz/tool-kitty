@@ -4,6 +4,7 @@ import PianoKeys from "./PianoKeys";
 
 const MusicEditor: Component<{}> = (props) => {
   let sound = new Sound();
+  sound.init();
   return (
     <div
       style={{

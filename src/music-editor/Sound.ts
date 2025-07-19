@@ -89,6 +89,9 @@ export class Sound {
       await this.init();
       return;
     }
+    if (this.audioContext.state === 'suspended') {
+        await this.audioContext.resume();
+    }
     let noteIdx = notes.findIndex((note) => note.name == name);
     if (noteIdx == -1) {
       return;
@@ -103,7 +106,7 @@ export class Sound {
   async noteOff(name: string) {
     if (this.audioContext == undefined) {
       await this.init();
-    }    
+    }
     this.pianoNode?.port.postMessage({
       type: "noteOff",
     });
