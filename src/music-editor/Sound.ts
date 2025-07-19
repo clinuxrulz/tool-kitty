@@ -118,7 +118,7 @@ class SquareProcessor extends AudioWorkletProcessor {
       // Calculate the phase increment based on frequency and sample rate
       // sampleRate is a global variable available in AudioWorkletGlobalScope
       this.phase += (2 * Math.PI * this.frequency) / sampleRate;
-      outputChannel[i] = this.phase; // Generate sine wave sample
+      outputChannel[i] = (this.phase < Math.PI ? 0 : 1); // Generate sine wave sample
     }
 
     // Keep phase within [0, 2*PI] to prevent it from growing indefinitely
