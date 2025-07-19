@@ -88,6 +88,9 @@ const App: Component<{
           <button class="btn" onClick={() => navigate("/level-builder")}>
             Level Builder
           </button>
+          <button class="btn" onClick={() => navigate("/music-editor")}>
+            Music Editor
+          </button>
           <button class="btn" onClick={() => navigate("/script-editor")}>
             Script Editor
           </button>
