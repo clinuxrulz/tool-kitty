@@ -140,7 +140,7 @@ const PianoKeys: Component<{
                   }}
                   style={{
                     width: `${whiteNoteWidth}px`,
-                    height: `${whiteNoteHeight}px`,
+                    height: `${whiteNoteHeight + (notePressed() ? 2 : 0)}px`,
                     "pointer-events": "none",
                   }}
                 />
@@ -156,7 +156,7 @@ const PianoKeys: Component<{
                     "margin-left": `${-0.5 * blackNoteWidth-1}px`,
                     "margin-right": `${-0.5 * blackNoteWidth+1}px`,
                     width: `${blackNoteWidth}px`,
-                    height: `${blackNoteHeight}px`,
+                    height: `${blackNoteHeight + (notePressed() ? 2 : 0)}px`,
                     "pointer-events": "none",
                   }}
                 />
