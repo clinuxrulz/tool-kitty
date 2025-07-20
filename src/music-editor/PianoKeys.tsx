@@ -42,6 +42,8 @@ const PianoKeys: Component<{
         display: "flex",
         "flex-direction": "row",
         "overflow-x": "auto",
+        "user-select": "none",
+        "touch-action": "none",
       }}
       onPointerDown={(e) => {
         let rect = pianoDiv.getBoundingClientRect();
