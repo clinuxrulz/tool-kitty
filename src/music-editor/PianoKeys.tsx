@@ -58,6 +58,10 @@ const PianoKeys: Component<{
         pointers.delete(e.pointerId);
         pianoDiv.releasePointerCapture(e.pointerId);
       }}
+      onPointerCancel={(e) => {
+        pointers.delete(e.pointerId);
+        pianoDiv.releasePointerCapture(e.pointerId);
+      }}
       onPointerMove={(e) => {
         if (!pointers.get(e.pointerId)) {
           return;
@@ -135,6 +139,7 @@ const PianoKeys: Component<{
                   style={{
                     width: `${whiteNoteWidth}px`,
                     height: `${whiteNoteHeight}px`,
+                    "pointer-events": "none",
                   }}
                 />
               </Match>
@@ -150,6 +155,7 @@ const PianoKeys: Component<{
                     "margin-right": `${-0.5 * blackNoteWidth+1}px`,
                     width: `${blackNoteWidth}px`,
                     height: `${blackNoteHeight}px`,
+                    "pointer-events": "none",
                   }}
                 />
               </Match>
