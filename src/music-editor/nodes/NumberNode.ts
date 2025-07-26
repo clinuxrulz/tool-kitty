@@ -15,7 +15,7 @@ export const numberkNodeType = new NumberNodeType();
 
 class NoiseNode implements Node<NumberState> {
   nodeParams: NodeParams<NumberState>;
-  outputPins: Accessor<{ name: Accessor<string>; sinks: Accessor<Pin[]>; setSinks: (x: Pin[]) => void, }[]>;
+  outputPins: Accessor<{ name: string; sinks: Accessor<Pin[]>; setSinks: (x: Pin[]) => void, }[]>;
 
   constructor(nodeParams: NodeParams<NumberState>) {
     let state = nodeParams.state;
@@ -23,7 +23,7 @@ class NoiseNode implements Node<NumberState> {
     this.nodeParams = nodeParams;
     this.outputPins = createMemo(() => [
       {
-        name: () => "out",
+        name: "out",
         sinks: () => state.out,
         setSinks: (x) => setState("out", x),
       }

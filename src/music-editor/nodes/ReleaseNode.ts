@@ -15,8 +15,8 @@ export const releaseNodeType = new ReleaseNodeType();
 
 class ReleaseNode implements Node<ReleaseState> {
   nodeParams: NodeParams<ReleaseState>;
-  inputPins: Accessor<{ name: Accessor<string>; source: Accessor<Pin | undefined>; setSource: (x: Pin | undefined) => void }[]>;
-  outputPins: Accessor<{ name: Accessor<string>; sinks: Accessor<Pin[]>; setSinks: (x: Pin[]) => void, }[]>;
+  inputPins: Accessor<{ name: string; source: Accessor<Pin | undefined>; setSource: (x: Pin | undefined) => void }[]>;
+  outputPins: Accessor<{ name: string; sinks: Accessor<Pin[]>; setSinks: (x: Pin[]) => void, }[]>;
 
   constructor(nodeParams: NodeParams<ReleaseState>) {
     let state = nodeParams.state;
@@ -24,14 +24,14 @@ class ReleaseNode implements Node<ReleaseState> {
     this.nodeParams = nodeParams;
     this.inputPins = createMemo(() => [
       {
-        name: () => "timeToZero",
+        name: "timeToZero",
         source: () => state.timeToZero,
         setSource: (x) => setState("timeToZero", x),
       }
     ]);
     this.outputPins = createMemo(() => [
       {
-        name: () => "out",
+        name: "out",
         sinks: () => state.out,
         setSinks: (x) => setState("out", x),
       }

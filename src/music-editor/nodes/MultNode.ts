@@ -15,8 +15,8 @@ export const multNodeType = new MultNodeType();
 
 class MultNode implements Node<MultState> {
   nodeParams: NodeParams<MultState>;
-  inputPins: Accessor<{ name: Accessor<string>; source: Accessor<Pin | undefined>; setSource: (x: Pin | undefined) => void; }[]>;
-  outputPins: Accessor<{ name: Accessor<string>; sinks: Accessor<Pin[]>; setSinks: (x: Pin[]) => void; }[]>;
+  inputPins: Accessor<{ name: string; source: Accessor<Pin | undefined>; setSource: (x: Pin | undefined) => void; }[]>;
+  outputPins: Accessor<{ name: string; sinks: Accessor<Pin[]>; setSinks: (x: Pin[]) => void; }[]>;
 
   constructor(nodeParams: NodeParams<MultState>) {
     let state = nodeParams.state;
@@ -24,19 +24,19 @@ class MultNode implements Node<MultState> {
     this.nodeParams = nodeParams;
     this.inputPins = createMemo(() => [
       {
-        name: () => "a",
+        name: "a",
         source: () => state.a,
         setSource: (x) => setState("a", x),
       },
       {
-        name: () => "b",
+        name: "b",
         source: () => state.b,
         setSource: (x) => setState("b", x),
       },
     ]);
     this.outputPins = createMemo(() => [
       {
-        name: () => "out",
+        name: "out",
         sinks: () => state.out,
         setSinks: (x) => setState("out", x),
       },

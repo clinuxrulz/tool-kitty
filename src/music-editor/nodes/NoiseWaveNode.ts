@@ -15,7 +15,7 @@ export const noisekNodeType = new NoiseNodeType();
 
 class NoiseNode implements Node<NoiseWaveState> {
   nodeParams: NodeParams<NoiseWaveState>;
-  outputPins: Accessor<{ name: Accessor<string>; sinks: Accessor<Pin[]>; setSinks: (x: Pin[]) => void, }[]>;
+  outputPins: Accessor<{ name: string; sinks: Accessor<Pin[]>; setSinks: (x: Pin[]) => void, }[]>;
 
   constructor(nodeParams: NodeParams<NoiseWaveState>) {
     let state = nodeParams.state;
@@ -23,7 +23,7 @@ class NoiseNode implements Node<NoiseWaveState> {
     this.nodeParams = nodeParams;
     this.outputPins = createMemo(() => [
       {
-        name: () => "out",
+        name: "out",
         sinks: () => state.out,
         setSinks: (x) => setState("out", x),
       }

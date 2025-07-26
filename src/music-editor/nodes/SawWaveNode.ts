@@ -15,8 +15,8 @@ export const sawWaveNodeType = new SawWaveNodeType();
 
 class SawWaveNode implements Node<SawWaveState> {
   nodeParams: NodeParams<SawWaveState>;
-  inputPins: Accessor<{ name: Accessor<string>; source: Accessor<Pin | undefined>; setSource: (x: Pin | undefined) => void; }[]>;
-  outputPins: Accessor<{ name: Accessor<string>; sinks: Accessor<Pin[]>; setSinks: (x: Pin[]) => void; }[]>;
+  inputPins: Accessor<{ name: string; source: Accessor<Pin | undefined>; setSource: (x: Pin | undefined) => void; }[]>;
+  outputPins: Accessor<{ name: string; sinks: Accessor<Pin[]>; setSinks: (x: Pin[]) => void; }[]>;
 
   constructor(nodeParams: NodeParams<SawWaveState>) {
     let state = nodeParams.state;
@@ -24,24 +24,24 @@ class SawWaveNode implements Node<SawWaveState> {
     this.nodeParams = nodeParams;
     this.inputPins = createMemo(() => [
       {
-        name: () => "frequency",
+        name: "frequency",
         source: () => state.frequency,
         setSource: (x) => setState("frequency", x),
       },
       {
-        name: () => "amplitude",
+        name: "amplitude",
         source: () => state.amplitude,
         setSource: (x) => setState("amplitude", x),
       },
       {
-        name: () => "centre",
+        name: "centre",
         source: () => state.centre,
         setSource: (x) => setState("centre", x),
       },
     ]);
     this.outputPins = createMemo(() => [
       {
-        name: () => "out",
+        name: "out",
         sinks: () => state.out,
         setSinks: (x) => setState("out", x),
       }

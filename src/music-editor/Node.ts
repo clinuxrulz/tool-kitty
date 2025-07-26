@@ -17,12 +17,12 @@ export interface NodeType<A extends object> {
 export interface Node<A extends object> {
   readonly nodeParams: NodeParams<A>;
   readonly inputPins?: Accessor<{
-    name: Accessor<string>,
+    name: string,
     source: Accessor<Pin | undefined>,
     setSource: (x: Pin | undefined) => void,
   }[]>;
   readonly outputPins?: Accessor<{
-    name: Accessor<string>,
+    name: string,
     sinks: Accessor<Pin[]>,
     setSinks: (x: Pin[]) => void,
   }[]>;

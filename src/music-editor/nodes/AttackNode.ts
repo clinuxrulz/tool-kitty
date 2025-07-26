@@ -15,8 +15,8 @@ export const attackNodeType = new AttackNodeType();
 
 class AttackNode implements Node<AttackState> {
   nodeParams: NodeParams<AttackState>;
-  inputPins: Accessor<{ name: Accessor<string>; source: Accessor<Pin | undefined>; setSource: (x: Pin | undefined) => void }[]>;
-  outputPins: Accessor<{ name: Accessor<string>; sinks: Accessor<Pin[]>; setSinks: (x: Pin[]) => void, }[]>;
+  inputPins: Accessor<{ name: string; source: Accessor<Pin | undefined>; setSource: (x: Pin | undefined) => void }[]>;
+  outputPins: Accessor<{ name: string; sinks: Accessor<Pin[]>; setSinks: (x: Pin[]) => void, }[]>;
 
   constructor(nodeParams: NodeParams<AttackState>) {
     let state = nodeParams.state;
@@ -24,14 +24,14 @@ class AttackNode implements Node<AttackState> {
     this.nodeParams = nodeParams;
     this.inputPins = createMemo(() => [
       {
-        name: () => "timeToOne",
+        name: "timeToOne",
         source: () => state.timeToOne,
         setSource: (x) => setState("timeToOne", x),
       }
     ]);
     this.outputPins = createMemo(() => [
       {
-        name: () => "out",
+        name: "out",
         sinks: () => state.out,
         setSinks: (x) => setState("out", x),
       }
