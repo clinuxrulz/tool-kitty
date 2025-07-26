@@ -4,6 +4,7 @@ export interface Mode {
   instructions?: Component;
   overlaySvg?: Component;
   overlayHtmlUi?: Component;
+  sideForm?: Component;
   click?: () => void;
   highlightedObjectsById?: Accessor<string[]>;
   selectedObjectsById?: Accessor<string[]>;
