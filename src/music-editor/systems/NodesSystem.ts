@@ -16,13 +16,13 @@ export class NodesSystem {
   nodes: Accessor<NodesSystemNode[]>;
 
   constructor(params: {
-    world: IEcsWorld,
+    world: Accessor<IEcsWorld>,
   }) {
     let nodes_ = createMemo(mapArray(
-      () => params.world.entities(),
+      () => params.world().entities(),
       (entity) => {
         let nodeTypeWithNodeComponent = createMemo(() => {
-          for (let component of params.world.getComponents(entity)) {
+          for (let component of params.world().getComponents(entity)) {
             let nodeType2 = lookupNodeType(component.type.typeName);
             if (nodeType2 != undefined) {
               return {
@@ -45,15 +45,15 @@ export class NodesSystem {
             setState: nodeComponent2.setState,
           });
           let space = createMemo(() => {
-            return params.world.getComponent(entity, transform2DComponentType)?.state.transform ?? Transform2D.identity;
+            return params.world().getComponent(entity, transform2DComponentType)?.state.transform ?? Transform2D.identity;
           });
           let setSpace = (x: Transform2D) => untrack(() => {
-            let transformComponent = params.world.getComponent(entity, transform2DComponentType);
+            let transformComponent = params.world().getComponent(entity, transform2DComponentType);
             if (transformComponent == undefined) {
               transformComponent = transform2DComponentType.create({
                 transform: x,
               });
-              params.world.setComponents(
+              params.world().setComponents(
                 entity,
                 [
                   transformComponent,

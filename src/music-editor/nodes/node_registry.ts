@@ -5,6 +5,9 @@ import { multNodeType } from "./MultNode";
 import { noiseNodeType } from "./NoiseWaveNode";
 import { numberNodeType } from "./NumberNode";
 import { releaseNodeType } from "./ReleaseNode";
+import { sawWaveNodeType } from "./SawWaveNode";
+import { sineWaveNodeType } from "./SineWaveNode";
+import { squareWaveNodeType } from "./SquareWaveNode";
 
 const nodeTypes: NodeType<any>[] = [
   addNodeType,
@@ -13,6 +16,9 @@ const nodeTypes: NodeType<any>[] = [
   noiseNodeType,
   numberNodeType,
   releaseNodeType,
+  sawWaveNodeType,
+  sineWaveNodeType,
+  squareWaveNodeType,
 ];
 
 const nodeTypeNameToNodeTypeMap = new Map<string,NodeType<any>>(

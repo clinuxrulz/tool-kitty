@@ -1,4 +1,4 @@
-import { Accessor, Component, createComputed, createMemo, createRoot, For, mapArray, onCleanup } from "solid-js";
+import { Accessor, Component, createComputed, createMemo, createRoot, For, mapArray, onCleanup, Show } from "solid-js";
 import { NodesSystemNode } from "./NodesSystem";
 import { Vec2 } from "../../lib";
 
@@ -30,7 +30,7 @@ const RenderNode: Component<{
       let text = document.createElementNS("http://www.w3.org/2000/svg", "text");
       let text2 = document.createTextNode(props.node.node.type.componentType.typeName);
       text.appendChild(text2);
-      svg.appendChild(text2);
+      svg.appendChild(text);
       let size = text.getBBox();
       dispose();
       return Vec2.create(size.width, size.height);
@@ -47,7 +47,7 @@ const RenderNode: Component<{
       let text = document.createElementNS("http://www.w3.org/2000/svg", "text");
       let text2 = document.createTextNode(inputPin.name);
       text.appendChild(text2);
-      svg.appendChild(text2);
+      svg.appendChild(text);
       let size = text.getBBox();
       dispose();
       return {
@@ -68,7 +68,7 @@ const RenderNode: Component<{
       let text = document.createElementNS("http://www.w3.org/2000/svg", "text");
       let text2 = document.createTextNode(outputPin.name);
       text.appendChild(text2);
-      svg.appendChild(text2);
+      svg.appendChild(text);
       let size = text.getBBox();
       dispose();
       return {
@@ -107,13 +107,37 @@ const RenderNode: Component<{
     return result;
   });
   let boxHeight = createMemo(() => {
-    return titleSize().x + Math.max(
+    return titleSize().y + Math.max(
       inputPinsTotalHeight(),
       outputPinsTotalHeight(),
     ) + 2.0 * boxPadding;
   });
   let boxWidth = createMemo(() => {
-    return titleSize().y + inputPinsMaxWidth() + outputPinsMaxWidth() + 2.0 * boxPadding;
+    return Math.max(
+      titleSize().y,
+      inputPinsMaxWidth() + outputPinsMaxWidth()
+    ) + 2.0 * boxPadding;
+  });
+  let inputPinPositions = createMemo(() => {
+    let result: { [name: string]: Vec2 } = {};
+    let atY = boxHeight() - titleSize().y;
+    for (let inputPinSize of inputPinSizes()) {
+      atY -= inputPinSize.size.y;
+      result[inputPinSize.name] = Vec2.create(0.0, atY);
+    }
+    return result;
+  });
+  let outputPinPositions = createMemo(() => {
+    let result: { [name: string]: Vec2 } = {};
+    let atY = boxHeight() - titleSize().y;
+    for (let outputPinSize of outputPinSizes()) {
+      atY -= outputPinSize.size.y;
+      result[outputPinSize.name] = Vec2.create(
+        boxWidth() - outputPinSize.size.x,
+        atY,
+      );
+    }
+    return result;
   });
   let transform = createMemo(() => {
     let space = props.node.space();
@@ -123,8 +147,8 @@ const RenderNode: Component<{
     let o2y = -o.y;
     let u2x = u.x;
     let u2y = -u.y;
-    let v2x = u2y;
-    let v2y = -u2x;
+    let v2x = -u2y;
+    let v2y = u2x;
     return `matrix(${u2x} ${v2x} ${u2y} ${v2y} ${o2x} ${o2y})`;
   });
   return (
@@ -136,7 +160,49 @@ const RenderNode: Component<{
         height={boxHeight()}
         stroke="black"
         fill="white"
+        rx="5"
+        ry="5"
       />
+      <text
+        x={0.5 * (boxWidth() - titleSize().x)}
+        y={-boxHeight() + titleSize().y}
+      >
+        {props.node.node.type.componentType.typeName}
+      </text>
+      <For each={props.node.node.inputPins?.() ?? []}>
+        {(inputPin) => {
+          let pos = createMemo(() => inputPinPositions()[inputPin.name]);
+          return (
+            <Show when={pos()}>
+              {(pos) => (
+                <text
+                  x={pos().x}
+                  y={-pos().y}
+                >
+                  {inputPin.name}
+                </text>
+              )}
+            </Show>
+          );
+        }}
+      </For>
+      <For each={props.node.node.outputPins?.() ?? []}>
+        {(outputPin) => {
+          let pos = createMemo(() => outputPinPositions()[outputPin.name]);
+          return (
+            <Show when={pos()}>
+              {(pos) => (
+                <text
+                  x={pos().x}
+                  y={-pos().y}
+                >
+                  {outputPin.name}
+                </text>
+              )}
+            </Show>
+          );
+        }}
+      </For>
     </g>
   );
 };

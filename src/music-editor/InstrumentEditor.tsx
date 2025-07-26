@@ -1,12 +1,15 @@
-import { Component, ComponentProps, createMemo, splitProps } from "solid-js";
+import { Component, ComponentProps, createMemo, createSignal, onCleanup, onMount, splitProps } from "solid-js";
 import { Overwrite } from "../util";
-import { EcsWorld, Vec2 } from "../lib";
+import { Complex, EcsWorld, Transform2D, transform2DComponentType, Vec2 } from "../lib";
 import { createStore } from "solid-js/store";
 import { createPanZoomManager } from "../PanZoomManager";
 import { ModeParams } from "./ModeParams";
 import { UndoManager } from "../pixel-editor/UndoManager";
 import { Mode } from "./Mode";
 import { IdleMode } from "./modes/IdleMode";
+import { NodesSystem } from "./systems/NodesSystem";
+import { RenderSystem } from "./systems/RenderSystem";
+import { sineWaveComponentType } from "./components/SineWaveComponent";
 
 const InstrumentEditor: Component<
   Overwrite<
@@ -32,6 +35,24 @@ const InstrumentEditor: Component<
   });
   let undoManager = new UndoManager();
   let svgElement!: SVGSVGElement;
+  let [ svgSize, setSvgSize, ] = createSignal<Vec2>(Vec2.zero);
+  onMount(() => {
+    {
+      let rect = svgElement.getBoundingClientRect();
+      setState("pan", Vec2.create(0.0, -rect.height));
+    }
+    let resizeObserver = new ResizeObserver(() => {
+      let rect = svgElement.getBoundingClientRect();
+      queueMicrotask(() => {
+        setSvgSize(Vec2.create(rect.width, rect.height));
+      });
+    });
+    resizeObserver.observe(svgElement);
+    onCleanup(() => {
+      resizeObserver.unobserve(svgElement);
+      resizeObserver.disconnect();
+    });
+  });
   let panZoomManager = createPanZoomManager({
     pan: () => state.pan,
     setPan: (x) => setState("pan", x),
@@ -47,6 +68,12 @@ const InstrumentEditor: Component<
   let setMode = (mkMode: () => Mode) => {
     setState("mkMode", () => mkMode);
   };
+  let nodesSystem = new NodesSystem({
+    world: () => props.world,
+  });
+  let renderSystem = new RenderSystem({
+    nodes: () => nodesSystem.nodes(),
+  });
   let modeParams: ModeParams = {
     undoManager,
     mousePos: () => state.mousePos,
@@ -103,6 +130,25 @@ const InstrumentEditor: Component<
   let onWheel = (e: WheelEvent) => {
     panZoomManager.onWheel(e);
   };
+  // test
+  setTimeout(() => {
+    let world = props.world;
+    world.createEntity([
+      sineWaveComponentType.create({
+        frequency: undefined,
+        amplitude: undefined,
+        centre: undefined,
+        out: [],
+      }),
+      transform2DComponentType.create({
+        transform: Transform2D.create(
+          Vec2.create(50, 50),
+          Complex.rot0,
+        ),
+      }),
+    ]);
+  });
+  //
   return (
     <div
       {...rest}
@@ -142,6 +188,7 @@ const InstrumentEditor: Component<
             onPointerOut={onPointerOut}
           >
             <g transform={transform()}>
+              <renderSystem.Render/>
             </g>
           </svg>
         </div>
