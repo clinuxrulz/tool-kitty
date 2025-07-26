@@ -78,6 +78,8 @@ const RenderNode: Component<{
     },
   ));
   const boxPadding = 5.0;
+  const pinDotSize = 2.0;
+  const gapAroundPinDot = 5.0;
   const inputPinsTotalHeight = createMemo(() => {
     let result = 0.0;
     for (let inputPinSize of inputPinSizes()) {
@@ -115,27 +117,45 @@ const RenderNode: Component<{
   let boxWidth = createMemo(() => {
     return Math.max(
       titleSize().y,
-      inputPinsMaxWidth() + outputPinsMaxWidth()
+      inputPinsMaxWidth() + outputPinsMaxWidth() + 4.0 * gapAroundPinDot
     ) + 2.0 * boxPadding;
   });
   let inputPinPositions = createMemo(() => {
-    let result: { [name: string]: Vec2 } = {};
+    let result: { [name: string]: {
+      dotPos: Vec2,
+      textPos: Vec2,
+    } } = {};
     let atY = boxHeight() - titleSize().y;
     for (let inputPinSize of inputPinSizes()) {
       atY -= inputPinSize.size.y;
-      result[inputPinSize.name] = Vec2.create(0.0, atY);
+      result[inputPinSize.name] = {
+        dotPos: Vec2.create(
+          gapAroundPinDot,
+          atY + 0.28 * inputPinSize.size.y,
+        ),
+        textPos: Vec2.create(2.0 * gapAroundPinDot, atY),
+      };
     }
     return result;
   });
   let outputPinPositions = createMemo(() => {
-    let result: { [name: string]: Vec2 } = {};
+    let result: { [name: string]: {
+      dotPos: Vec2,
+      textPos: Vec2,
+    } } = {};
     let atY = boxHeight() - titleSize().y;
     for (let outputPinSize of outputPinSizes()) {
       atY -= outputPinSize.size.y;
-      result[outputPinSize.name] = Vec2.create(
-        boxWidth() - outputPinSize.size.x,
-        atY,
-      );
+      result[outputPinSize.name] = {
+        dotPos: Vec2.create(
+          boxWidth() - gapAroundPinDot,
+          atY + 0.28 * outputPinSize.size.y,
+        ),
+        textPos: Vec2.create(
+          boxWidth() - 2.0 * gapAroundPinDot - outputPinSize.size.x,
+          atY,
+        ),
+      };
     }
     return result;
   });
@@ -175,12 +195,20 @@ const RenderNode: Component<{
           return (
             <Show when={pos()}>
               {(pos) => (
-                <text
-                  x={pos().x}
-                  y={-pos().y}
-                >
-                  {inputPin.name}
-                </text>
+                <>
+                  <circle
+                    cx={pos().dotPos.x}
+                    cy={-pos().dotPos.y}
+                    r={0.5 * pinDotSize}
+                    fill="black"
+                  />
+                  <text
+                    x={pos().textPos.x}
+                    y={-pos().textPos.y}
+                  >
+                    {inputPin.name}
+                  </text>
+                </>
               )}
             </Show>
           );
@@ -192,12 +220,20 @@ const RenderNode: Component<{
           return (
             <Show when={pos()}>
               {(pos) => (
-                <text
-                  x={pos().x}
-                  y={-pos().y}
-                >
-                  {outputPin.name}
-                </text>
+                <>
+                  <circle
+                    cx={pos().dotPos.x}
+                    cy={-pos().dotPos.y}
+                    r={0.5 * pinDotSize}
+                    fill="black"
+                  />
+                  <text
+                    x={pos().textPos.x}
+                    y={-pos().textPos.y}
+                  >
+                    {outputPin.name}
+                  </text>
+                </>
               )}
             </Show>
           );
