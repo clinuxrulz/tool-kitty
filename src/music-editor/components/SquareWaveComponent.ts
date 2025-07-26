@@ -9,9 +9,9 @@ const typeSchema = tsObject({
   out: tsArray(pinTypeSchema),
 });
 
-export type SineWaveState = TypeSchemaType<typeof typeSchema>;
+export type SquareWaveState = TypeSchemaType<typeof typeSchema>;
 
-export const sineWaveComponentType = new EcsComponentType({
-  typeName: "SineWave",
+export const squareWaveComponentType = new EcsComponentType({
+  typeName: "SquareWave",
   typeSchema,
 });
