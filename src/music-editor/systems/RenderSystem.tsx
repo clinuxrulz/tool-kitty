@@ -1,4 +1,4 @@
-import { Accessor, Component, createComputed, createMemo, createRoot, For, mapArray, onCleanup, Show } from "solid-js";
+import { Accessor, Component, createComputed, createMemo, createRoot, For, mapArray, onCleanup, onMount, Show } from "solid-js";
 import { NodesSystemNode } from "./NodesSystem";
 import { Vec2 } from "../../lib";
 
@@ -116,9 +116,13 @@ const RenderNode: Component<{
   });
   let boxWidth = createMemo(() => {
     return Math.max(
-      titleSize().y,
+      titleSize().x,
       inputPinsMaxWidth() + outputPinsMaxWidth() + 4.0 * gapAroundPinDot
     ) + 2.0 * boxPadding;
+  });
+  let boxSize = createMemo(() => Vec2.create(boxWidth(), boxHeight()));
+  onMount(() => {
+    props.node.setRenderSizeAccessor(boxSize);
   });
   let inputPinPositions = createMemo(() => {
     let result: { [name: string]: {

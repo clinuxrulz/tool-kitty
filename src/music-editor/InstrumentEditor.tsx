@@ -1,4 +1,4 @@
-import { Component, ComponentProps, createMemo, createSignal, onCleanup, onMount, splitProps } from "solid-js";
+import { Component, ComponentProps, createMemo, createSignal, onCleanup, onMount, Show, splitProps } from "solid-js";
 import { Overwrite } from "../util";
 import { Complex, EcsWorld, Transform2D, transform2DComponentType, Vec2 } from "../lib";
 import { createStore } from "solid-js/store";
@@ -10,6 +10,7 @@ import { IdleMode } from "./modes/IdleMode";
 import { NodesSystem } from "./systems/NodesSystem";
 import { RenderSystem } from "./systems/RenderSystem";
 import { sineWaveComponentType } from "./components/SineWaveComponent";
+import { AddNodeMode } from "./modes/AddNodeMode";
 
 const InstrumentEditor: Component<
   Overwrite<
@@ -162,7 +163,12 @@ const InstrumentEditor: Component<
         }}
       >
         <div>
-          Toolbar goes here!
+          <button
+            class="btn btn-primary"
+            onClick={() => setMode(() => new AddNodeMode(modeParams))}
+          >
+            Add Node
+          </button>
         </div>
         <div
           style={{
@@ -191,6 +197,21 @@ const InstrumentEditor: Component<
               <renderSystem.Render/>
             </g>
           </svg>
+          <Show when={mode().sideForm?.()} keyed>
+            {(SideForm) => (
+              <div
+                style={{
+                  position: "absolute",
+                  left: "0",
+                  top: "0",
+                  height: "100%",
+                  background: "black",
+                }}
+              >
+                <SideForm/>
+              </div>
+            )}
+          </Show>
         </div>
       </div>
     </div>

@@ -4,6 +4,7 @@ import { Pin } from "./components/Pin";
 import { Accessor } from "solid-js";
 
 export interface NodeParams<A extends object> {
+  readonly entity: string;
   readonly state: Store<A>;
   readonly setState: SetStoreFunction<A>;
 }
