@@ -1,5 +1,6 @@
-import { Accessor, Component, For } from "solid-js";
+import { Accessor, Component, createComputed, createMemo, createRoot, For, mapArray, onCleanup } from "solid-js";
 import { NodesSystemNode } from "./NodesSystem";
+import { Vec2 } from "../../lib";
 
 export class RenderSystem {
   Render: Component;
@@ -19,6 +20,152 @@ export class RenderSystem {
 const RenderNode: Component<{
   node: NodesSystemNode,
 }> = (props) => {
-  
-  return undefined;
+  let titleSize = createMemo(() => {
+      let { svg, dispose, } = createRoot((dispose) => {
+        return {
+          svg: createMeasurementSvg(),
+          dispose,
+        }
+      });
+      let text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      let text2 = document.createTextNode(props.node.node.type.componentType.typeName);
+      text.appendChild(text2);
+      svg.appendChild(text2);
+      let size = text.getBBox();
+      dispose();
+      return Vec2.create(size.width, size.height);
+  });
+  let inputPinSizes = createMemo(mapArray(
+    () => props.node.node.inputPins?.() ?? [],
+    (inputPin) => {
+      let { svg, dispose, } = createRoot((dispose) => {
+        return {
+          svg: createMeasurementSvg(),
+          dispose,
+        }
+      });
+      let text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      let text2 = document.createTextNode(inputPin.name);
+      text.appendChild(text2);
+      svg.appendChild(text2);
+      let size = text.getBBox();
+      dispose();
+      return {
+        name: inputPin.name,
+        size: Vec2.create(size.width, size.height),
+      };
+    },
+  ));
+  let outputPinSizes = createMemo(mapArray(
+    () => props.node.node.outputPins?.() ?? [],
+    (outputPin) => {
+      let { svg, dispose, } = createRoot((dispose) => {
+        return {
+          svg: createMeasurementSvg(),
+          dispose,
+        }
+      });
+      let text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      let text2 = document.createTextNode(outputPin.name);
+      text.appendChild(text2);
+      svg.appendChild(text2);
+      let size = text.getBBox();
+      dispose();
+      return {
+        name: outputPin.name,
+        size: Vec2.create(size.width, size.height),
+      };
+    },
+  ));
+  const boxPadding = 5.0;
+  const inputPinsTotalHeight = createMemo(() => {
+    let result = 0.0;
+    for (let inputPinSize of inputPinSizes()) {
+      result += inputPinSize.size.y;
+    }
+    return result;
+  });
+  const outputPinsTotalHeight = createMemo(() => {
+    let result = 0.0;
+    for (let outputPinSize of outputPinSizes()) {
+      result += outputPinSize.size.y;
+    }
+    return result;
+  });
+  let inputPinsMaxWidth = createMemo(() => {
+    let result = 0.0;
+    for (let inputPinSize of inputPinSizes()) {
+      result = Math.max(result, inputPinSize.size.x);
+    }
+    return result;
+  });
+  let outputPinsMaxWidth = createMemo(() => {
+    let result = 0.0;
+    for (let outputPinSize of outputPinSizes()) {
+      result = Math.max(result, outputPinSize.size.x);
+    }
+    return result;
+  });
+  let boxHeight = createMemo(() => {
+    return titleSize().x + Math.max(
+      inputPinsTotalHeight(),
+      outputPinsTotalHeight(),
+    ) + 2.0 * boxPadding;
+  });
+  let boxWidth = createMemo(() => {
+    return titleSize().y + inputPinsMaxWidth() + outputPinsMaxWidth() + 2.0 * boxPadding;
+  });
+  let transform = createMemo(() => {
+    let space = props.node.space();
+    let o = space.origin;
+    let u = space.u;
+    let o2x = o.x;
+    let o2y = -o.y;
+    let u2x = u.x;
+    let u2y = -u.y;
+    let v2x = u2y;
+    let v2y = -u2x;
+    return `matrix(${u2x} ${v2x} ${u2y} ${v2y} ${o2x} ${o2y})`;
+  });
+  return (
+    <g transform={transform()}>
+      <rect
+        x={0}
+        y={-boxHeight()}
+        width={boxWidth()}
+        height={boxHeight()}
+        stroke="black"
+        fill="white"
+      />
+    </g>
+  );
 };
+
+const createMeasurementSvg = (() => {
+  let refCount = 0;
+  let svg: SVGSVGElement | undefined = undefined;
+  return () => {
+    if (svg != undefined) {
+      ++refCount;
+    } else {
+      svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.style.setProperty("position", "absolute");
+      svg.style.setProperty("left", "-1000px");
+      svg.style.setProperty("top", "-1000px");
+      document.body.append(svg);
+      refCount = 1;
+    }
+    onCleanup(() => {
+      --refCount;
+      if (refCount == 0) {
+        window.queueMicrotask(() => {
+          if (refCount == 0 && svg != undefined) {
+            document.body.removeChild(svg);
+            svg = undefined;
+          }
+        });
+      }
+    });
+    return svg;
+  };
+})();

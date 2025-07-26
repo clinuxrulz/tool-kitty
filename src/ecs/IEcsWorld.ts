@@ -16,6 +16,10 @@ export interface IEcsWorld {
     componentType: EcsComponentType<A>,
   ): EcsComponent<A> | undefined;
   getComponents(entityId: string): IsEcsComponent[];
+  setComponents(
+    entityId: string,
+    components: IsEcsComponent[],
+  ): void;
   unsetComponent(entityId: string, componentType: IsEcsComponentType): void;
   unsetComponents(entityId: string, componentTypes: IsEcsComponentType[]): void;
   debugInfo?(): string;

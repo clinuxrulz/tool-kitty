@@ -11,9 +11,10 @@ export class NoiseNodeType implements NodeType<NoiseWaveState> {
   }  
 }
 
-export const noisekNodeType = new NoiseNodeType();
+export const noiseNodeType = new NoiseNodeType();
 
 class NoiseNode implements Node<NoiseWaveState> {
+  type = noiseNodeType;
   nodeParams: NodeParams<NoiseWaveState>;
   outputPins: Accessor<{ name: string; sinks: Accessor<Pin[]>; setSinks: (x: Pin[]) => void, }[]>;
 

@@ -11,9 +11,10 @@ export class NumberNodeType implements NodeType<NumberState> {
   }  
 }
 
-export const numberkNodeType = new NumberNodeType();
+export const numberNodeType = new NumberNodeType();
 
 class NoiseNode implements Node<NumberState> {
+  type = numberNodeType;
   nodeParams: NodeParams<NumberState>;
   outputPins: Accessor<{ name: string; sinks: Accessor<Pin[]>; setSinks: (x: Pin[]) => void, }[]>;
 

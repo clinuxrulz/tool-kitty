@@ -14,6 +14,7 @@ export class MultNodeType implements NodeType<MultState> {
 export const multNodeType = new MultNodeType();
 
 class MultNode implements Node<MultState> {
+  type = multNodeType;
   nodeParams: NodeParams<MultState>;
   inputPins: Accessor<{ name: string; source: Accessor<Pin | undefined>; setSource: (x: Pin | undefined) => void; }[]>;
   outputPins: Accessor<{ name: string; sinks: Accessor<Pin[]>; setSinks: (x: Pin[]) => void; }[]>;

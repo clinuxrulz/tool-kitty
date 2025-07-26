@@ -220,6 +220,36 @@ export class EcsWorldAutomergeProjection implements IEcsWorld {
     return result;
   }
 
+  setComponents(entityId: string, components: IsEcsComponent[]): void {
+    this.docHandle.change((doc) => {
+      for (let component of components) {
+        let component2 = component as EcsComponent<object>;
+        let component3 = saveToJsonViaTypeSchema(
+          component2.type.typeSchema,
+          component2.state,
+        );
+        doc[entityId][component2.type.typeName] = component3;
+      }
+    });
+    for (let component of components) {
+      let component2 = component as EcsComponent<object>;
+      let componentTypeName = component2.type.typeName;
+      let component3 = component2.type.createJsonProjectionV3(
+        untrack(() => this.doc[entityId][componentTypeName]),
+        (callback: (json: any) => void) =>
+          this.docHandle.change((doc2) =>
+            callback(doc2[entityId][componentTypeName]),
+          ),
+      );
+      if (component3.type == "Err") {
+        throw new Error("Unreachable");
+      }
+      let component4 = component3.value;
+      component2.state = component4.state;
+      component2.setState = component4.setState;
+    }
+  }
+
   unsetComponent(entityId: string, componentType: IsEcsComponentType): void {
     this.docHandle.change((doc) => {
       let entity = doc[entityId];

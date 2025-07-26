@@ -15,6 +15,7 @@ export interface NodeType<A extends object> {
 }
 
 export interface Node<A extends object> {
+  readonly type: NodeType<A>;
   readonly nodeParams: NodeParams<A>;
   readonly inputPins?: Accessor<{
     name: string,

@@ -14,6 +14,7 @@ export class SineWaveNodeType implements NodeType<SineWaveState> {
 export const sineWaveNodeType = new SineWaveNodeType();
 
 class SineWaveNode implements Node<SineWaveState> {
+  type = sineWaveNodeType;
   nodeParams: NodeParams<SineWaveState>;
   inputPins: Accessor<{ name: string; source: Accessor<Pin | undefined>; setSource: (x: Pin | undefined) => void; }[]>;
   outputPins: Accessor<{ name: string; sinks: Accessor<Pin[]>; setSinks: (x: Pin[]) => void; }[]>;

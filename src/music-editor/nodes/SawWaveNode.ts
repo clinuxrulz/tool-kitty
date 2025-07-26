@@ -14,6 +14,7 @@ export class SawWaveNodeType implements NodeType<SawWaveState> {
 export const sawWaveNodeType = new SawWaveNodeType();
 
 class SawWaveNode implements Node<SawWaveState> {
+  type = sawWaveNodeType;
   nodeParams: NodeParams<SawWaveState>;
   inputPins: Accessor<{ name: string; source: Accessor<Pin | undefined>; setSource: (x: Pin | undefined) => void; }[]>;
   outputPins: Accessor<{ name: string; sinks: Accessor<Pin[]>; setSinks: (x: Pin[]) => void; }[]>;

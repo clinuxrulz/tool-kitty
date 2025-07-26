@@ -14,6 +14,7 @@ export class AddNodeType implements NodeType<AddState> {
 export const addNodeType = new AddNodeType();
 
 class AddNode implements Node<AddState> {
+  type = addNodeType;
   nodeParams: NodeParams<AddState>;
   inputPins: Accessor<{ name: string; source: Accessor<Pin | undefined>; setSource: (x: Pin | undefined) => void; }[]>;
   outputPins: Accessor<{ name: string; sinks: Accessor<Pin[]>; setSinks: (x: Pin[]) => void; }[]>;

@@ -14,6 +14,7 @@ export class AttackNodeType implements NodeType<AttackState> {
 export const attackNodeType = new AttackNodeType();
 
 class AttackNode implements Node<AttackState> {
+  type = attackNodeType;
   nodeParams: NodeParams<AttackState>;
   inputPins: Accessor<{ name: string; source: Accessor<Pin | undefined>; setSource: (x: Pin | undefined) => void }[]>;
   outputPins: Accessor<{ name: string; sinks: Accessor<Pin[]>; setSinks: (x: Pin[]) => void, }[]>;

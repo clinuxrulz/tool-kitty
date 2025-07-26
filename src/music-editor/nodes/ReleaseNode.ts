@@ -14,6 +14,7 @@ export class ReleaseNodeType implements NodeType<ReleaseState> {
 export const releaseNodeType = new ReleaseNodeType();
 
 class ReleaseNode implements Node<ReleaseState> {
+  type = releaseNodeType;
   nodeParams: NodeParams<ReleaseState>;
   inputPins: Accessor<{ name: string; source: Accessor<Pin | undefined>; setSource: (x: Pin | undefined) => void }[]>;
   outputPins: Accessor<{ name: string; sinks: Accessor<Pin[]>; setSinks: (x: Pin[]) => void, }[]>;

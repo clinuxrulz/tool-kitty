@@ -14,6 +14,7 @@ export class SquareWaveNodeType implements NodeType<SquareWaveState> {
 export const squareWaveNodeType = new SquareWaveNodeType();
 
 class SquareWaveNode implements Node<SquareWaveState> {
+  type = squareWaveNodeType;
   nodeParams: NodeParams<SquareWaveState>;
   inputPins: Accessor<{ name: string; source: Accessor<Pin | undefined>; setSource: (x: Pin | undefined) => void; }[]>;
   outputPins: Accessor<{ name: string; sinks: Accessor<Pin[]>; setSinks: (x: Pin[]) => void; }[]>;
