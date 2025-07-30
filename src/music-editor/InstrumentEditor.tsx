@@ -1,4 +1,4 @@
-import { Component, ComponentProps, createMemo, createSignal, onCleanup, onMount, Show, splitProps } from "solid-js";
+import { Component, ComponentProps, createComputed, createMemo, createSignal, onCleanup, onMount, Show, splitProps } from "solid-js";
 import { Overwrite } from "../util";
 import { Complex, EcsWorld, Transform2D, transform2DComponentType, Vec2 } from "../lib";
 import { createStore } from "solid-js/store";
@@ -11,6 +11,8 @@ import { NodesSystem } from "./systems/NodesSystem";
 import { RenderSystem } from "./systems/RenderSystem";
 import { sineWaveComponentType } from "./components/SineWaveComponent";
 import { AddNodeMode } from "./modes/AddNodeMode";
+import { PickingSystem } from "./systems/PickingSystem";
+import { ReactiveSet } from "@solid-primitives/set";
 
 const InstrumentEditor: Component<
   Overwrite<
@@ -69,11 +71,34 @@ const InstrumentEditor: Component<
   let setMode = (mkMode: () => Mode) => {
     setState("mkMode", () => mkMode);
   };
+  let screenPtToWorldPt = (screenPt: Vec2): Vec2 | undefined => {
+    return Vec2.create(
+      state.pan.x + screenPt.x / state.scale,
+      state.pan.y + screenPt.y / state.scale,
+    );
+  };
   let nodesSystem = new NodesSystem({
     world: () => props.world,
   });
+  let pickingSystem = new PickingSystem({
+    mousePos: () => state.mousePos,
+    screenPtToWorldPt,
+    nodes: () => nodesSystem.nodes(),
+  });
+  let nodeUnderMouseById = () => pickingSystem.nodeUnderMouseById();
+  let highlightedEntitySet = new ReactiveSet<string>();
+  let selectedEntitySet = new ReactiveSet<string>();
+  createComputed(() => {
+    let nodeId = nodeUnderMouseById();
+    if (nodeId == undefined) {
+      highlightedEntitySet.clear();
+    } else {
+      highlightedEntitySet.add(nodeId);
+    }
+  });
   let renderSystem = new RenderSystem({
     nodes: () => nodesSystem.nodes(),
+    highlightedEntitySet,
   });
   let modeParams: ModeParams = {
     undoManager,

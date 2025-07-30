@@ -5,6 +5,7 @@ import { Complex, EcsWorld, makeDefaultViaTypeSchema, Transform2D, transform2DCo
 import { getNodeTypes } from "../nodes/node_registry";
 import { NodesSystem } from "../systems/NodesSystem";
 import { RenderSystem } from "../systems/RenderSystem";
+import { ReactiveSet } from "@solid-primitives/set";
 
 export class AddNodeMode implements Mode {
   sideForm: Accessor<Component | undefined>;
@@ -34,6 +35,7 @@ export class AddNodeMode implements Mode {
     });
     let renderSystem = new RenderSystem({
       nodes: () => nodesSystem.nodes(),
+      highlightedEntitySet: new ReactiveSet(),
     });
     let nodePositions = createMemo(() => {
       let result: {

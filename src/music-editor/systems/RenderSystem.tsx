@@ -1,17 +1,25 @@
 import { Accessor, Component, createComputed, createMemo, createRoot, For, mapArray, onCleanup, onMount, Show } from "solid-js";
 import { NodesSystemNode } from "./NodesSystem";
 import { Vec2 } from "../../lib";
+import { ReactiveSet } from "@solid-primitives/set";
 
 export class RenderSystem {
   Render: Component;
 
   constructor(params: {
     nodes: Accessor<NodesSystemNode[]>,
+    highlightedEntitySet: ReactiveSet<string>,
   }) {
 
     this.Render = () => (
       <For each={params.nodes()}>
-        {(node) => (<RenderNode node={node}/>)}
+        {(node) => (
+          <RenderNode
+            node={node}
+            isHighlighted={
+              params.highlightedEntitySet.has(node.node.nodeParams.entity)
+            }
+          />)}
       </For>
     );
   }
@@ -19,6 +27,7 @@ export class RenderSystem {
 
 const RenderNode: Component<{
   node: NodesSystemNode,
+  isHighlighted: boolean,
 }> = (props) => {
   let titleSize = createMemo(() => {
       let { svg, dispose, } = createRoot((dispose) => {
@@ -183,7 +192,7 @@ const RenderNode: Component<{
         width={boxWidth()}
         height={boxHeight()}
         stroke="black"
-        fill="white"
+        fill={props.isHighlighted ? "blue" : "white"}
         rx="5"
         ry="5"
       />
