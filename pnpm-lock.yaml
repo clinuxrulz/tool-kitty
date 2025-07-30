@@ -228,6 +228,12 @@ importers:
         specifier: ^4.5.3
         version: 4.5.3(@types/node@22.14.1)(rollup@4.27.4)(typescript@5.8.2)(vite@6.0.0(@types/node@22.14.1)(jiti@2.4.2)(lightningcss@1.29.2))
 
+  packages/radioactive-kitty:
+    devDependencies:
+      vite-plugin-dts:
+        specifier: ^4.5.3
+        version: 4.5.3(@types/node@22.14.1)(rollup@4.27.4)(typescript@5.8.2)(vite@6.0.0(@types/node@22.14.1)(jiti@2.4.2)(lightningcss@1.29.2))
+
   packages/reactive-cache:
     devDependencies:
       vite-plugin-dts:
