@@ -1,6 +1,6 @@
-type Accessor<A> = () => A;
-type Setter<A> = (a: A) => void;
-type Signal<A> = [ get: Accessor<A>, set: Setter<A>, ];
+export type Accessor<A> = () => A;
+export type Setter<A> = (a: A) => void;
+export type Signal<A> = [ get: Accessor<A>, set: Setter<A>, ];
 
 type NodeState = "Clean" | "Stale" | "Dirty";
 
@@ -28,7 +28,7 @@ class Node {
 
   static create(update: () => boolean): Node {
     return new Node(
-      "Clean",
+      "Stale",
       new Set(),
       new Set(),
       update,
@@ -38,10 +38,11 @@ class Node {
 
 let observer: ((x: Node) => void) | undefined = undefined;
 let cursorSet = new Set<Node>();
-let cursors: Node[] = [];
+let cursorStack: Node[] = [];
 let transactionDepth: number = 0;
+let returnSet = new Set<Node>();
 let returnStack: Node[] = [];
-let cleanStack: Node[] = [];
+let cleanSet = new Set<Node>();
 
 function transaction<A>(k: () => A): A {
   let result: A;
@@ -59,9 +60,13 @@ function transaction<A>(k: () => A): A {
 
 function propergate() {
   while (true) {
-    let cursor = cursors.pop();
+    let cursor = cursorStack.pop();
     if (cursor == undefined) {
-      break;
+      cursor = returnStack.pop();
+      if (cursor == undefined) {
+        break;
+      }
+      returnSet.delete(cursor);
     }
     cursorSet.delete(cursor);
     if (cursor.state == "Clean") {
@@ -72,21 +77,57 @@ function propergate() {
       if (source.state == "Dirty" || source.state == "Stale") {
         if (!cursorSet.has(source)) {
           cursorSet.add(source);
-          cursors.push(source);
+          cursorStack.push(source);
           hasStaleOrDirtySources = true;
         }
       }
     }
-    returnStack.push(cursor);
-    // TODO
-  }
-  while (true) {
-    let node = cleanStack.pop();
-    if (node == undefined) {
-      break;
+    if (!hasStaleOrDirtySources) {
+      if (cursor.state == "Stale") {
+        cursor.state = "Clean";
+        continue;
+      } else if (cursor.state == "Dirty") {
+        for (let source of cursor.sources) {
+          source.sinks.delete(cursor);
+        }
+        cursor.sources.clear();
+        let changed: boolean;
+        let oldObserver = observer;
+        try {
+          observer = (node) => {
+            node.sinks.add(cursor);
+            cursor.sources.add(node);
+          };
+          changed = cursor.update();
+        } finally {
+          observer = oldObserver;
+        }
+        cursor.state = "Clean";
+        if (changed) {
+          for (let sink of cursor.sinks) {
+            sink.state = "Dirty";
+            if (!(cursorSet.has(sink) || returnSet.has(sink))) {
+              cursorSet.add(sink);
+              cursorStack.push(sink);
+            }
+          }
+        }
+        continue;
+      } else {
+        let x: never = cursor.state;
+        throw new Error(`Unreachable: ${x}`);
+      }
+    } else {
+      if (!returnSet.has(cursor)) {
+        returnSet.add(cursor);
+        returnStack.push(cursor);
+      }
     }
+  }
+  for (let node of cleanSet) {
     node.state = "Stale";
   }
+  cleanSet.clear();
 }
 
 function dirtyTheNode(node: Node) {
@@ -94,7 +135,7 @@ function dirtyTheNode(node: Node) {
     node.state = "Dirty";
     if (!cursorSet.has(node)) {
       cursorSet.add(node);
-      cursors.push(node);
+      cursorStack.push(node);
     }
   });
 }
@@ -110,6 +151,49 @@ export function batch<A>(k: () => A): A {
   return transaction(k);
 }
 
+export function createMemo<A>(k: () => A): Accessor<A> {
+  let value: A;
+  let sources = new Set<Node>();
+  let oldObserver = observer;
+  observer = (node) => {
+    sources.add(node);
+  };
+  try {
+    value = k();
+  } finally {
+    observer = oldObserver;
+  }
+  let node = new Node(
+    "Stale",
+    sources,
+    new Set(),
+    () => {
+      let oldValue = value;
+      value = k();
+      return value !== oldValue;
+    },
+  );
+  for (let source of sources) {
+    source.sinks.add(node);
+  }
+  return () => {
+    observeNode(node);
+    return value;
+  };
+}
+
+export function untrack<A>(k: () => A): A {
+  let oldObserver = observer;
+  observer = () => {};
+  let result: A;
+  try {
+    result = k();
+  } finally {
+    observer = oldObserver;
+  }
+  return result;
+}
+
 export function createSignal<A>(): Signal<A | undefined>;
 export function createSignal<A>(a: A): Signal<A>;
 export function createSignal<A>(a?: A): Signal<A> | Signal<A | undefined> {
@@ -122,7 +206,7 @@ export function createSignal<A>(a?: A): Signal<A> | Signal<A | undefined> {
 
 function createSignal2<A>(a: A): Signal<A> {
   let value = a;
-  let node = Node.create(() => false);
+  let node = Node.create(() => true);
   return [
     () => {
       observeNode(node);

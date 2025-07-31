@@ -1,0 +1,36 @@
+// .vscode/launch.json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node", // Or "pwa-node" if you have it installed and prefer it
+      "request": "launch",
+      "name": "Debug Vitest Current File",
+      "autoAttachChildProcesses": true, // Important for Vitest's worker threads
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+      "program": "${workspaceRoot}/node_modules/vitest/vitest.mjs", // Path to Vitest executable
+      "args": [
+        "run", // Use 'run' to execute tests once, good for debugging
+        "${relativeFile}", // This will run the currently open test file
+        "--test-timeout=0",
+        "--no-file-parallelism"
+      ],
+      "console": "integratedTerminal", // Or "internalConsole"
+      "cwd": "${workspaceFolder}" // Set the working directory, adjust if in a submodule
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug Vitest All Tests (Current Submodule)",
+      "autoAttachChildProcesses": true,
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+      "program": "${workspaceFolder}/node_modules/vitest/vitest.mjs",
+      "args": [
+        "--test-timeout=0",
+        "--no-file-parallelism"
+      ],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}
