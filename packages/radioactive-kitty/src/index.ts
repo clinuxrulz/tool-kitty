@@ -121,11 +121,40 @@ function resolveNode(node: Node) {
   } else if (node.state == "Dirty") {
     let changed = false;
     if (node.update != undefined) {
+      cleanupNode(node);
       changed = node.update();
     }
     node.state = "Clean";
     if (changed) {
       dirtyTheSinks(node);
+    }
+  }
+}
+
+function cleanupNode(node: Node) {
+  let stack = [ node, ];
+  while (true) {
+    let atNode = stack.pop();
+    if (atNode == undefined) {
+      break;
+    }
+    if (atNode.sources != undefined) {
+      for (let source of atNode.sources) {
+        if (source.sinks != undefined) {
+          source.sinks.delete(atNode);
+        }
+      }
+      atNode.sources.clear();
+    }
+    if (atNode.cleanups != undefined) {
+      for (let cleanup of atNode.cleanups) {
+        cleanup();
+      }
+      atNode.cleanups.splice(0, atNode.cleanups.length);
+    }
+    if (atNode.children != undefined) {
+      stack.push(...atNode.children);
+      atNode.children.clear();
     }
   }
 }
@@ -140,6 +169,9 @@ export function createMemo<A>(
     equals: (a: A, b: A) => boolean,
   },
 ): Accessor<A> {
+  if (owner == undefined) {
+    throw new Error("Creating a memo outside owner is not supported.");
+  }
   let equals = options?.equals ?? ((a, b) => a === b);
   let value: A | undefined = undefined;
   let children = new Set<Node>();
@@ -161,6 +193,7 @@ export function createMemo<A>(
         equals(value, oldValue);
     },
   };
+  owner.children?.add(node);
   return () => {
     resolveNode(node);
     return value!;
@@ -168,13 +201,16 @@ export function createMemo<A>(
 }
 
 export function createEffect(k: () => void) {
+  if (owner == undefined) {
+    throw new Error("Creating an effect outside owner is not supported.");
+  }
   let children = new Set<Node>();
   let cleanups: (() => void)[] = [];
   let sources = new Set<Node>();
   let sinks = new Set<Node>();
   let node: Node = {
     state: "Dirty",
-    eagar: false,
+    eagar: true,
     children,
     cleanups,
     sources,
@@ -184,7 +220,15 @@ export function createEffect(k: () => void) {
       return false;
     },
   };
-  cursorSet.add(node);
+  owner.children?.add(node);
+  transaction(() => cursorSet.add(node));
+}
+
+export function onCleanup(k: () => void) {
+  if (owner == undefined) {
+    throw new Error("Creating a cleanup outside owner is not supported.");
+  }
+  owner.cleanups?.push(k);
 }
 
 export function untrack<A>(k: () => A): A {
@@ -235,32 +279,6 @@ export function createRoot<A>(k: (dispose: () => void) => A): A {
     children,
     cleanups,
   };
-  let dispose = () => {
-    let stack = [ node, ];
-    while (true) {
-      let atNode = stack.pop();
-      if (atNode == undefined) {
-        break;
-      }
-      if (atNode.sources != undefined) {
-        for (let source of atNode.sources) {
-          if (source.sinks != undefined) {
-            source.sinks.delete(atNode);
-          }
-        }
-        atNode.sources.clear();
-      }
-      if (atNode.cleanups != undefined) {
-        for (let cleanup of atNode.cleanups) {
-          cleanup();
-        }
-        atNode.cleanups.splice(0, cleanups.length);
-      }
-      if (atNode.children != undefined) {
-        stack.push(...atNode.children);
-        atNode.children.clear();
-      }
-    }
-  };
+  let dispose = () => cleanupNode(node);
   return useOwner(node, () => k(dispose));
 }
