@@ -342,6 +342,7 @@ export function createSelector<A>(selection: Accessor<A | undefined>): (key: A) 
         s: createSignal(untrack(() => selection() === key)),
         refCount: 1,
       };
+      map.set(key, entry);
     } else {
       entry.refCount++;
     }
