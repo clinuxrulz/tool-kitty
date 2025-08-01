@@ -24,6 +24,7 @@ describe("tests createSelector", () => {
         let item = {
           selected: false,
         };
+        items.push(item);
         createEffect(() => {
           item.selected = isSelected(i);
         });
@@ -31,7 +32,7 @@ describe("tests createSelector", () => {
       for (let i = 0; i < items.length; ++i) {
         setSelection(i);
         for (let j = 0; j < items.length; ++j) {
-          expect(items[i].selected).toBe(i == j);
+          expect(items[j].selected).toBe(j == i);
         }
       }
       dispose();

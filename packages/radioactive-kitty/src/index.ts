@@ -321,6 +321,9 @@ export function createSelector<A>(selection: Accessor<A | undefined>): (key: A) 
   let lastSelection: A | undefined = undefined;
   let halfEdge = createHalfEdge(() => {
     let selection2 = selection();
+    if (selection2 === lastSelection) {
+      return;
+    }
     if (lastSelection != undefined) {
       let entry = map.get(lastSelection);
       if (entry != undefined) {
@@ -333,6 +336,7 @@ export function createSelector<A>(selection: Accessor<A | undefined>): (key: A) 
         entry.s[1](true);
       }
     }
+    lastSelection = selection2;
   });
   return (key) => {
     halfEdge();
