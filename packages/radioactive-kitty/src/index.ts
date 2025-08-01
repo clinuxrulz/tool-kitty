@@ -312,3 +312,49 @@ export function createHalfEdge<A>(a: Accessor<A>): Accessor<void> {
     }
   };
 }
+
+export function createSelector<A>(selection: Accessor<A | undefined>): (key: A) => boolean {
+  let map = new Map<A,{
+    s: Signal<boolean>,
+    refCount: number,
+  }>();
+  let lastSelection: A | undefined = undefined;
+  let halfEdge = createHalfEdge(() => {
+    let selection2 = selection();
+    if (lastSelection != undefined) {
+      let entry = map.get(lastSelection);
+      if (entry != undefined) {
+        entry.s[1](false);
+      }
+    }
+    if (selection2 != undefined) {
+      let entry = map.get(selection2);
+      if (entry != undefined) {
+        entry.s[1](true);
+      }
+    }
+  });
+  return (key) => {
+    halfEdge();
+    let entry = map.get(key);
+    if (entry == undefined) {
+      entry = {
+        s: createSignal(untrack(() => selection() === key)),
+        refCount: 1,
+      };
+    } else {
+      entry.refCount++;
+    }
+    onCleanup(() => {
+      entry.refCount--;
+      if (entry.refCount == 0) {
+        queueMicrotask(() => {
+          if (entry.refCount == 0) {
+            map.delete(key);
+          }
+        });
+      }
+    });
+    return entry.s[0]();
+  };
+}
