@@ -305,6 +305,7 @@ export function createHalfEdge<A>(a: Accessor<A>): Accessor<void> {
       return false;
     },
   };
+  transaction(() => cursorSet.add(node));
   return () => {
     if (observer != undefined) {
       observer.sources?.add(node);
