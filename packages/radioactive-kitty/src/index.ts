@@ -4,194 +4,191 @@ export type Signal<A> = [ get: Accessor<A>, set: Setter<A>, ];
 
 type NodeState = "Clean" | "Stale" | "Dirty";
 
-class Node {
+interface Node {
   state: NodeState;
-  sources: Set<Node>;
-  sinks: Set<Node>;
+  eagar: boolean;
+  readonly children?: Set<Node>;
+  readonly cleanups?: (() => void)[];
+  readonly sources?: Set<Node>;
+  readonly sinks?: Set<Node>;
   /**
    * The update function.
    * Returns true if the node changed in value.
    */
-  update: () => boolean;
-
-  constructor(
-    state: NodeState,
-    sources: Set<Node>,
-    sinks: Set<Node>,
-    update: () => boolean,
-  ) {
-    this.state = state;
-    this.sources = sources;
-    this.sinks = sinks;
-    this.update = update;
-  }
-
-  static create(update: () => boolean): Node {
-    return new Node(
-      "Stale",
-      new Set(),
-      new Set(),
-      update,
-    );
-  }
+  readonly update?: () => boolean;
 }
 
-let observer: ((x: Node) => void) | undefined = undefined;
+let owner: Node | undefined = undefined;
+let observer: Node | undefined = undefined;
 let cursorSet = new Set<Node>();
-let cursorStack: Node[] = [];
-let transactionDepth: number = 0;
-let returnSet = new Set<Node>();
-let returnStack: Node[] = [];
-let cleanSet = new Set<Node>();
+let transactionDepth = 0;
 
 function transaction<A>(k: () => A): A {
+  ++transactionDepth;
   let result: A;
   try {
-    ++transactionDepth;
     result = k();
   } finally {
     --transactionDepth;
   }
   if (transactionDepth == 0) {
-    propergate();
+    flush();
   }
   return result;
 }
 
-function propergate() {
-  while (true) {
-    let cursor = cursorStack.pop();
-    if (cursor == undefined) {
-      cursor = returnStack.pop();
-      if (cursor == undefined) {
-        break;
-      }
-      returnSet.delete(cursor);
-    }
-    cursorSet.delete(cursor);
-    if (cursor.state == "Clean") {
-      continue;
-    }
-    let hasStaleOrDirtySources = false;
-    for (let source of cursor.sources) {
-      if (source.state == "Dirty" || source.state == "Stale") {
-        if (!cursorSet.has(source)) {
-          cursorSet.add(source);
-          cursorStack.push(source);
-          hasStaleOrDirtySources = true;
-        }
-      }
-    }
-    if (!hasStaleOrDirtySources) {
-      if (cursor.state == "Stale") {
-        cursor.state = "Clean";
-        continue;
-      } else if (cursor.state == "Dirty") {
-        for (let source of cursor.sources) {
-          source.sinks.delete(cursor);
-        }
-        cursor.sources.clear();
-        let changed: boolean;
-        let oldObserver = observer;
-        try {
-          observer = (node) => {
-            node.sinks.add(cursor);
-            cursor.sources.add(node);
-          };
-          changed = cursor.update();
-        } finally {
-          observer = oldObserver;
-        }
-        cursor.state = "Clean";
-        if (changed) {
-          for (let sink of cursor.sinks) {
-            sink.state = "Dirty";
-            if (!(cursorSet.has(sink) || returnSet.has(sink))) {
-              cursorSet.add(sink);
-              cursorStack.push(sink);
-            }
-          }
-        }
-        continue;
-      } else {
-        let x: never = cursor.state;
-        throw new Error(`Unreachable: ${x}`);
-      }
-    } else {
-      if (!returnSet.has(cursor)) {
-        returnSet.add(cursor);
-        returnStack.push(cursor);
-      }
+function flush() {
+  while (cursorSet.size != 0) {
+    let cursors = [...cursorSet];
+    cursorSet.clear();
+    for (let cursor of cursors) {
+      resolveNode(cursor);
     }
   }
-  for (let node of cleanSet) {
-    node.state = "Stale";
+}
+
+function useOwner<A>(innerOwner: Node, k: () => A): A {
+  let oldOwner = owner;
+  owner = innerOwner;
+  let result: A;
+  try {
+    result = k();
+  } finally {
+    owner = oldOwner;
   }
-  cleanSet.clear();
+  return result;
 }
 
-function dirtyTheNode(node: Node) {
-  transaction(() => {
-    node.state = "Dirty";
-    if (!cursorSet.has(node)) {
-      cursorSet.add(node);
-      cursorStack.push(node);
-    }
-  });
+function useObserver<A>(innerObserver: Node | undefined, k: () => A): A {
+  let oldObserver = observer;
+  observer = innerObserver;
+  let result: A;
+  try {
+    result = k();
+  } finally {
+    observer = oldObserver;
+  }
+  return result;
 }
 
-function observeNode(node: Node) {
-  if (observer == undefined) {
+function useOwnerAndObserver<A>(innerOwnerAndObserver: Node | undefined, k: () => A): A {
+  let oldOwner = owner;
+  let oldObserver = observer;
+  let result: A;
+  owner = innerOwnerAndObserver;
+  observer = innerOwnerAndObserver;
+  try {
+    result = k();
+  } finally {
+    owner = oldOwner;
+    observer = oldObserver;
+  }
+  return result;
+}
+
+function dirtyTheSinks(node: Node) {
+  if (node.sinks == undefined) {
     return;
   }
-  observer(node);
+  for (let sink of node.sinks) {
+    if (sink.state != "Dirty") {
+      sink.state = "Dirty";
+      if (sink.eagar) {
+        cursorSet.add(sink);
+      }
+      dirtyTheSinks(sink);
+    }
+  }
+}
+
+function resolveNode(node: Node) {
+  if (node.state == "Clean") {
+    return;
+  }
+  let dirtyOrStaleSources: Node[] = [];
+  if (node.sources != undefined) {
+    for (let source of node.sources) {
+      if (source.state == "Dirty" || source.state == "Stale") {
+        dirtyOrStaleSources.push(source);
+      }
+    }
+  }
+  for (let node of dirtyOrStaleSources) {
+    resolveNode(node);
+  }
+  if (node.state == "Stale") {
+    node.state = "Clean";
+  } else if (node.state == "Dirty") {
+    let changed = false;
+    if (node.update != undefined) {
+      changed = node.update();
+    }
+    node.state = "Clean";
+    if (changed) {
+      dirtyTheSinks(node);
+    }
+  }
 }
 
 export function batch<A>(k: () => A): A {
   return transaction(k);
 }
 
-export function createMemo<A>(k: () => A): Accessor<A> {
-  let value: A;
+export function createMemo<A>(
+  k: () => A,
+  options?: {
+    equals: (a: A, b: A) => boolean,
+  },
+): Accessor<A> {
+  let equals = options?.equals ?? ((a, b) => a === b);
+  let value: A | undefined = undefined;
+  let children = new Set<Node>();
+  let cleanups: (() => void)[] = [];
   let sources = new Set<Node>();
-  let oldObserver = observer;
-  observer = (node) => {
-    sources.add(node);
-  };
-  try {
-    value = k();
-  } finally {
-    observer = oldObserver;
-  }
-  let node = new Node(
-    "Stale",
+  let sinks = new Set<Node>();
+  let node: Node = {
+    state: "Dirty",
+    eagar: false,
+    children,
+    cleanups,
     sources,
-    new Set(),
-    () => {
+    sinks,
+    update: () => {
       let oldValue = value;
-      value = k();
-      return value !== oldValue;
+      value = useOwnerAndObserver(node, k);
+      return oldValue == undefined ?
+        false :
+        equals(value, oldValue);
     },
-  );
-  for (let source of sources) {
-    source.sinks.add(node);
-  }
+  };
   return () => {
-    observeNode(node);
-    return value;
+    resolveNode(node);
+    return value!;
   };
 }
 
+export function createEffect(k: () => void) {
+  let children = new Set<Node>();
+  let cleanups: (() => void)[] = [];
+  let sources = new Set<Node>();
+  let sinks = new Set<Node>();
+  let node: Node = {
+    state: "Dirty",
+    eagar: false,
+    children,
+    cleanups,
+    sources,
+    sinks,
+    update: () => {
+      useOwnerAndObserver(node, k);
+      return false;
+    },
+  };
+  cursorSet.add(node);
+}
+
 export function untrack<A>(k: () => A): A {
-  let oldObserver = observer;
-  observer = () => {};
-  let result: A;
-  try {
-    result = k();
-  } finally {
-    observer = oldObserver;
-  }
-  return result;
+  return useObserver(undefined, k);
 }
 
 export function createSignal<A>(): Signal<A | undefined>;
@@ -206,15 +203,64 @@ export function createSignal<A>(a?: A): Signal<A> | Signal<A | undefined> {
 
 function createSignal2<A>(a: A): Signal<A> {
   let value = a;
-  let node = Node.create(() => true);
+  let sinks = new Set<Node>();
+  let node: Node = {
+    state: "Clean",
+    eagar: true,
+    sinks,
+  };
   return [
     () => {
-      observeNode(node);
+      if (observer != undefined) {
+        observer.sources?.add(node);
+        sinks.add(observer);
+      }
       return value;
     },
     (x) => {
-      value = x;
-      dirtyTheNode(node);
+      transaction(() => {
+        value = x;
+        dirtyTheSinks(node);
+      });
     },
   ];
+}
+
+export function createRoot<A>(k: (dispose: () => void) => A): A {
+  let children = new Set<Node>();
+  let cleanups: (() => void)[] = [];
+  let node: Node = {
+    state: "Clean",
+    eagar: true,
+    children,
+    cleanups,
+  };
+  let dispose = () => {
+    let stack = [ node, ];
+    while (true) {
+      let atNode = stack.pop();
+      if (atNode == undefined) {
+        break;
+      }
+      if (atNode.sources != undefined) {
+        for (let source of atNode.sources) {
+          if (source.sinks != undefined) {
+            source.sinks.delete(atNode);
+          }
+        }
+        atNode.sources.clear();
+      }
+      if (atNode.cleanups != undefined) {
+        for (let cleanup of atNode.cleanups) {
+          cleanup();
+        }
+        atNode.cleanups.splice(0, cleanups.length);
+      }
+      if (atNode.children != undefined) {
+        stack.push(...atNode.children);
+        atNode.children.clear();
+      }
+    }
+  };
+  return useOwner(node, () => k(dispose));
 }
