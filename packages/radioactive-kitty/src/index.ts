@@ -195,6 +195,10 @@ export function createMemo<A>(
   };
   owner.children?.add(node);
   return () => {
+    if (observer != undefined) {
+      observer.sources?.add(node);
+      sinks.add(observer);
+    }
     resolveNode(node);
     return value!;
   };
@@ -281,4 +285,29 @@ export function createRoot<A>(k: (dispose: () => void) => A): A {
   };
   let dispose = () => cleanupNode(node);
   return useOwner(node, () => k(dispose));
+}
+
+export function createHalfEdge<A>(a: Accessor<A>): Accessor<void> {
+  if (owner == undefined) {
+    throw new Error("Creating a half edge outside owner is not supported.");
+  }
+  let children = new Set<Node>();
+  let cleanups: (() => void)[] = [];
+  let sources = new Set<Node>();
+  let node: Node = {
+    state: "Dirty",
+    eagar: true,
+    children,
+    cleanups,
+    sources,
+    update: () => {
+      useOwnerAndObserver(node, a);
+      return false;
+    },
+  };
+  return () => {
+    if (observer != undefined) {
+      observer.sources?.add(node);
+    }
+  };
 }
