@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createMemo, createRoot, createSignal } from ".";
+import { createEffect, createMemo, createRoot, createSelector, createSignal, untrack } from ".";
 
 describe("test", () => {
   it("tests a test", () => {
@@ -9,6 +9,31 @@ describe("test", () => {
       expect(y()).toBe(4);
       setX(4);
       expect(y()).toBe(8);
+      dispose();
+    });
+  });
+});
+
+describe("tests createSelector", () => {
+  it("should select stuff when the selection changes", () => {
+    let items: { selected: boolean, }[] = [];
+    let [ selection, setSelection, ] = createSignal(0);
+    createRoot((dispose) => {
+      let isSelected = createSelector(selection);
+      for (let i = 0; i < 10; ++i) {
+        let item = {
+          selected: false,
+        };
+        createEffect(() => {
+          item.selected = isSelected(i);
+        });
+      }
+      for (let i = 0; i < items.length; ++i) {
+        setSelection(i);
+        for (let j = 0; j < items.length; ++j) {
+          expect(items[i].selected).toBe(i == j);
+        }
+      }
       dispose();
     });
   });
