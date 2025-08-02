@@ -9,6 +9,7 @@ import { ReactiveSet } from "@solid-primitives/set";
 import { createStore } from "solid-js/store";
 import { PickingSystem } from "../systems/PickingSystem";
 import { NodeType } from "../Node";
+import { NoTrack } from "../../util";
 
 export class AddNodeMode implements Mode {
   sideForm: Accessor<Component | undefined>;
@@ -18,10 +19,10 @@ export class AddNodeMode implements Mode {
       pan: Vec2,
       scale: number,
       formMousePos: Vec2 | undefined,
-      dragging: {
+      dragging: NoTrack<{
         nodeType: NodeType<any>,
         pickupOffset: Vec2,
-      } | undefined,
+      }> | undefined,
     }>({
       pan: Vec2.zero,
       scale: 1.0,
@@ -123,11 +124,27 @@ export class AddNodeMode implements Mode {
     let onPointerDown = (e: PointerEvent) => {
       svgElement.setPointerCapture(e.pointerId);
       queueMicrotask(() => {
+        let mousePos = state.formMousePos;
+        if (mousePos == undefined) {
+          return;
+        }
         let nodeUnderMouseById2 = nodeUnderMouseById();
         if (nodeUnderMouseById2 == undefined) {
           return;
         }
-        
+        let node = nodesSystem.lookupNodeById(nodeUnderMouseById2);
+        if (node == undefined) {
+          return;
+        }
+        let nodePos = node.space().origin;
+        let pt = screenPtToWorldPt(mousePos);
+        if (pt == undefined) {
+          return;
+        }
+        setState("dragging", new NoTrack({
+          nodeType: node.node.type,
+          pickupOffset: pt.sub(nodePos),
+        }));
       });
     };
     let onPointerUp = (e: PointerEvent) => {
