@@ -237,6 +237,11 @@ const InstrumentEditor: Component<
               </div>
             )}
           </Show>
+          <Show when={mode().overlayHtmlUi} keyed>
+            {(OverlayHtmlUi) => (
+              <OverlayHtmlUi/>
+            )}
+          </Show>
         </div>
       </div>
     </div>
