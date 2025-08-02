@@ -1,10 +1,11 @@
-import { Accessor, createMemo, createSignal, mapArray, untrack } from "solid-js";
+import { Accessor, createComputed, createMemo, createSignal, mapArray, onCleanup, untrack } from "solid-js";
 import { Node } from "../Node";
 import { Transform2D } from "../../math/Transform2D";
 import { IEcsWorld } from "../../ecs/IEcsWorld";
 import { lookupNodeType } from "../nodes/node_registry";
 import { EcsComponent, transform2DComponentType, Vec2 } from "../../lib";
 import { opToArr } from "../../kitty-demo/util";
+import { ReactiveMap } from "@solid-primitives/map";
 
 export type NodesSystemNode = {
   node: Node<any>,
@@ -16,6 +17,7 @@ export type NodesSystemNode = {
 
 export class NodesSystem {
   nodes: Accessor<NodesSystemNode[]>;
+  lookupNodeById: (nodeId: string) => NodesSystemNode | undefined;
 
   constructor(params: {
     world: Accessor<IEcsWorld>,
@@ -78,6 +80,29 @@ export class NodesSystem {
         });
       },
     ));
-    this.nodes = createMemo(() => nodes_().flatMap((node) => opToArr(node())));
+    let nodes = createMemo(() => nodes_().flatMap((node) => opToArr(node())));
+    let nodeIdTToNodeMap = new ReactiveMap<string,NodesSystemNode>();
+    let firewall = createMemo(() => {
+      mapArray(
+        nodes,
+        (node) => {
+          let nodeId = node.node.nodeParams.entity;
+          nodeIdTToNodeMap.set(
+            nodeId,
+            node,
+          );
+          onCleanup(() => {
+            nodeIdTToNodeMap.delete(nodeId)
+          });
+        },
+      )();
+      return undefined;
+    });
+    let lookupNodeById = (nodeId: string): NodesSystemNode | undefined => {
+      firewall();
+      return nodeIdTToNodeMap.get(nodeId);
+    };
+    this.nodes = nodes;
+    this.lookupNodeById = lookupNodeById;
   }
 }
