@@ -169,8 +169,8 @@ export class AddNodeMode implements Mode {
               let pt2 = createMemo(() => {
                 let rect = svgElement.getBoundingClientRect();
                 return pt().add(Vec2.create(
-                  -draging().pickupOffset.x,
-                  -50+draging().pickupOffset.y,
+                  rect.left-draging().pickupOffset.x,
+                  rect.top-50+draging().pickupOffset.y,
                 ));
               });
               return (
