@@ -8,6 +8,7 @@ import { RenderSystem } from "../systems/RenderSystem";
 import { ReactiveSet } from "@solid-primitives/set";
 import { createStore } from "solid-js/store";
 import { PickingSystem } from "../systems/PickingSystem";
+import { NodeType } from "../Node";
 
 export class AddNodeMode implements Mode {
   sideForm: Accessor<Component | undefined>;
@@ -16,11 +17,16 @@ export class AddNodeMode implements Mode {
     let [ state, setState ] = createStore<{
       pan: Vec2,
       scale: number,
-      formMousePos: Vec2 | undefined
+      formMousePos: Vec2 | undefined,
+      dragging: {
+        nodeType: NodeType<any>,
+        pickupOffset: Vec2,
+      } | undefined,
     }>({
       pan: Vec2.zero,
       scale: 1.0,
       formMousePos: undefined,
+      dragging: undefined,
     });
     // mini world for showing nodes we can select
     let world = new EcsWorld();
@@ -116,6 +122,13 @@ export class AddNodeMode implements Mode {
     let svgElement!: SVGSVGElement;
     let onPointerDown = (e: PointerEvent) => {
       svgElement.setPointerCapture(e.pointerId);
+      queueMicrotask(() => {
+        let nodeUnderMouseById2 = nodeUnderMouseById();
+        if (nodeUnderMouseById2 == undefined) {
+          return;
+        }
+        
+      });
     };
     let onPointerUp = (e: PointerEvent) => {
       svgElement.releasePointerCapture(e.pointerId);
