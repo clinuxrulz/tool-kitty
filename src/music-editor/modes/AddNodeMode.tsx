@@ -1,4 +1,4 @@
-import { Accessor, Component, createComputed, createMemo, untrack } from "solid-js";
+import { Accessor, Component, createComputed, createMemo, Show, untrack } from "solid-js";
 import { Mode } from "../Mode";
 import { ModeParams } from "../ModeParams";
 import { Complex, EcsWorld, makeDefaultViaTypeSchema, Transform2D, transform2DComponentType, Vec2 } from "../../lib";
@@ -12,6 +12,7 @@ import { NodeType } from "../Node";
 import { NoTrack } from "../../util";
 
 export class AddNodeMode implements Mode {
+  overlayHtmlUi: Component;
   sideForm: Accessor<Component | undefined>;
 
   constructor(modeParams: ModeParams) {
@@ -160,6 +161,36 @@ export class AddNodeMode implements Mode {
         ),
       );
     };
+    this.overlayHtmlUi = () => (
+      <Show when={state.dragging?.value}>
+        {(draging) => (
+          <Show when={state.formMousePos}>
+            {(pt) => {
+              let pt2 = createMemo(() => {
+                let rect = svgElement.getBoundingClientRect();
+                return pt().add(Vec2.create(
+                  -draging().pickupOffset.x,
+                  -50+draging().pickupOffset.y,
+                ));
+              });
+              return (
+                <svg
+                  style={{
+                    position: "absolute",
+                    left: `${pt2().x}px`,
+                    top: `${pt2().y}px`,
+                    width: "100px",
+                    height: "50px",
+                    background: "green",
+                  }}
+                >
+                </svg>
+              );
+            }}
+          </Show>
+        )}
+      </Show>
+    );
     this.sideForm = createMemo(() => () => (
       <svg
         ref={svgElement}
