@@ -1,4 +1,4 @@
-import { Accessor, createComputed, createMemo, createSignal, mapArray, untrack } from "solid-js";
+import { Accessor, createComputed, createMemo, createSignal, mapArray, onCleanup, untrack } from "solid-js";
 import { Node } from "../Node";
 import { Transform2D } from "../../math/Transform2D";
 import { IEcsWorld } from "../../ecs/IEcsWorld";
@@ -86,10 +86,14 @@ export class NodesSystem {
       mapArray(
         nodes,
         (node) => {
+          let nodeId = node.node.nodeParams.entity;
           nodeIdTToNodeMap.set(
-            node.node.nodeParams.entity,
+            nodeId,
             node,
-          )
+          );
+          onCleanup(() => {
+            nodeIdTToNodeMap.delete(nodeId)
+          });
         },
       );
       return undefined;
