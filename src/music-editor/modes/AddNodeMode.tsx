@@ -1,4 +1,4 @@
-import { Accessor, Component, createComputed, createMemo, createSignal, onMount, Show, untrack } from "solid-js";
+import { Accessor, Component, createComputed, createMemo, createSignal, onCleanup, onMount, Show, untrack } from "solid-js";
 import { Mode } from "../Mode";
 import { ModeParams } from "../ModeParams";
 import { Complex, EcsWorld, makeDefaultViaTypeSchema, Transform2D, transform2DComponentType, Vec2 } from "../../lib";
@@ -122,6 +122,7 @@ export class AddNodeMode implements Mode {
         });
       }
     });
+    let [ overlayDiv, setOverlayDiv, ] = createSignal<HTMLDivElement>();
     let svgElement!: SVGSVGElement;
     let onPointerDown = (e: PointerEvent) => {
       {
@@ -162,7 +163,32 @@ export class AddNodeMode implements Mode {
     };
     let onPointerUp = (e: PointerEvent) => {
       svgElement.releasePointerCapture(e.pointerId);
-      if (state.dragging) {
+      let overlayDiv2 = overlayDiv();
+      if (state.formMousePos != undefined && state.dragging != undefined && overlayDiv2 != undefined) {
+        let formMousePos = state.formMousePos;
+        let rect = svgElement.getBoundingClientRect();
+        let rect2 = overlayDiv2.getBoundingClientRect();
+        let pickOffset = state.dragging.value.pickupOffset;
+        let pt = Vec2.create(
+          rect.left - rect2.left + formMousePos.x - pickOffset.x,
+          rect.top - rect2.top + formMousePos.y + pickOffset.y,
+        );
+        let pt2 = modeParams.screenPtToWorldPt(pt);
+        if (pt2 == undefined) {
+          return;
+        }
+        let dropWorld = modeParams.world();
+        dropWorld.createEntity([
+          state.dragging.value.nodeType.componentType.create(
+            makeDefaultViaTypeSchema(state.dragging.value.nodeType.componentType.typeSchema),
+          ),
+          transform2DComponentType.create({
+            transform: Transform2D.create(
+              pt2,
+              Complex.rot0,
+            )
+          }),
+        ]);
         setState("dragging", undefined);
       }
     };
@@ -181,8 +207,10 @@ export class AddNodeMode implements Mode {
         {(draging) => (
           <Show when={state.formMousePos}>
             {(pt) => {
-              let [ overlayDiv, setOverlayDiv, ] = createSignal<HTMLDivElement>();
               let [ blockPt2, setBlockPt2, ] = createSignal(true);
+              onCleanup(() => {
+                setOverlayDiv(undefined);
+              });
               onMount(() => setBlockPt2(false));
               let pt2 = createMemo(() => {
                 if (blockPt2()) {
