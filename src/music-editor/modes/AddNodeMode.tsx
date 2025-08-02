@@ -182,6 +182,7 @@ export class AddNodeMode implements Mode {
                     width: "100px",
                     height: "50px",
                     background: "green",
+                    "touch-action": "none",
                   }}
                 >
                 </svg>
@@ -197,6 +198,7 @@ export class AddNodeMode implements Mode {
         style={{
           width: "150px",
           height: "100%",
+          "touch-action": "none",
         }}
         onPointerDown={onPointerDown}
         onPointerUp={onPointerUp}
