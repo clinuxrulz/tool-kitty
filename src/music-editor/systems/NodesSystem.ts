@@ -95,7 +95,7 @@ export class NodesSystem {
             nodeIdTToNodeMap.delete(nodeId)
           });
         },
-      );
+      )();
       return undefined;
     });
     let lookupNodeById = (nodeId: string): NodesSystemNode | undefined => {
