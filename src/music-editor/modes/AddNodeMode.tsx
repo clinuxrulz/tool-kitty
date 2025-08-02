@@ -114,6 +114,12 @@ export class AddNodeMode implements Mode {
       }
     });
     let svgElement!: SVGSVGElement;
+    let onPointerDown = (e: PointerEvent) => {
+      svgElement.setPointerCapture(e.pointerId);
+    };
+    let onPointerUp = (e: PointerEvent) => {
+      svgElement.releasePointerCapture(e.pointerId);
+    };
     let onPointerMove = (e: PointerEvent) => {
       let rect = svgElement.getBoundingClientRect();
       setState(
@@ -131,6 +137,8 @@ export class AddNodeMode implements Mode {
           width: "150px",
           height: "100%",
         }}
+        onPointerDown={onPointerDown}
+        onPointerUp={onPointerUp}
         onPointerMove={onPointerMove}
       >
         <g>
