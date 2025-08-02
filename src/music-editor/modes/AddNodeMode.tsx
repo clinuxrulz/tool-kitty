@@ -6,11 +6,22 @@ import { getNodeTypes } from "../nodes/node_registry";
 import { NodesSystem } from "../systems/NodesSystem";
 import { RenderSystem } from "../systems/RenderSystem";
 import { ReactiveSet } from "@solid-primitives/set";
+import { createStore } from "solid-js/store";
+import { PickingSystem } from "../systems/PickingSystem";
 
 export class AddNodeMode implements Mode {
   sideForm: Accessor<Component | undefined>;
 
   constructor(modeParams: ModeParams) {
+    let [ state, setState ] = createStore<{
+      pan: Vec2,
+      scale: number,
+      formMousePos: Vec2 | undefined
+    }>({
+      pan: Vec2.zero,
+      scale: 1.0,
+      formMousePos: undefined,
+    });
     // mini world for showing nodes we can select
     let world = new EcsWorld();
     let atY = 0.0;
@@ -30,12 +41,40 @@ export class AddNodeMode implements Mode {
         }),
       ]);
     }
+    let screenPtToWorldPt = (screenPt: Vec2): Vec2 | undefined => {
+      return Vec2.create(
+        state.pan.x + screenPt.x / state.scale,
+        -(state.pan.y + screenPt.y / state.scale),
+      );
+    };
+    let worldPtToScreenPt = (worldPt: Vec2): Vec2 | undefined => {
+      return Vec2.create(
+        (worldPt.x - state.pan.x) * state.scale,
+        ((-worldPt.y) - state.pan.y) * state.scale,
+      );
+    };
     let nodesSystem = new NodesSystem({
       world: () => world,
     });
+    let pickingSystem = new PickingSystem({
+      mousePos: () => state.formMousePos,
+      screenPtToWorldPt,
+      nodes: () => nodesSystem.nodes(),
+    });
+    let nodeUnderMouseById = () => pickingSystem.nodeUnderMouseById();
+    let highlightedEntitySet = new ReactiveSet<string>();
+    createComputed(() => {
+      let nodeId = nodeUnderMouseById();
+      if (nodeId == undefined) {
+        highlightedEntitySet.clear();
+      } else {
+        highlightedEntitySet.clear();
+        highlightedEntitySet.add(nodeId);
+      }
+    });
     let renderSystem = new RenderSystem({
       nodes: () => nodesSystem.nodes(),
-      highlightedEntitySet: new ReactiveSet(),
+      highlightedEntitySet,
     });
     let nodePositions = createMemo(() => {
       let result: {
@@ -74,12 +113,25 @@ export class AddNodeMode implements Mode {
         });
       }
     });
+    let svgElement!: SVGSVGElement;
+    let onPointerMove = (e: PointerEvent) => {
+      let rect = svgElement.getBoundingClientRect();
+      setState(
+        "formMousePos",
+        Vec2.create(
+          e.clientX - rect.left,
+          e.clientY - rect.top,
+        ),
+      );
+    };
     this.sideForm = createMemo(() => () => (
       <svg
+        ref={svgElement}
         style={{
           width: "150px",
           height: "100%",
         }}
+        onPointerMove={onPointerMove}
       >
         <g>
           <renderSystem.Render/>

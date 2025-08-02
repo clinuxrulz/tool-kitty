@@ -74,7 +74,13 @@ const InstrumentEditor: Component<
   let screenPtToWorldPt = (screenPt: Vec2): Vec2 | undefined => {
     return Vec2.create(
       state.pan.x + screenPt.x / state.scale,
-      state.pan.y + screenPt.y / state.scale,
+      -(state.pan.y + screenPt.y / state.scale),
+    );
+  };
+  let worldPtToScreenPt = (worldPt: Vec2): Vec2 | undefined => {
+    return Vec2.create(
+      (worldPt.x - state.pan.x) * state.scale,
+      ((-worldPt.y) - state.pan.y) * state.scale,
     );
   };
   let nodesSystem = new NodesSystem({
@@ -93,6 +99,7 @@ const InstrumentEditor: Component<
     if (nodeId == undefined) {
       highlightedEntitySet.clear();
     } else {
+      highlightedEntitySet.clear();
       highlightedEntitySet.add(nodeId);
     }
   });
@@ -103,18 +110,8 @@ const InstrumentEditor: Component<
   let modeParams: ModeParams = {
     undoManager,
     mousePos: () => state.mousePos,
-    screenPtToWorldPt(screenPt) {
-      return Vec2.create(
-        state.pan.x + screenPt.x / state.scale,
-        state.pan.y + screenPt.y / state.scale,
-      );
-    },
-    worldPtToScreenPt(worldPt) {
-      return Vec2.create(
-        (worldPt.x - state.pan.x) * state.scale,
-        (worldPt.y - state.pan.y) * state.scale,
-      );
-    },
+    screenPtToWorldPt,
+    worldPtToScreenPt,
     world: () => props.world,
     onDone: () => {
       setMode(() => new IdleMode(modeParams));
@@ -159,6 +156,9 @@ const InstrumentEditor: Component<
   // test
   setTimeout(() => {
     let world = props.world;
+    if (world.entities().length != 0) {
+      return;
+    }
     world.createEntity([
       sineWaveComponentType.create({
         frequency: undefined,
