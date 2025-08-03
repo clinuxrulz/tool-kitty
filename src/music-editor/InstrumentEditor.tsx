@@ -87,6 +87,7 @@ const InstrumentEditor: Component<
   let selectedEntitySet = new ReactiveSet<string>();
   let renderSystem = new RenderSystem({
     nodes: () => nodesSystem.nodes(),
+    lookupNodeById: (nodeId) => nodesSystem.lookupNodeById(nodeId),
     highlightedEntitySet,
     selectedEntitySet,
   });
@@ -105,6 +106,7 @@ const InstrumentEditor: Component<
     setPan: (x) => setState("pan", x),
     scale: () => state.scale,
     setScale: (x) => setState("scale", x),
+    setMode,
   };
   let mode = createMemo(() => state.mkMode());
   let panZoomManager = createPanZoomManager({
@@ -248,7 +250,6 @@ const InstrumentEditor: Component<
           >
             Delete
           </button>
-          {JSON.stringify(pickingSystem.pinUnderMouse() ?? null)}
         </div>
         <div
           style={{
@@ -275,6 +276,11 @@ const InstrumentEditor: Component<
           >
             <g transform={transform()}>
               <renderSystem.Render/>
+              <Show when={mode().overlaySvg} keyed>
+                {(OverlaySvg) =>
+                  <OverlaySvg/>
+                }
+              </Show>
             </g>
           </svg>
           <Show when={mode().sideForm?.() == undefined}>

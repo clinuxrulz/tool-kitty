@@ -86,6 +86,7 @@ export class AddNodeMode implements Mode {
     });
     let renderSystem = new RenderSystem({
       nodes: () => nodesSystem.nodes(),
+      lookupNodeById: (nodeId) => nodesSystem.lookupNodeById(nodeId),
       highlightedEntitySet,
       selectedEntitySet,
     });
@@ -260,6 +261,7 @@ export class AddNodeMode implements Mode {
               });
               let dragRenderSystem = new RenderSystem({
                 nodes: () => dragNodesSystem.nodes(),
+                lookupNodeById: (nodeId) => dragNodesSystem.lookupNodeById(nodeId),
                 highlightedEntitySet: new ReactiveSet([ dragEntity, ]),
                 selectedEntitySet: new ReactiveSet(),
               });

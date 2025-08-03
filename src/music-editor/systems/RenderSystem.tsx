@@ -8,11 +8,12 @@ export class RenderSystem {
 
   constructor(params: {
     nodes: Accessor<NodesSystemNode[]>,
+    lookupNodeById: (nodeId: string) => NodesSystemNode | undefined,
     highlightedEntitySet: ReactiveSet<string>,
     selectedEntitySet: ReactiveSet<string>,
   }) {
 
-    this.Render = () => (
+    this.Render = () => (<>
       <For each={params.nodes()}>
         {(node) => (
           <RenderNode
@@ -23,9 +24,69 @@ export class RenderSystem {
             isSelected={
               params.selectedEntitySet.has(node.node.nodeParams.entity)
             }
-          />)}
+          />
+        )}
       </For>
-    );
+      <For each={params.nodes()}>
+        {(node) => (
+          <For each={node.node.inputPins?.() ?? []}>
+            {(inputPin) => (
+              <Show when={inputPin.source()}>
+                {(source) => {
+                  let sourceNode = createMemo(() => params.lookupNodeById(source().target));
+                  let fromPt = createMemo(() => {
+                    let sourceNode2 = sourceNode();
+                    if (sourceNode2 == undefined) {
+                      return undefined;
+                    }
+                    let pt = sourceNode2.outputPinPositionMap()?.get(source().pin);
+                    if (pt == undefined) {
+                      return undefined;
+                    }
+                    return sourceNode2.space().pointFromSpace(pt);
+                  });
+                  let toPt = createMemo(() => {
+                    let pt = node.inputPinPositionMap()?.get(inputPin.name);
+                    if (pt == undefined) {
+                      return undefined;
+                    }
+                    return node.space().pointFromSpace(pt);
+                  });
+                  return (
+                    <Show when={fromPt()}>
+                      {(fromPt) => (
+                        <Show when={toPt()}>
+                          {(toPt) => {
+                            let d = createMemo(() =>
+                              createSBezierPath(
+                                fromPt().x,
+                                -fromPt().y,
+                                toPt().x,
+                                -toPt().y,
+                                0.0,
+                              )
+                            );
+                            return (
+                              <path
+                                d={d()}
+                                fill="none"
+                                stroke="blue"
+                                stroke-width={2.0}
+                                vector-effect="non-scaling-stroke"
+                              />
+                            );
+                          }}
+                        </Show>
+                      )}
+                    </Show>
+                  );
+                }}
+              </Show>
+            )}
+          </For>
+        )}
+      </For>
+    </>);
   }
 }
 
@@ -311,3 +372,36 @@ const createMeasurementSvg = (() => {
     return svg;
   };
 })();
+
+export function createSBezierPath(startX: number, startY: number, endX: number, endY: number, strength: number = 0.5) {
+  // Calculate the midpoint
+  const midX = (startX + endX) / 2;
+  const midY = (startY + endY) / 2;
+
+  // Determine the direction of the S-curve.
+  // This is a simplified approach. For more complex scenarios, you might want to
+  // adjust control points more precisely or allow for an explicit 'direction' parameter.
+  //const isHorizontal = Math.abs(endX - startX) > Math.abs(endY - startY);
+  const isHorizontal = false;
+
+  let controlPoint1X, controlPoint1Y, controlPoint2X, controlPoint2Y;
+
+  if (isHorizontal) {
+    // S-curve primarily along the X-axis
+    controlPoint1X = startX + (midX - startX) * strength;
+    controlPoint1Y = startY + (midY - startY) * (1 - strength); // Pull away from straight line
+    controlPoint2X = endX - (endX - midX) * strength;
+    controlPoint2Y = endY - (endY - midY) * (1 - strength); // Pull away from straight line
+  } else {
+    // S-curve primarily along the Y-axis
+    controlPoint1X = startX + (midX - startX) * (1 - strength); // Pull away from straight line
+    controlPoint1Y = startY + (midY - startY) * strength;
+    controlPoint2X = endX - (endX - midX) * (1 - strength); // Pull away from straight line
+    controlPoint2Y = endY - (endY - midY) * strength;
+  }
+
+  // SVG Path Data:
+  // M startX startY - Move to the start point
+  // C controlPoint1X controlPoint1Y, controlPoint2X controlPoint2Y, endX endY - Cubic Bezier curve
+  return `M ${startX} ${startY} C ${controlPoint1X} ${controlPoint1Y}, ${controlPoint2X} ${controlPoint2Y}, ${endX} ${endY}`;
+}

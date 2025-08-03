@@ -6,6 +6,7 @@ import { opToArr } from "../../kitty-demo/util";
 import { NoTrack } from "../../util";
 import { Complex, Transform2D, Vec2 } from "../../lib";
 import { createStore } from "solid-js/store";
+import { AddEdgeMode } from "./AddEdgeMode";
 
 export class IdleMode implements Mode {
   overlaySvg: Component;
@@ -76,8 +77,7 @@ export class IdleMode implements Mode {
                       }
                       pos = pos2;
                     } else {
-                      let x: never = pin.type;
-                      throw new Error(`Unreachable: ${x}`);
+                      return undefined;
                     }
                     return node.space().pointFromSpace(pos);
                   });
@@ -86,9 +86,10 @@ export class IdleMode implements Mode {
                       {(pt) => (
                         <circle
                           cx={pt().x}
-                          cy={pt().y}
-                          r="10"
-                          fill="yellow"
+                          cy={-pt().y}
+                          r={5.0 / modeParams.scale()}
+                          fill="blue"
+                          pointer-events="none"
                         />
                       )}
                     </Show>
@@ -120,6 +121,25 @@ export class IdleMode implements Mode {
       if (nodeId == undefined) {
         return;
       }
+      // trigger add edge mode if its over a pin
+      {
+        let pin = pinUnderMouse();
+        if (pin != undefined && pin.type == "Output") {
+          let pin2: { type: "Output", name: string, } = {
+            type: "Output",
+            name: pin.name,
+          };
+          modeParams.setMode(() =>
+            new AddEdgeMode({
+              modeParams,
+              fromNodeId: nodeId,
+              fromPin: pin2,
+            })
+          );
+          return;
+        }
+      }
+      //
       if (!selectedNodesByIdSet.has(nodeId)) {
         return;
       }

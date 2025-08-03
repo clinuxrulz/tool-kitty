@@ -4,6 +4,7 @@ import { Vec2 } from "../math/Vec2";
 import { IEcsWorld } from "../ecs/IEcsWorld";
 import { PickingSystem } from "./systems/PickingSystem";
 import { NodesSystem } from "./systems/NodesSystem";
+import { Mode } from "./Mode";
 
 export type ModeParams = {
   undoManager: UndoManager;
@@ -18,4 +19,5 @@ export type ModeParams = {
   setPan: (x: Vec2) => void,
   scale: () => number,
   setScale: (x: number) => void,
+  setMode: (mkMode: () => Mode) => void,
 };

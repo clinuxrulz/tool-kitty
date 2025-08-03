@@ -1,7 +1,7 @@
-import { tsNumber, tsObject, tsString, TypeSchemaType } from "../../TypeSchema";
+import { tsObject, tsString, TypeSchemaType } from "../../TypeSchema";
 
 export const pinTypeSchema = tsObject({
-  target: tsNumber(),
+  target: tsString(),
   pin: tsString(),
 });
 

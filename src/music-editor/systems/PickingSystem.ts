@@ -8,7 +8,10 @@ const SNAP_DIST_SQUARED = SNAP_DIST * SNAP_DIST;
 export class PickingSystem {
   nodeUnderMouseById: Accessor<string | undefined>;
   pinUnderMouse: Accessor<{
-    type: "Input" | "Output";
+    type: "Input";
+    name: string;
+  } | {
+    type: "Output";
     name: string;
   } | undefined>;
 
