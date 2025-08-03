@@ -9,6 +9,7 @@ export class RenderSystem {
   constructor(params: {
     nodes: Accessor<NodesSystemNode[]>,
     highlightedEntitySet: ReactiveSet<string>,
+    selectedEntitySet: ReactiveSet<string>,
   }) {
 
     this.Render = () => (
@@ -19,6 +20,9 @@ export class RenderSystem {
             isHighlighted={
               params.highlightedEntitySet.has(node.node.nodeParams.entity)
             }
+            isSelected={
+              params.selectedEntitySet.has(node.node.nodeParams.entity)
+            }
           />)}
       </For>
     );
@@ -28,6 +32,7 @@ export class RenderSystem {
 const RenderNode: Component<{
   node: NodesSystemNode,
   isHighlighted: boolean,
+  isSelected: boolean,
 }> = (props) => {
   let titleSize = createMemo(() => {
       let { svg, dispose, } = createRoot((dispose) => {
@@ -192,7 +197,13 @@ const RenderNode: Component<{
         width={boxWidth()}
         height={boxHeight()}
         stroke="black"
-        fill={props.isHighlighted ? "blue" : "white"}
+        fill={
+          props.isSelected ?
+            "green" :
+          props.isHighlighted ?
+            "blue" :
+            "white"
+        }
         rx="5"
         ry="5"
       />

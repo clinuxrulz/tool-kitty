@@ -12,6 +12,7 @@ import { NodeType } from "../Node";
 import { NoTrack } from "../../util";
 
 export class AddNodeMode implements Mode {
+  instructions: Component;
   overlayHtmlUi: Component;
   sideForm: Accessor<Component | undefined>;
 
@@ -72,6 +73,7 @@ export class AddNodeMode implements Mode {
     });
     let nodeUnderMouseById = () => pickingSystem.nodeUnderMouseById();
     let highlightedEntitySet = new ReactiveSet<string>();
+    let selectedEntitySet = new ReactiveSet<string>();
     createComputed(() => {
       let nodeId = nodeUnderMouseById();
       if (nodeId == undefined) {
@@ -84,6 +86,7 @@ export class AddNodeMode implements Mode {
     let renderSystem = new RenderSystem({
       nodes: () => nodesSystem.nodes(),
       highlightedEntitySet,
+      selectedEntitySet,
     });
     let nodePositions = createMemo(() => {
       let result: {
@@ -202,6 +205,16 @@ export class AddNodeMode implements Mode {
         ),
       );
     };
+    this.instructions = () => (
+      <button
+        class="btn btn-primary"
+        onClick={() => {
+          modeParams.onDone();
+        }}
+      >
+        End Mode
+      </button>
+    );
     this.overlayHtmlUi = () => (
       <Show when={state.dragging?.value}>
         {(draging) => (
@@ -247,6 +260,7 @@ export class AddNodeMode implements Mode {
               let dragRenderSystem = new RenderSystem({
                 nodes: () => dragNodesSystem.nodes(),
                 highlightedEntitySet: new ReactiveSet([ dragEntity, ]),
+                selectedEntitySet: new ReactiveSet(),
               });
               return (
                 <div

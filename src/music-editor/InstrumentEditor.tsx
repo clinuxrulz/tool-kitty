@@ -1,4 +1,4 @@
-import { Component, ComponentProps, createComputed, createMemo, createSignal, onCleanup, onMount, Show, splitProps } from "solid-js";
+import { Component, ComponentProps, createComputed, createMemo, createSignal, mapArray, on, onCleanup, onMount, Show, splitProps } from "solid-js";
 import { Overwrite } from "../util";
 import { Complex, EcsWorld, Transform2D, transform2DComponentType, Vec2 } from "../lib";
 import { createStore } from "solid-js/store";
@@ -56,15 +56,6 @@ const InstrumentEditor: Component<
       resizeObserver.disconnect();
     });
   });
-  let panZoomManager = createPanZoomManager({
-    pan: () => state.pan,
-    setPan: (x) => setState("pan", x),
-    scale: () => state.scale,
-    setScale: (x) => setState("scale", x),
-    setPointerCapture: (pointerId) => svgElement.setPointerCapture(pointerId),
-    releasePointerCapture: (pointerId) =>
-      svgElement.releasePointerCapture(pointerId),
-  });
   let transform = createMemo(
     () => `scale(${state.scale}) translate(${-state.pan.x} ${-state.pan.y})`,
   );
@@ -91,24 +82,17 @@ const InstrumentEditor: Component<
     screenPtToWorldPt,
     nodes: () => nodesSystem.nodes(),
   });
-  let nodeUnderMouseById = () => pickingSystem.nodeUnderMouseById();
   let highlightedEntitySet = new ReactiveSet<string>();
   let selectedEntitySet = new ReactiveSet<string>();
-  createComputed(() => {
-    let nodeId = nodeUnderMouseById();
-    if (nodeId == undefined) {
-      highlightedEntitySet.clear();
-    } else {
-      highlightedEntitySet.clear();
-      highlightedEntitySet.add(nodeId);
-    }
-  });
   let renderSystem = new RenderSystem({
     nodes: () => nodesSystem.nodes(),
     highlightedEntitySet,
+    selectedEntitySet,
   });
   let modeParams: ModeParams = {
     undoManager,
+    nodesSystem,
+    pickingSystem,
     mousePos: () => state.mousePos,
     screenPtToWorldPt,
     worldPtToScreenPt,
@@ -122,17 +106,70 @@ const InstrumentEditor: Component<
     setScale: (x) => setState("scale", x),
   };
   let mode = createMemo(() => state.mkMode());
+  let panZoomManager = createPanZoomManager({
+    pan: () => state.pan,
+    setPan: (x) => setState("pan", x),
+    scale: () => state.scale,
+    setScale: (x) => setState("scale", x),
+    setPointerCapture: (pointerId) => svgElement.setPointerCapture(pointerId),
+    releasePointerCapture: (pointerId) =>
+      svgElement.releasePointerCapture(pointerId),
+    disableOneFingerPan: createMemo(() =>
+      mode().disablePan?.() ?? false
+    ),
+  });
+  let highlightedObjectsById = createMemo(() =>
+    mode().highlightedObjectsById?.() ?? []
+  );
+  let selectedObjectsById = createMemo(() =>
+    mode().selectedObjectsById?.() ?? [],
+  );
+  createComputed(mapArray(
+    highlightedObjectsById,
+    (entity) => {
+      highlightedEntitySet.add(entity);
+      onCleanup(() => {
+        highlightedEntitySet.delete(entity);
+      });
+    },
+  ));
+  createComputed(mapArray(
+    selectedObjectsById,
+    (entity) => {
+      selectedEntitySet.add(entity);
+      onCleanup(() => {
+        selectedEntitySet.delete(entity);
+      });
+    },
+  ));
   let onClick = () => {
     mode().click?.();
   };
+  let dragStartTimerId: number | undefined = undefined;
+  let dragging = false;
+  const START_DRAG_DELAY_MS = 200;
   let onPointerDown = (e: PointerEvent) => {
     panZoomManager.onPointerDown(e);
+    dragStartTimerId = window.setTimeout(
+      () => {
+        window.clearTimeout(dragStartTimerId);
+        dragStartTimerId = undefined;
+        dragging = true;
+        mode().dragStart?.();
+      },
+      START_DRAG_DELAY_MS,
+    );
   };
   let onPointerUp = (e: PointerEvent) => {
     panZoomManager.onPointerUp(e);
     if (panZoomManager.numTouches() == 0) {
       onClick();
     }
+    if (dragging) {
+      mode().dragEnd?.();
+    }
+    window.clearTimeout(dragStartTimerId);
+    dragStartTimerId = undefined;
   };
   let onPointerCancel = (e: PointerEvent) => {
     panZoomManager.onPointerCancel(e);
@@ -222,6 +259,21 @@ const InstrumentEditor: Component<
               <renderSystem.Render/>
             </g>
           </svg>
+          <Show when={mode().sideForm?.() == undefined}>
+            <Show when={mode().instructions} keyed>
+              {(Instructions) => (
+                <div
+                  style={{
+                    "position": "absolute",
+                    "left": "0",
+                    "top": "0",
+                  }}
+                >
+                  <Instructions/>
+                </div>
+              )}
+            </Show>
+          </Show>
           <Show when={mode().sideForm?.()} keyed>
             {(SideForm) => (
               <div
@@ -230,10 +282,32 @@ const InstrumentEditor: Component<
                   left: "0",
                   top: "0",
                   height: "100%",
-                  background: "black",
+                  display: "flex",
+                  "flex-direction": "row",
+                  "pointer-events": "none",
                 }}
               >
-                <SideForm/>
+                <div
+                  style={{
+                    background: "black",
+                    "pointer-events": "auto",
+                  }}
+                >
+                  <SideForm/>
+                </div>
+                <Show when={mode().instructions} keyed>
+                  {(Instructions) => (
+                    <div>
+                      <div
+                        style={{
+                          "pointer-events": "auto",
+                        }}
+                      >
+                        <Instructions/>
+                      </div>
+                    </div>
+                  )}
+                </Show>
               </div>
             )}
           </Show>

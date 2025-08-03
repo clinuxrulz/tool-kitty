@@ -6,6 +6,9 @@ export interface Mode {
   overlayHtmlUi?: Component;
   sideForm?: Accessor<Component | undefined>;
   click?: () => void;
+  dragStart?: () => void;
+  dragEnd?: () => void;
   highlightedObjectsById?: Accessor<string[]>;
   selectedObjectsById?: Accessor<string[]>;
+  disablePan?: Accessor<boolean>;
 }
