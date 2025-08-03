@@ -12,7 +12,11 @@ export type NodesSystemNode = {
   space: Accessor<Transform2D>,
   setSpace: (x: Transform2D) => void,
   setRenderSizeAccessor: (x: Accessor<Vec2 | undefined> | undefined) => void,
+  setInputPinPositionMapAccessor: (x: Accessor<Map<string,Vec2>>) => void,
+  setOutputPinPositionMapAccessor: (x: Accessor<Map<string,Vec2>>) => void,
   renderSize: Accessor<Vec2 | undefined>,
+  inputPinPositionMap: Accessor<Map<string,Vec2> | undefined>,
+  outputPinPositionMap: Accessor<Map<string,Vec2> | undefined>,
 }
 
 export class NodesSystem {
@@ -69,12 +73,18 @@ export class NodesSystem {
             }
           });
           let [ renderSizeAccessor, setRenderSizeAccessor, ] = createSignal<Accessor<Vec2 | undefined>>();
+          let [ inputPinPositionMapAccessor, setInputPinPositionMapAccessor ] = createSignal<Accessor<Map<string,Vec2>>>();
+          let [ outputPinPositionMapAccessor, setOutputPinPositionMapAccessor ] = createSignal<Accessor<Map<string,Vec2>>>();
           let nodesSystemNode: NodesSystemNode = {
             node,
             space,
             setSpace,
             setRenderSizeAccessor: (x) => setRenderSizeAccessor(() => x),
-            renderSize: () => renderSizeAccessor()?.()
+            setInputPinPositionMapAccessor: (x) => setInputPinPositionMapAccessor(() => x),
+            setOutputPinPositionMapAccessor: (x) => setOutputPinPositionMapAccessor(() => x),
+            renderSize: () => renderSizeAccessor()?.(),
+            inputPinPositionMap: () => inputPinPositionMapAccessor()?.(),
+            outputPinPositionMap: () => outputPinPositionMapAccessor()?.(),
           };
           return nodesSystemNode;
         });

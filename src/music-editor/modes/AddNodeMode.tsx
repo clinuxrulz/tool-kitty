@@ -69,6 +69,7 @@ export class AddNodeMode implements Mode {
     let pickingSystem = new PickingSystem({
       mousePos: () => state.formMousePos,
       screenPtToWorldPt,
+      worldPtToScreenPt,
       nodes: () => nodesSystem.nodes(),
     });
     let nodeUnderMouseById = () => pickingSystem.nodeUnderMouseById();

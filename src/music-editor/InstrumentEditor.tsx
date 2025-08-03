@@ -80,6 +80,7 @@ const InstrumentEditor: Component<
   let pickingSystem = new PickingSystem({
     mousePos: () => state.mousePos,
     screenPtToWorldPt,
+    worldPtToScreenPt,
     nodes: () => nodesSystem.nodes(),
   });
   let highlightedEntitySet = new ReactiveSet<string>();
@@ -190,6 +191,13 @@ const InstrumentEditor: Component<
   let onWheel = (e: WheelEvent) => {
     panZoomManager.onWheel(e);
   };
+  //
+  let deleteSelectedObjects = () => {
+    for (let objectId of selectedObjectsById()) {
+      props.world.destroyEntity(objectId);
+    }
+    selectedEntitySet.clear();
+  };
   // test
   setTimeout(() => {
     let world = props.world;
@@ -231,6 +239,16 @@ const InstrumentEditor: Component<
           >
             Add Node
           </button>
+          <button
+            class="btn btn-primary"
+            onClick={() => {
+              deleteSelectedObjects();
+            }}
+            disabled={selectedEntitySet.size == 0}
+          >
+            Delete
+          </button>
+          {JSON.stringify(pickingSystem.pinUnderMouse() ?? null)}
         </div>
         <div
           style={{

@@ -135,9 +135,6 @@ const RenderNode: Component<{
     ) + 2.0 * boxPadding;
   });
   let boxSize = createMemo(() => Vec2.create(boxWidth(), boxHeight()));
-  onMount(() => {
-    props.node.setRenderSizeAccessor(boxSize);
-  });
   let inputPinPositions = createMemo(() => {
     let result: { [name: string]: {
       dotPos: Vec2,
@@ -176,6 +173,25 @@ const RenderNode: Component<{
       };
     }
     return result;
+  });
+  let inputPinPositionMapAccessor = createMemo(() => {
+    let result = new Map<string,Vec2>();
+    for (let [ name, { dotPos, }, ] of Object.entries(inputPinPositions())) {
+      result.set(name, dotPos);
+    }
+    return result;
+  });
+  let outputPinPositionMapAccessor = createMemo(() => {
+    let result = new Map<string,Vec2>();
+    for (let [ name, { dotPos, }, ] of Object.entries(outputPinPositions())) {
+      result.set(name, dotPos);
+    }
+    return result;
+  });
+  onMount(() => {
+    props.node.setRenderSizeAccessor(boxSize);
+    props.node.setInputPinPositionMapAccessor(inputPinPositionMapAccessor);
+    props.node.setOutputPinPositionMapAccessor(outputPinPositionMapAccessor);
   });
   let transform = createMemo(() => {
     let space = props.node.space();
