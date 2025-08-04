@@ -150,7 +150,7 @@ const InstrumentEditor: Component<
   };
   let dragStartTimerId: number | undefined = undefined;
   let dragging = false;
-  const START_DRAG_DELAY_MS = 200;
+  //const START_DRAG_DELAY_MS = 200;
   let onPointerDown = (e: PointerEvent) => {
     panZoomManager.onPointerDown(e);
     dragStartTimerId = window.setTimeout(
@@ -160,7 +160,7 @@ const InstrumentEditor: Component<
         dragging = true;
         mode().dragStart?.();
       },
-      START_DRAG_DELAY_MS,
+      //START_DRAG_DELAY_MS,
     );
   };
   let onPointerUp = (e: PointerEvent) => {
