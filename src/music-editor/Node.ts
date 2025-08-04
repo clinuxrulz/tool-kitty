@@ -1,7 +1,7 @@
 import { SetStoreFunction, Store } from "solid-js/store";
 import { EcsComponentType } from "../ecs/EcsComponent";
 import { Pin } from "./components/Pin";
-import { Accessor } from "solid-js";
+import { Accessor, Component } from "solid-js";
 
 export interface NodeParams<A extends object> {
   readonly entity: string;
@@ -28,4 +28,5 @@ export interface Node<A extends object> {
     sinks: Accessor<Pin[]>,
     setSinks: (x: Pin[]) => void,
   }[]>;
+  readonly ui?: Accessor<Component | undefined>;
 }

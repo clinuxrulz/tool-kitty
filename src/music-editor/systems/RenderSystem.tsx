@@ -2,6 +2,7 @@ import { Accessor, Component, createComputed, createMemo, createRoot, For, mapAr
 import { NodesSystemNode } from "./NodesSystem";
 import { Vec2 } from "../../lib";
 import { ReactiveSet } from "@solid-primitives/set";
+import { render } from "solid-js/web";
 
 export class RenderSystem {
   Render: Component;
@@ -152,6 +153,21 @@ const RenderNode: Component<{
       };
     },
   ));
+  let extraUiSize = createMemo(() => {
+    let Ui = props.node.node.ui?.();
+    if (Ui == undefined) {
+      return undefined;
+    }
+    debugger;
+    let div = createMeasurementDiv();
+    let span = document.createElement("div");
+    span.style.setProperty("display", "inline-block");
+    div.append(span);
+    let dispose = render(() => <Ui/>, span);
+    let rect = span.getBoundingClientRect();
+    dispose();
+    return Vec2.create(rect.width, rect.height);
+  });
   const boxPadding = 5.0;
   const pinDotSize = 2.0;
   const gapAroundPinDot = 5.0;
@@ -187,12 +203,13 @@ const RenderNode: Component<{
     return titleSize().y + Math.max(
       inputPinsTotalHeight(),
       outputPinsTotalHeight(),
-    ) + 2.0 * boxPadding;
+    ) + (extraUiSize()?.y ?? 0.0) + 2.0 * boxPadding;
   });
   let boxWidth = createMemo(() => {
     return Math.max(
       titleSize().x,
-      inputPinsMaxWidth() + outputPinsMaxWidth() + 4.0 * gapAroundPinDot
+      inputPinsMaxWidth() + outputPinsMaxWidth() + 4.0 * gapAroundPinDot,
+      extraUiSize()?.x ?? 0.0
     ) + 2.0 * boxPadding;
   });
   let boxSize = createMemo(() => Vec2.create(boxWidth(), boxHeight()));
@@ -284,9 +301,26 @@ const RenderNode: Component<{
         rx="5"
         ry="5"
       />
+      <Show when={extraUiSize()}>
+        {(extraUiSize) => (
+          <Show when={props.node.node.ui?.()} keyed>
+            {(UI) => (
+              <foreignObject
+                x={boxPadding}
+                y={-extraUiSize().y - boxPadding}
+                width={extraUiSize().x}
+                height={extraUiSize().y}
+              >
+                <UI/>
+              </foreignObject>
+            )}
+          </Show>
+        )}
+      </Show>
       <text
         x={0.5 * (boxWidth() - titleSize().x)}
         y={-boxHeight() + titleSize().y}
+        style="user-select: none;"
       >
         {props.node.node.type.componentType.typeName}
       </text>
@@ -343,6 +377,37 @@ const RenderNode: Component<{
     </g>
   );
 };
+
+const createMeasurementDiv = (() => {
+  let refCount = 0;
+  let div: HTMLDivElement | undefined;
+  return () => {
+    if (div != undefined) {
+      ++refCount;
+    } else {
+      div = document.createElement("div");
+      div.style.setProperty("position", "absolute");
+      div.style.setProperty("left", "-1000px");
+      div.style.setProperty("top", "-1000px");
+      div.style.setProperty("width", "500px");
+      div.style.setProperty("height", "500px");
+      document.body.append(div);
+      refCount = 1;
+    }
+    onCleanup(() => {
+      --refCount;
+      if (refCount == 0) {
+        window.queueMicrotask(() => {
+          if (refCount == 0 && div != undefined) {
+            document.body.removeChild(div);
+            div = undefined;
+          }
+        });
+      }
+    });
+    return div;
+  };
+})();
 
 const createMeasurementSvg = (() => {
   let refCount = 0;
