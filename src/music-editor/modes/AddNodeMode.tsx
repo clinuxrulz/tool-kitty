@@ -105,6 +105,17 @@ export class AddNodeMode implements Mode {
       }
       return result;
     });
+    let svgPaletteHeight = createMemo(() => {
+      let nodePositions2 = nodePositions();
+      if (nodePositions2 == undefined) {
+        return 0.0;
+      }
+      let minAtY = 0.0;
+      for (let pt of Object.values(nodePositions2)) {
+        minAtY = Math.min(minAtY, pt.y);
+      }
+      return Math.abs(minAtY);
+    });
     createComputed(() => {
       let nodePositions2 = nodePositions();
       if (nodePositions2 == undefined) {
@@ -302,22 +313,31 @@ export class AddNodeMode implements Mode {
       </Show>
     );
     this.sideForm = createMemo(() => () => (
-      <svg
-        ref={svgElement}
+      <div
         style={{
           width: "150px",
           height: "100%",
-          "touch-action": "none",
-          "user-select": "none",
+          "overflow-x": "hidden",
+          "overflow-y": "auto",
         }}
-        onPointerDown={onPointerDown}
-        onPointerUp={onPointerUp}
-        onPointerMove={onPointerMove}
       >
-        <g>
-          <renderSystem.Render/>
-        </g>
-      </svg>
+        <svg
+          ref={svgElement}
+          style={{
+            width: "100%",
+            height: `${svgPaletteHeight()}px`,
+            "touch-action": "none",
+            "user-select": "none",
+          }}
+          onPointerDown={onPointerDown}
+          onPointerUp={onPointerUp}
+          onPointerMove={onPointerMove}
+        >
+          <g>
+            <renderSystem.Render/>
+          </g>
+        </svg>
+      </div>
     ));
   }
 }

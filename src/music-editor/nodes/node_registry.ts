@@ -4,6 +4,7 @@ import { attackNodeType } from "./AttackNode";
 import { multNodeType } from "./MultNode";
 import { noiseNodeType } from "./NoiseWaveNode";
 import { numberNodeType } from "./NumberNode";
+import { pianoKeysNodeType } from "./PianoKeysNode";
 import { releaseNodeType } from "./ReleaseNode";
 import { sawWaveNodeType } from "./SawWaveNode";
 import { sineWaveNodeType } from "./SineWaveNode";
@@ -16,6 +17,7 @@ const nodeTypes: NodeType<any>[] = [
   multNodeType,
   noiseNodeType,
   numberNodeType,
+  pianoKeysNodeType,
   releaseNodeType,
   sawWaveNodeType,
   sineWaveNodeType,

@@ -10,6 +10,7 @@ import { sineWaveComponentType } from "./SineWaveComponent";
 import { squareWaveComponentType } from "./SquareWaveComponent";
 import { addComponentType } from "./AddComponent";
 import { speakerComponentType } from "./SpeakerComponent";
+import { pianoKeysComponentType } from "./PianoKeysComponent";
 
 export const registry = new EcsRegistry([
   ...baseRegistry.componentTypes,
@@ -18,6 +19,7 @@ export const registry = new EcsRegistry([
   multComponentType,
   noiseWaveComponentType,
   numberComponentType,
+  pianoKeysComponentType,
   releaseComponentType,
   sawWaveComponentType,
   sineWaveComponentType,

@@ -1,4 +1,4 @@
-import { Accessor, createMemo } from "solid-js";
+import { Accessor, Component, createMemo } from "solid-js";
 import { speakerComponentType, SpeakerState } from "../components/SpeakerComponent";
 import { Node, NodeParams, NodeType } from "../Node";
 import { Pin } from "../components/Pin";
@@ -17,6 +17,7 @@ class SpeakerNode implements Node<SpeakerState> {
   type = speakerNodeType;
   nodeParams: NodeParams<SpeakerState>;
   inputPins: Accessor<{ name: string; source: Accessor<Pin | undefined>; setSource: (x: Pin | undefined) => void; }[]>;
+  ui: Accessor<Component | undefined>;
 
   constructor(nodeParams: NodeParams<SpeakerState>) {
     let state = nodeParams.state;
@@ -29,5 +30,14 @@ class SpeakerNode implements Node<SpeakerState> {
         setSource: (x) => setState("in", x),
       },
     ]);
+    this.ui = createMemo(() => () =>
+      <i
+        class="fa-solid fa-volume-high"
+        style={{
+          "font-size": "24px",
+          "color": "green",
+        }}
+      />
+    );
   }
 }
