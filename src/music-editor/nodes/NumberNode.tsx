@@ -4,18 +4,22 @@ import { numberComponentType, NumberState } from "../components/NumberComponent"
 import { Pin } from "../components/Pin";
 import { Node, NodeParams, NodeType } from "../Node";
 import { untrack } from "solid-js/web";
+import numberAudioWorkletProcessorUrl from  "./worklets/number-audio-worklet-processor.ts?worker&url";
 
 export class NumberNodeType implements NodeType<NumberState> {
   componentType = numberComponentType;
+  registerAudioWorkletModules = (audioCtx: AudioContext) => {
+    audioCtx.audioWorklet.addModule(numberAudioWorkletProcessorUrl);
+  };
 
   create(nodeParams: NodeParams<NumberState>): Node<NumberState> {
-    return new NoiseNode(nodeParams);
-  }  
+    return new NumberNode(nodeParams);
+  }
 }
 
 export const numberNodeType = new NumberNodeType();
 
-class NoiseNode implements Node<NumberState> {
+class NumberNode implements Node<NumberState> {
   type = numberNodeType;
   nodeParams: NodeParams<NumberState>;
   outputPins: Accessor<{ name: string; sinks: Accessor<Pin[]>; setSinks: (x: Pin[]) => void, }[]>;
