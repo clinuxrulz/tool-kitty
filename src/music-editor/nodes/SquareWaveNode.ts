@@ -2,9 +2,13 @@ import { Accessor, createMemo } from "../../lib";
 import { Pin } from "../components/Pin";
 import { squareWaveComponentType, SquareWaveState } from "../components/SquareWaveComponent";
 import { Node, NodeParams, NodeType } from "../Node";
+import squareWaveAudioWorkletProcessorUrl from  "./worklets/sine-wave-audio-worklet-processor.ts?worker&url";
 
 export class SquareWaveNodeType implements NodeType<SquareWaveState> {
   componentType = squareWaveComponentType;
+  registerAudioWorkletModules = (audioCtx: AudioContext) => {
+    audioCtx.audioWorklet.addModule(squareWaveAudioWorkletProcessorUrl);
+  };
 
   create(nodeParams: NodeParams<SquareWaveState>) {
     return new SquareWaveNode(nodeParams);

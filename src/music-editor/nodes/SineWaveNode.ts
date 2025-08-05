@@ -2,9 +2,13 @@ import { Accessor, createMemo } from "../../lib";
 import { Pin } from "../components/Pin";
 import { sineWaveComponentType, SineWaveState } from "../components/SineWaveComponent";
 import { Node, NodeParams, NodeType } from "../Node";
+import sineWaveAudioWorkletProcessorUrl from  "./worklets/sine-wave-audio-worklet-processor.ts?worker&url";
 
 export class SineWaveNodeType implements NodeType<SineWaveState> {
   componentType = sineWaveComponentType;
+  registerAudioWorkletModules = (audioCtx: AudioContext) => {
+    audioCtx.audioWorklet.addModule(sineWaveAudioWorkletProcessorUrl);
+  };
 
   create(nodeParams: NodeParams<SineWaveState>) {
     return new SineWaveNode(nodeParams);

@@ -2,9 +2,13 @@ import { Accessor, createMemo, EcsComponentType } from "../../lib";
 import { Pin } from "../components/Pin";
 import { sawWaveComponentType, SawWaveState } from "../components/SawWaveComponent";
 import { Node, NodeParams, NodeType } from "../Node";
+import sawWaveAudioWorkletProcessorUrl from  "./worklets/saw-wave-audio-worklet-processor.ts?worker&url";
 
 export class SawWaveNodeType implements NodeType<SawWaveState> {
   componentType = sawWaveComponentType;
+  registerAudioWorkletModules = (audioCtx: AudioContext) => {
+    audioCtx.audioWorklet.addModule(sawWaveAudioWorkletProcessorUrl);
+  };
 
   create(nodeParams: NodeParams<SawWaveState>) {
     return new SawWaveNode(nodeParams);
