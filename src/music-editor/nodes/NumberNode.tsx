@@ -5,6 +5,7 @@ import { Pin } from "../components/Pin";
 import { Node, NodeParams, NodeType } from "../Node";
 import { untrack } from "solid-js/web";
 import numberAudioWorkletProcessorUrl from  "./worklets/number-audio-worklet-processor.ts?worker&url";
+import { CodeGenCtx } from "../CodeGenCtx";
 
 export class NumberNodeType implements NodeType<NumberState> {
   componentType = numberComponentType;
@@ -24,6 +25,7 @@ class NumberNode implements Node<NumberState> {
   nodeParams: NodeParams<NumberState>;
   outputPins: Accessor<{ name: string; sinks: Accessor<Pin[]>; setSinks: (x: Pin[]) => void, }[]>;
   ui: Accessor<Component | undefined>;
+  generateCode: (ctx: CodeGenCtx, next: { [outputName: string]: (variableName: string) => void; }) => void;
 
   constructor(nodeParams: NodeParams<NumberState>) {
     let state = nodeParams.state;
@@ -65,5 +67,9 @@ class NumberNode implements Node<NumberState> {
         />
       );
     });
+    this.generateCode = (ctx, next) => {
+      let value = ctx.allocField(`${state.value}`);
+      next["out"](value);
+    };
   }
 }

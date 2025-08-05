@@ -2,6 +2,7 @@ import { SetStoreFunction, Store } from "solid-js/store";
 import { EcsComponentType } from "../ecs/EcsComponent";
 import { Pin } from "./components/Pin";
 import { Accessor, Component } from "solid-js";
+import { CodeGenCtx } from "./CodeGenCtx";
 
 export interface NodeParams<A extends object> {
   readonly entity: string;
@@ -30,4 +31,10 @@ export interface Node<A extends object> {
     setSinks: (x: Pin[]) => void,
   }[]>;
   readonly ui?: Accessor<Component | undefined>;
+  generateCode?: (
+    ctx: CodeGenCtx,
+    next: {
+      [outputName: string]: (variableName: string) => void,
+    },
+  ) => void;
 }
