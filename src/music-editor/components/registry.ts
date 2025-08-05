@@ -9,6 +9,7 @@ import { sawWaveComponentType } from "./SawWaveComponent";
 import { sineWaveComponentType } from "./SineWaveComponent";
 import { squareWaveComponentType } from "./SquareWaveComponent";
 import { addComponentType } from "./AddComponent";
+import { speakerComponentType } from "./SpeakerComponent";
 
 export const registry = new EcsRegistry([
   ...baseRegistry.componentTypes,
@@ -20,5 +21,6 @@ export const registry = new EcsRegistry([
   releaseComponentType,
   sawWaveComponentType,
   sineWaveComponentType,
+  speakerComponentType,
   squareWaveComponentType,
 ]);

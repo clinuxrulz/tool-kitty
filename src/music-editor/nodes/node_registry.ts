@@ -7,6 +7,7 @@ import { numberNodeType } from "./NumberNode";
 import { releaseNodeType } from "./ReleaseNode";
 import { sawWaveNodeType } from "./SawWaveNode";
 import { sineWaveNodeType } from "./SineWaveNode";
+import { speakerNodeType } from "./SpeakerNode";
 import { squareWaveNodeType } from "./SquareWaveNode";
 
 const nodeTypes: NodeType<any>[] = [
@@ -18,6 +19,7 @@ const nodeTypes: NodeType<any>[] = [
   releaseNodeType,
   sawWaveNodeType,
   sineWaveNodeType,
+  speakerNodeType,
   squareWaveNodeType,
 ];
 
