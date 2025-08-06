@@ -65,7 +65,7 @@ class SineWaveNode implements Node<SineWaveState> {
       let out = ctx.allocField("0.0");
       ctx.insertCode([
         `this.${phase} += (2 * Math.PI * ${frequency}) / sampleRate;`,
-        `this.${out} = this.${amplitude} * Math.sin(this.${phase}) + ${centre};`
+        `this.${out} = this.${amplitude} * Math.sin(this.${phase}) + this.${centre};`
       ]);
       outputAtoms.set("out", out);
       return [{ outputAtoms, }];
