@@ -31,10 +31,10 @@ export interface Node<A extends object> {
     setSinks: (x: Pin[]) => void,
   }[]>;
   readonly ui?: Accessor<Component | undefined>;
-  generateCode?: (
+  generateCode?: (params: {
     ctx: CodeGenCtx,
-    next: {
-      [outputName: string]: (variableName: string) => void,
-    },
-  ) => void;
+    inputAtoms: Map<string,string>,
+  }) => {
+    outputAtoms: Map<string,string>,
+  }[];
 }

@@ -2,6 +2,7 @@ import { Accessor, Component, createMemo } from "solid-js";
 import { speakerComponentType, SpeakerState } from "../components/SpeakerComponent";
 import { Node, NodeParams, NodeType } from "../Node";
 import { Pin } from "../components/Pin";
+import { CodeGenCtx } from "../CodeGenCtx";
 
 export class SpeakerNodeType implements NodeType<SpeakerState> {
   componentType = speakerComponentType;
@@ -18,6 +19,7 @@ class SpeakerNode implements Node<SpeakerState> {
   nodeParams: NodeParams<SpeakerState>;
   inputPins: Accessor<{ name: string; source: Accessor<Pin | undefined>; setSource: (x: Pin | undefined) => void; }[]>;
   ui: Accessor<Component | undefined>;
+  generateCode: (params: { ctx: CodeGenCtx; inputAtoms: Map<string, string>; }) => { outputAtoms: Map<string, string>; }[];
 
   constructor(nodeParams: NodeParams<SpeakerState>) {
     let state = nodeParams.state;
@@ -39,5 +41,17 @@ class SpeakerNode implements Node<SpeakerState> {
         }}
       />
     );
+    this.generateCode = ({ ctx, inputAtoms, }) => {
+      let in_ = inputAtoms.get("in");
+      if (in_ == undefined) {
+        return [];
+      }
+      ctx.insertCode([
+        `result += ${in_}`,
+      ]);
+      return [{
+        outputAtoms: new Map<string,string>(),
+      }];
+    };
   }
 }

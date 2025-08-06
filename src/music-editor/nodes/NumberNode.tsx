@@ -25,7 +25,7 @@ class NumberNode implements Node<NumberState> {
   nodeParams: NodeParams<NumberState>;
   outputPins: Accessor<{ name: string; sinks: Accessor<Pin[]>; setSinks: (x: Pin[]) => void, }[]>;
   ui: Accessor<Component | undefined>;
-  generateCode: (ctx: CodeGenCtx, next: { [outputName: string]: (variableName: string) => void; }) => void;
+  generateCode: ((params: { ctx: CodeGenCtx; inputAtoms: Map<string, string>; }) => { outputAtoms: Map<string, string>; }[]);
 
   constructor(nodeParams: NodeParams<NumberState>) {
     let state = nodeParams.state;
@@ -67,9 +67,12 @@ class NumberNode implements Node<NumberState> {
         />
       );
     });
-    this.generateCode = (ctx, next) => {
-      let value = ctx.allocField(`${state.value}`);
-      next["out"](value);
+    this.generateCode = ({ ctx, }) => {
+      let outputAtoms = new Map<string,string>();
+      outputAtoms.set("out", `${state.value}`);
+      return [{
+        outputAtoms,
+      }];
     };
   }
 }
