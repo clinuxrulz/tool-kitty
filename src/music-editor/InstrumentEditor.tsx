@@ -355,6 +355,7 @@ const InstrumentEditor: Component<
                 right: "0",
                 top: "0",
                 width: "35%",
+                "max-height": "100%",
                 overflow: "auto",
               }}
             >
