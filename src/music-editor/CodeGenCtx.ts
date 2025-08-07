@@ -10,7 +10,7 @@ export class CodeGenCtx {
   }
 
   insertCode(lines: string[]) {
-    this.code_ += lines.map((line) => `      ${line}\r\n`).join();
+    this.code_ += lines.map((line) => `      ${line}\r\n`).join("");
   }
 
   get code(): string {
@@ -18,9 +18,8 @@ export class CodeGenCtx {
       "class CompiledGraphAudioWorkletProcessor extends AudioWorkletProcessor {",
       this.fieldDeclarations,
       "  process(inputs, outputs, parameters) {",
-      "    let input = inputs[0][0];",
       "    let output = outputs[0][0];",
-      "    for (let i = 0; i < input.length; ++i) {",
+      "    for (let i = 0; i < output.length; ++i) {",
       "      let result = 0.0;",
       `${this.code_}      output[i] = result;`,
       "    }",

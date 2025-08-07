@@ -13,7 +13,6 @@ export class RenderSystem {
     highlightedEntitySet: ReactiveSet<string>,
     selectedEntitySet: ReactiveSet<string>,
   }) {
-
     this.Render = () => (<>
       <For each={params.nodes()}>
         {(node) => (

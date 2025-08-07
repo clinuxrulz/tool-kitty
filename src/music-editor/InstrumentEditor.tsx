@@ -1,5 +1,5 @@
 import { Component, ComponentProps, createComputed, createMemo, createSignal, mapArray, on, onCleanup, onMount, Show, splitProps, untrack } from "solid-js";
-import { Overwrite } from "../util";
+import { makeRefCountedMakeReactiveObject, Overwrite } from "../util";
 import { Complex, EcsWorld, Transform2D, transform2DComponentType, Vec2 } from "../lib";
 import { createStore } from "solid-js/store";
 import { createPanZoomManager } from "../PanZoomManager";
@@ -32,12 +32,14 @@ const InstrumentEditor: Component<
     mousePos: Vec2 | undefined,
     mkMode: () => Mode,
     showCode: boolean,
+    makeSound: boolean,
   }>({
     pan: Vec2.zero,
     scale: 1.0,
     mousePos: undefined,
     mkMode: () => new IdleMode(modeParams),
     showCode: false,
+    makeSound: false,
   });
   let undoManager = new UndoManager();
   let svgElement!: SVGSVGElement;
@@ -224,6 +226,41 @@ const InstrumentEditor: Component<
       }),
     ]);
   });
+  let code = createMemo(() => {
+    if (!(state.showCode || state.makeSound)) {
+      return undefined;
+    }
+    return generateCode({
+      nodesSystem,
+    });
+  });
+  createComputed(on(
+    [
+      () => state.makeSound,
+      code,
+    ],
+    ([makeSound, code]) => {
+      if (!makeSound) {
+        return;
+      }
+      if (code == undefined) {
+        return;
+      }
+      let url = URL.createObjectURL(new Blob([code], { type: "text/javascript", }));
+      let audioCtx = new AudioContext();
+      (async () => {
+        await audioCtx.audioWorklet.addModule(url);
+        let node = new AudioWorkletNode(audioCtx, "compiled-graph-audio-worklet-processor");
+        node.connect(audioCtx.destination);
+      })();
+      onCleanup(() => {
+        (async () => {
+          await audioCtx.close();
+          URL.revokeObjectURL(url);
+        })();
+      });
+    },
+  ));
   //
   return (
     <div
@@ -261,6 +298,15 @@ const InstrumentEditor: Component<
               onChange={(e) => setState("showCode", e.currentTarget.checked)}
             />
             Show Code
+          </label>
+          <label class="label" style="margin-left: 5px;">
+            <input
+              type="checkbox"
+              class="checkbox"
+              checked={state.makeSound}
+              onChange={(e) => setState("makeSound", e.currentTarget.checked)}
+            />
+            Make Sound
           </label>
         </div>
         <div
@@ -347,27 +393,24 @@ const InstrumentEditor: Component<
               </div>
             )}
           </Show>
-          <Show when={state.showCode}>
-            <div
-              class="bg-base"
-              style={{
-                position: "absolute",
-                right: "0",
-                top: "0",
-                width: "35%",
-                "max-height": "100%",
-                overflow: "auto",
-              }}
-            >
-              <pre>
-                {untrack(() => {
-                  let code = createMemo(() => generateCode({
-                    nodesSystem,
-                  }));
-                  return (<>{code()}</>);
-                })}
-              </pre>
-            </div>
+          <Show when={state.showCode ? code() : undefined}>
+            {(code) => (
+              <div
+                class="bg-base"
+                style={{
+                  position: "absolute",
+                  right: "0",
+                  top: "0",
+                  width: "35%",
+                  "max-height": "100%",
+                  overflow: "auto",
+                }}
+              >
+                <pre>
+                  {code()}
+                </pre>
+              </div>
+            )}
           </Show>
           <Show when={mode().overlayHtmlUi} keyed>
             {(OverlayHtmlUi) => (

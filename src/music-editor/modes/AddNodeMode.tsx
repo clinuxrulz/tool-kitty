@@ -326,7 +326,7 @@ export class AddNodeMode implements Mode {
           style={{
             width: "100%",
             height: `${svgPaletteHeight()}px`,
-            "touch-action": "none",
+            "touch-action": "pan-y",
             "user-select": "none",
           }}
           onPointerDown={onPointerDown}
