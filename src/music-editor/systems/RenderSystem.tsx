@@ -158,7 +158,6 @@ const RenderNode: Component<{
     if (Ui == undefined) {
       return undefined;
     }
-    debugger;
     let div = createMeasurementDiv();
     let span = document.createElement("div");
     span.style.setProperty("display", "inline-block");

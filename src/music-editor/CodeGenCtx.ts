@@ -6,7 +6,7 @@ export class CodeGenCtx {
   allocField(initValue: string): string {
     let fieldName = `x${this.nextFieldIdx++}`;
     this.fieldDeclarations += `${fieldName} = ${initValue};\r\n`;
-    return fieldName;
+    return `this.${fieldName}`;
   }
 
   insertCode(lines: string[]) {

@@ -20,10 +20,13 @@ export function generateCode(params: {
       let tmp = stack1;
       stack1 = stack2;
       stack2 = tmp;
-      at = stack2.pop();
+      at = stack1.pop();
       if (at == undefined) {
         break;
       }
+    }
+    if (entityIdOutputAtomsMap.has(at.node.nodeParams.entity)) {
+      continue;
     }
     let hasStaleChildren = false;
     for (let source of at.node.inputPins?.() ?? []) {
@@ -80,26 +83,6 @@ export function generateCode(params: {
       }[] = [];
       let doneAll = false;
       while (true) {
-        // increments comboGroupCounters
-        {
-          let atI = 0;
-          while (true) {
-            comboGroups[atI].idx++;
-            if (comboGroups[atI].idx >= comboGroups[atI].len) {
-              comboGroups[atI].idx = 0;
-              atI++;
-              if (atI >= comboGroups.length) {
-                doneAll = true;
-                break;
-              }
-            } else {
-              break;
-            }
-          }
-          if (doneAll) {
-            break;
-          }
-        }
         //
         let inputAtoms = new Map<string,string>();
         for (let comboGroup of comboGroups) {
@@ -112,6 +95,26 @@ export function generateCode(params: {
             ctx: codeGenCtx,
             inputAtoms,
           }));
+        }
+        // increments comboGroupCounters
+        {
+          let atI = 0;
+          while (true) {
+            if (atI >= comboGroups.length) {
+              doneAll = true;
+              break;
+            }
+            comboGroups[atI].idx++;
+            if (comboGroups[atI].idx >= comboGroups[atI].len) {
+              comboGroups[atI].idx = 0;
+              atI++;
+            } else {
+              break;
+            }
+          }
+          if (doneAll) {
+            break;
+          }
         }
       }
       entityIdOutputAtomsMap.set(

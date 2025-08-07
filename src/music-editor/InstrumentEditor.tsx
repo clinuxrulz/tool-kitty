@@ -1,4 +1,4 @@
-import { Component, ComponentProps, createComputed, createMemo, createSignal, mapArray, on, onCleanup, onMount, Show, splitProps } from "solid-js";
+import { Component, ComponentProps, createComputed, createMemo, createSignal, mapArray, on, onCleanup, onMount, Show, splitProps, untrack } from "solid-js";
 import { Overwrite } from "../util";
 import { Complex, EcsWorld, Transform2D, transform2DComponentType, Vec2 } from "../lib";
 import { createStore } from "solid-js/store";
@@ -13,6 +13,7 @@ import { sineWaveComponentType } from "./components/SineWaveComponent";
 import { AddNodeMode } from "./modes/AddNodeMode";
 import { PickingSystem } from "./systems/PickingSystem";
 import { ReactiveSet } from "@solid-primitives/set";
+import { generateCode } from "./code-gen";
 
 const InstrumentEditor: Component<
   Overwrite<
@@ -30,11 +31,13 @@ const InstrumentEditor: Component<
     scale: number,
     mousePos: Vec2 | undefined,
     mkMode: () => Mode,
+    showCode: boolean,
   }>({
     pan: Vec2.zero,
     scale: 1.0,
     mousePos: undefined,
     mkMode: () => new IdleMode(modeParams),
+    showCode: false,
   });
   let undoManager = new UndoManager();
   let svgElement!: SVGSVGElement;
@@ -250,6 +253,15 @@ const InstrumentEditor: Component<
           >
             Delete
           </button>
+          <label class="label" style="margin-left: 5px;">
+            <input
+              type="checkbox"
+              class="checkbox"
+              checked={state.showCode}
+              onChange={(e) => setState("showCode", e.currentTarget.checked)}
+            />
+            Show Code
+          </label>
         </div>
         <div
           style={{
@@ -334,6 +346,27 @@ const InstrumentEditor: Component<
                 </Show>
               </div>
             )}
+          </Show>
+          <Show when={state.showCode}>
+            <div
+              class="bg-base"
+              style={{
+                position: "absolute",
+                right: "0",
+                top: "0",
+                width: "35%",
+                overflow: "auto",
+              }}
+            >
+              <pre>
+                {untrack(() => {
+                  let code = createMemo(() => generateCode({
+                    nodesSystem,
+                  }));
+                  return (<>{code()}</>);
+                })}
+              </pre>
+            </div>
           </Show>
           <Show when={mode().overlayHtmlUi} keyed>
             {(OverlayHtmlUi) => (
