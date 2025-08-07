@@ -58,7 +58,7 @@ class SineWaveNode implements Node<SineWaveState> {
       if (frequency == undefined) {
         return [];
       }
-      let amplitude = inputAtoms.get("amplitute") ?? "1.0";
+      let amplitude = inputAtoms.get("amplitude") ?? "1.0";
       let centre = inputAtoms.get("centre") ?? "0.0";
       let outputAtoms = new Map<string,string>();
       let phase = ctx.allocField("0.0");
