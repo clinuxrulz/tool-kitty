@@ -1,4 +1,4 @@
-import { Accessor, Component, createComputed, createMemo, on, Show } from "solid-js";
+import { Accessor, Component, createComputed, createEffect, createMemo, on, Show } from "solid-js";
 import { Mode } from "../Mode";
 import { ModeParams } from "../ModeParams";
 import { ReactiveSet } from "@solid-primitives/set";
@@ -30,7 +30,7 @@ export class IdleMode implements Mode {
     let selectedNodesById = createMemo(() => Array.from(selectedNodesByIdSet));
     let nodeUnderMouseById = () => modeParams.pickingSystem.nodeUnderMouseById();
     let pinUnderMouse = () => modeParams.pickingSystem.pinUnderMouse();
-    createComputed(() => {
+    createEffect(() => {
       if (state.dragging == undefined) {
         return;
       }
