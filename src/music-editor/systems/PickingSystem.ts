@@ -2,16 +2,18 @@ import { Accessor, createMemo } from "solid-js";
 import { NodesSystemNode } from "./NodesSystem";
 import { Vec2 } from "../../lib";
 
-const SNAP_DIST = 10;
+const SNAP_DIST = 30;
 const SNAP_DIST_SQUARED = SNAP_DIST * SNAP_DIST;
 
 export class PickingSystem {
   nodeUnderMouseById: Accessor<string | undefined>;
   pinUnderMouse: Accessor<{
     type: "Input";
+    nodeId: string,
     name: string;
   } | {
     type: "Output";
+    nodeId: string,
     name: string;
   } | undefined>;
 
@@ -45,42 +47,51 @@ export class PickingSystem {
     });
     let nodeUnderMouseById = () => nodeUnderMouse()?.node.nodeParams.entity;
     let pinUnderMouse = createMemo(() => {
-      let node = nodeUnderMouse();
-      if (node == undefined) {
-        return undefined;
-      }
       let mousePos = params.mousePos();
       if (mousePos == undefined) {
         return undefined;
       }
-      let inputPinPositionsMap = node.inputPinPositionMap();
-      if (inputPinPositionsMap != undefined) {
-        for (let [ name, pos ] of inputPinPositionsMap.entries()) {
-          let pt = node.space().pointFromSpace(pos);
-          let pt2 = params.worldPtToScreenPt(pt);
-          if (pt2 == undefined) {
-            continue;
+      let closest: { type: "Input" | "Output", nodeId: string, name: string } | undefined = undefined;
+      let closestDist: number | undefined = undefined;
+      for (let node of params.nodes()) {
+        let inputPinPositionsMap = node.inputPinPositionMap();
+        if (inputPinPositionsMap != undefined) {
+          for (let [ name, pos ] of inputPinPositionsMap.entries()) {
+            let pt = node.space().pointFromSpace(pos);
+            let pt2 = params.worldPtToScreenPt(pt);
+            if (pt2 == undefined) {
+              continue;
+            }
+            let dist = pt2.distanceSquared(mousePos);
+            if (dist > SNAP_DIST_SQUARED) {
+              continue;
+            }
+            if (closestDist == undefined || dist < closestDist) {
+              closest = { type: "Input", nodeId: node.node.nodeParams.entity, name, };
+              closestDist = dist;
+            }
           }
-          let dist = pt2.distanceSquared(mousePos);
-          if (dist < SNAP_DIST_SQUARED) {
-            return { type: "Input" as const, name, };
+        }
+        let outputPinPositionsMap = node.outputPinPositionMap();
+        if (outputPinPositionsMap != undefined) {
+          for (let [ name, pos ] of outputPinPositionsMap.entries()) {
+            let pt = node.space().pointFromSpace(pos);
+            let pt2 = params.worldPtToScreenPt(pt);
+            if (pt2 == undefined) {
+              continue;
+            }
+            let dist = pt2.distanceSquared(mousePos);
+            if (dist > SNAP_DIST_SQUARED) {
+              continue;
+            }
+            if (closestDist == undefined || dist < closestDist) {
+              closest = { type: "Output", nodeId: node.node.nodeParams.entity, name, };
+              closestDist = dist;
+            }
           }
         }
       }
-      let outputPinPositionsMap = node.outputPinPositionMap();
-      if (outputPinPositionsMap != undefined) {
-        for (let [ name, pos ] of outputPinPositionsMap.entries()) {
-          let pt = node.space().pointFromSpace(pos);
-          let pt2 = params.worldPtToScreenPt(pt);
-          if (pt2 == undefined) {
-            continue;
-          }
-          let dist = pt2.distanceSquared(mousePos);
-          if (dist < SNAP_DIST_SQUARED) {
-            return { type: "Output" as const, name, };
-          }
-        }
-      }
+      return closest;
     });
     this.nodeUnderMouseById = nodeUnderMouseById;
     this.pinUnderMouse = pinUnderMouse;

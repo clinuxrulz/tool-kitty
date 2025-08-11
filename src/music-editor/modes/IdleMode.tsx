@@ -57,46 +57,42 @@ export class IdleMode implements Mode {
     this.overlaySvg = () => (
       <Show when={pinUnderMouse()}>
         {(pinUnderMouse) => (
-          <Show when={nodeUnderMouseById()} keyed>
-            {(nodeId) => (
-              <Show when={modeParams.nodesSystem.lookupNodeById(nodeId)} keyed>
-                {(node) => {
-                  let pt = createMemo(() => {
-                    let pin = pinUnderMouse();
-                    let pos: Vec2;
-                    if (pin.type == "Input") {
-                      let pos2 = node.inputPinPositionMap()?.get(pin.name);
-                      if (pos2 == undefined) {
-                        return undefined;
-                      }
-                      pos = pos2;
-                    } else if (pin.type == "Output") {
-                      let pos2 = node.outputPinPositionMap()?.get(pin.name);
-                      if (pos2 == undefined) {
-                        return undefined;
-                      }
-                      pos = pos2;
-                    } else {
-                      return undefined;
-                    }
-                    return node.space().pointFromSpace(pos);
-                  });
-                  return (
-                    <Show when={pt()}>
-                      {(pt) => (
-                        <circle
-                          cx={pt().x}
-                          cy={-pt().y}
-                          r={5.0 / modeParams.scale()}
-                          fill="blue"
-                          pointer-events="none"
-                        />
-                      )}
-                    </Show>
-                  );
-                }}
-              </Show>
-            )}
+          <Show when={modeParams.nodesSystem.lookupNodeById(pinUnderMouse().nodeId)} keyed>
+            {(node) => {
+              let pt = createMemo(() => {
+                let pin = pinUnderMouse();
+                let pos: Vec2;
+                if (pin.type == "Input") {
+                  let pos2 = node.inputPinPositionMap()?.get(pin.name);
+                  if (pos2 == undefined) {
+                    return undefined;
+                  }
+                  pos = pos2;
+                } else if (pin.type == "Output") {
+                  let pos2 = node.outputPinPositionMap()?.get(pin.name);
+                  if (pos2 == undefined) {
+                    return undefined;
+                  }
+                  pos = pos2;
+                } else {
+                  return undefined;
+                }
+                return node.space().pointFromSpace(pos);
+              });
+              return (
+                <Show when={pt()}>
+                  {(pt) => (
+                    <circle
+                      cx={pt().x}
+                      cy={-pt().y}
+                      r={5.0 / modeParams.scale()}
+                      fill="blue"
+                      pointer-events="none"
+                    />
+                  )}
+                </Show>
+              );
+            }}
           </Show>
         )}
       </Show>
@@ -117,10 +113,6 @@ export class IdleMode implements Mode {
       if (pt == undefined) {
         return;
       }
-      let nodeId = nodeUnderMouseById();
-      if (nodeId == undefined) {
-        return;
-      }
       // trigger add edge mode if its over a pin
       {
         let pin = pinUnderMouse();
@@ -132,7 +124,7 @@ export class IdleMode implements Mode {
           modeParams.setMode(() =>
             new AddEdgeMode({
               modeParams,
-              fromNodeId: nodeId,
+              fromNodeId: pin.nodeId,
               fromPin: pin2,
             })
           );
@@ -140,6 +132,10 @@ export class IdleMode implements Mode {
         }
       }
       //
+      let nodeId = nodeUnderMouseById();
+      if (nodeId == undefined) {
+        return;
+      }
       if (!selectedNodesByIdSet.has(nodeId)) {
         return;
       }
