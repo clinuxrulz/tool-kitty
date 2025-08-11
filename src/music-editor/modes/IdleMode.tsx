@@ -163,6 +163,9 @@ export class IdleMode implements Mode {
       return opToArr(nodeUnderMouseById());
     });
     this.selectedObjectsById = selectedNodesById;
-    this.disablePan = createMemo(() => state.dragging != undefined);
+    this.disablePan = createMemo(() =>
+      pinUnderMouse() != undefined ||
+      state.dragging != undefined
+    );
   }
 }

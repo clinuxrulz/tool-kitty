@@ -2,7 +2,7 @@ import { Accessor, createMemo } from "solid-js";
 import { NodesSystemNode } from "./NodesSystem";
 import { Vec2 } from "../../lib";
 
-const SNAP_DIST = 30;
+const SNAP_DIST = 20;
 const SNAP_DIST_SQUARED = SNAP_DIST * SNAP_DIST;
 
 export class PickingSystem {

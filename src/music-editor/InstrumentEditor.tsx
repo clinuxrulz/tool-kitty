@@ -1,4 +1,4 @@
-import { Component, ComponentProps, createComputed, createMemo, createSignal, mapArray, on, onCleanup, onMount, Show, splitProps, untrack } from "solid-js";
+import { batch, Component, ComponentProps, createComputed, createMemo, createSignal, mapArray, on, onCleanup, onMount, Show, splitProps, untrack } from "solid-js";
 import { makeRefCountedMakeReactiveObject, Overwrite } from "../util";
 import { Complex, EcsWorld, Transform2D, transform2DComponentType, Vec2 } from "../lib";
 import { createStore } from "solid-js/store";
@@ -155,18 +155,15 @@ const InstrumentEditor: Component<
   };
   let dragStartTimerId: number | undefined = undefined;
   let dragging = false;
-  //const START_DRAG_DELAY_MS = 200;
   let onPointerDown = (e: PointerEvent) => {
-    panZoomManager.onPointerDown(e);
-    dragStartTimerId = window.setTimeout(
-      () => {
-        window.clearTimeout(dragStartTimerId);
-        dragStartTimerId = undefined;
-        dragging = true;
-        mode().dragStart?.();
-      },
-      //START_DRAG_DELAY_MS,
+    let rect = svgElement.getBoundingClientRect();
+    setState(
+      "mousePos",
+      Vec2.create(e.clientX - rect.left, e.clientY - rect.top),
     );
+    mode().dragStart?.();
+    dragging = true;
+    panZoomManager.onPointerDown(e)
   };
   let onPointerUp = (e: PointerEvent) => {
     panZoomManager.onPointerUp(e);
@@ -183,12 +180,12 @@ const InstrumentEditor: Component<
     panZoomManager.onPointerCancel(e);
   };
   let onPointerMove = (e: PointerEvent) => {
-    panZoomManager.onPointerMove(e);
     let rect = svgElement.getBoundingClientRect();
     setState(
       "mousePos",
       Vec2.create(e.clientX - rect.left, e.clientY - rect.top),
     );
+    panZoomManager.onPointerMove(e);
   };
   let onPointerOut = (e: PointerEvent) => {
     if (panZoomManager.numTouches() == 0) {
@@ -324,6 +321,7 @@ const InstrumentEditor: Component<
               width: "100%",
               height: "100%",
               "touch-action": "none",
+              "user-select": "none",
             }}
             onPointerDown={onPointerDown}
             onPointerUp={onPointerUp}
