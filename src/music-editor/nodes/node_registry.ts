@@ -1,6 +1,7 @@
 import { NodeType } from "../Node";
 import { addNodeType } from "./AddNode";
 import { attackNodeType } from "./AttackNode";
+import { delayNodeType } from "./DelayNode";
 import { multNodeType } from "./MultNode";
 import { noiseNodeType } from "./NoiseWaveNode";
 import { numberNodeType } from "./NumberNode";
@@ -10,10 +11,12 @@ import { sawWaveNodeType } from "./SawWaveNode";
 import { sineWaveNodeType } from "./SineWaveNode";
 import { speakerNodeType } from "./SpeakerNode";
 import { squareWaveNodeType } from "./SquareWaveNode";
+import { startNodeType } from "./StartNode";
 
 const nodeTypes: NodeType<any>[] = [
   addNodeType,
   attackNodeType,
+  delayNodeType,
   multNodeType,
   noiseNodeType,
   numberNodeType,
@@ -23,6 +26,7 @@ const nodeTypes: NodeType<any>[] = [
   sineWaveNodeType,
   speakerNodeType,
   squareWaveNodeType,
+  startNodeType,
 ];
 
 const nodeTypeNameToNodeTypeMap = new Map<string,NodeType<any>>(

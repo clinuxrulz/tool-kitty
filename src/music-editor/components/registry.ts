@@ -11,11 +11,14 @@ import { squareWaveComponentType } from "./SquareWaveComponent";
 import { addComponentType } from "./AddComponent";
 import { speakerComponentType } from "./SpeakerComponent";
 import { pianoKeysComponentType } from "./PianoKeysComponent";
+import { startComponentType } from "./StartComponent";
+import { delayComponentType } from "./DelayComponent";
 
 export const registry = new EcsRegistry([
   ...baseRegistry.componentTypes,
   addComponentType,
   attackComponentType,
+  delayComponentType,
   multComponentType,
   noiseWaveComponentType,
   numberComponentType,
@@ -25,4 +28,5 @@ export const registry = new EcsRegistry([
   sineWaveComponentType,
   speakerComponentType,
   squareWaveComponentType,
+  startComponentType,
 ]);
