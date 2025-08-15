@@ -8,10 +8,12 @@ import { numberNodeType } from "./NumberNode";
 import { pianoKeysNodeType } from "./PianoKeysNode";
 import { releaseNodeType } from "./ReleaseNode";
 import { sawWaveNodeType } from "./SawWaveNode";
+import { setVariableNodeType } from "./SetVariableNode";
 import { sineWaveNodeType } from "./SineWaveNode";
 import { speakerNodeType } from "./SpeakerNode";
 import { squareWaveNodeType } from "./SquareWaveNode";
 import { startNodeType } from "./StartNode";
+import { variableNodeType } from "./VariableNode";
 
 const nodeTypes: NodeType<any>[] = [
   addNodeType,
@@ -23,10 +25,12 @@ const nodeTypes: NodeType<any>[] = [
   pianoKeysNodeType,
   releaseNodeType,
   sawWaveNodeType,
+  setVariableNodeType,
   sineWaveNodeType,
   speakerNodeType,
   squareWaveNodeType,
   startNodeType,
+  variableNodeType,
 ];
 
 const nodeTypeNameToNodeTypeMap = new Map<string,NodeType<any>>(
