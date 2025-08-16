@@ -2,6 +2,7 @@ import { NodeType } from "../Node";
 import { addNodeType } from "./AddNode";
 import { attackNodeType } from "./AttackNode";
 import { delayNodeType } from "./DelayNode";
+import { meowNodeType } from "./MeowNode";
 import { multNodeType } from "./MultNode";
 import { noiseNodeType } from "./NoiseWaveNode";
 import { numberNodeType } from "./NumberNode";
@@ -19,6 +20,7 @@ const nodeTypes: NodeType<any>[] = [
   addNodeType,
   attackNodeType,
   delayNodeType,
+  meowNodeType,
   multNodeType,
   noiseNodeType,
   numberNodeType,

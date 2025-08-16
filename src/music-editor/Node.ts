@@ -13,6 +13,9 @@ export interface NodeParams<A extends object> {
 export interface NodeType<A extends object> {
   readonly componentType: EcsComponentType<A>;
   readonly registerAudioWorkletModules?: (audioCtx: AudioContext) => void;
+  readonly generateInitOnceCode?: (params: {
+    ctx: CodeGenCtx,
+  }) => void;
 
   create(nodeParams: NodeParams<A>): Node<A>;
 }
