@@ -1,4 +1,4 @@
-import { Accessor, createMemo } from "solid-js";
+import { Accessor, Component, createMemo } from "solid-js";
 import { meowComponentType, MeowState } from "../components/MeowComponent";
 import { Pin } from "../components/Pin";
 import { Node, NodeParams, NodeType } from "../Node";
@@ -18,6 +18,7 @@ class MeowNode implements Node<MeowState> {
   nodeParams: NodeParams<MeowState>;
   inputPins: Accessor<{ name: string; source: Accessor<Pin | undefined>; setSource: (x: Pin | undefined) => void; }[]>;
   outputPins: Accessor<{ name: string; sinks: Accessor<Pin[]>; setSinks: (x: Pin[]) => void; }[]>;
+  ui: Accessor<Component>;
 
   constructor(nodeParams: NodeParams<MeowState>) {
     let state = nodeParams.state;
@@ -37,5 +38,12 @@ class MeowNode implements Node<MeowState> {
         setSinks: (x) => setState("out", x),
       }
     ]);
+    this.ui = createMemo(() => () => (
+      <img
+        width="120px"
+        height="120px"
+        src="./cat-node.jpg"
+      />
+    ));
   }
 }
