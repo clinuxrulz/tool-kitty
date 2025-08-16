@@ -6,6 +6,18 @@ import { CodeGenCtx } from "../CodeGenCtx";
 
 export class MeowNodeType implements NodeType<MeowState> {
   componentType = meowComponentType;
+  generateInitOnceCode: (params: { ctx: CodeGenCtx; }) => void;
+
+  constructor() {
+    this.generateInitOnceCode = ({ ctx, }) => {
+      ctx.insertMessageHandlerCode(
+        "meowData",
+        [
+          "// TODO",
+        ]
+      );
+    };
+  }
 
   create(nodeParams: NodeParams<MeowState>) {
     return new MeowNode(nodeParams);
