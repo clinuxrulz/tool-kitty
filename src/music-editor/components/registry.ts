@@ -15,12 +15,14 @@ import { startComponentType } from "./StartComponent";
 import { delayComponentType } from "./DelayComponent";
 import { variableComponentType } from "./VariableComponent";
 import { setVariableComponentType } from "./SetVariableComponent";
+import { meowComponentType } from "./MeowComponent";
 
 export const registry = new EcsRegistry([
   ...baseRegistry.componentTypes,
   addComponentType,
   attackComponentType,
   delayComponentType,
+  meowComponentType,
   multComponentType,
   noiseWaveComponentType,
   numberComponentType,
