@@ -59,7 +59,28 @@ async function playSoundfontNote(sf2Url: string, presetIndex: number, noteNumber
         }
         
         // 4. Decode the raw audio data into an AudioBuffer.
-        const audioBuffer: AudioBuffer = await audioContext.decodeAudioData(sample.data.slice(0).buffer);
+        //const audioBuffer: AudioBuffer = await audioContext.decodeAudioData(sample.data.slice(0).buffer);
+
+        // 4. Create an AudioBuffer from the raw sample data.
+        // This is the corrected approach, replacing decodeAudioData.
+
+        // a. Get the required parameters from the sample header.
+        const sampleRate: number = sample.header.sampleRate;
+        const totalSamples: number = sample.data.length;
+
+        // b. Create an empty AudioBuffer. We'll assume mono (1 channel) for simplicity,
+        // as is common for many SoundFont samples.
+        const audioBuffer: AudioBuffer = audioContext.createBuffer(1, totalSamples, sampleRate);
+
+        // c. Get a reference to the buffer's channel data.
+        const channelData: Float32Array = audioBuffer.getChannelData(0);
+
+        // d. Copy and normalize the 16-bit integer sample data into the
+        // 32-bit float channel data, scaling it to the [-1.0, 1.0] range.
+        for (let i = 0; i < totalSamples; i++) {
+            channelData[i] = sample.data[i] / 32768.0;
+        }
+
 
         // 5. Create an AudioBufferSourceNode and set its properties.
         const sourceNode: AudioBufferSourceNode = audioContext.createBufferSource();
