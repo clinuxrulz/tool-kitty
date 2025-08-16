@@ -2,6 +2,7 @@ import { Accessor, Component, createMemo } from "solid-js";
 import { meowComponentType, MeowState } from "../components/MeowComponent";
 import { Pin } from "../components/Pin";
 import { Node, NodeParams, NodeType } from "../Node";
+import { CodeGenCtx } from "../CodeGenCtx";
 
 export class MeowNodeType implements NodeType<MeowState> {
   componentType = meowComponentType;
@@ -19,6 +20,7 @@ class MeowNode implements Node<MeowState> {
   inputPins: Accessor<{ name: string; source: Accessor<Pin | undefined>; setSource: (x: Pin | undefined) => void; }[]>;
   outputPins: Accessor<{ name: string; sinks: Accessor<Pin[]>; setSinks: (x: Pin[]) => void; }[]>;
   ui: Accessor<Component>;
+  generateCode: (params: { ctx: CodeGenCtx; inputAtoms: Map<string, string>; }) => { outputAtoms: Map<string, string>; }[];
 
   constructor(nodeParams: NodeParams<MeowState>) {
     let state = nodeParams.state;
@@ -45,5 +47,8 @@ class MeowNode implements Node<MeowState> {
         src="./cat-node.jpg"
       />
     ));
+    this.generateCode = ({ ctx, inputAtoms }) => {
+      return [];
+    };
   }
 }

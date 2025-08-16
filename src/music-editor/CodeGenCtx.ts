@@ -1,12 +1,17 @@
 export class CodeGenCtx {
   private nextFieldIdx = 0;
   private fieldDeclarations = "";
+  private constructorCode = "";
   private code_ = "";
 
   allocField(initValue: string): string {
     let fieldName = `x${this.nextFieldIdx++}`;
     this.fieldDeclarations += `  ${fieldName} = ${initValue};\r\n`;
     return `this.${fieldName}`;
+  }
+
+  insertConstructorCode(lines: string[]) {
+    this.constructorCode += lines.map((line) => `      ${line}\r\n`).join("");
   }
 
   insertCode(lines: string[]) {
@@ -17,6 +22,10 @@ export class CodeGenCtx {
     return [
       "class CompiledGraphAudioWorkletProcessor extends AudioWorkletProcessor {",
       this.fieldDeclarations,
+      "  constructor(options) {",
+      "    super();",
+      `${this.constructorCode}  }`,
+      "",
       "  process(inputs, outputs, parameters) {",
       "    let output = outputs[0][0];",
       "    for (let i = 0; i < output.length; ++i) {",
