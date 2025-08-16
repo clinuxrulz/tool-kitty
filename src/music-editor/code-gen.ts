@@ -1,17 +1,31 @@
 import { CodeGenCtx } from "./CodeGenCtx";
+import { NodeType } from "./Node";
 import { NodesSystem } from "./systems/NodesSystem";
 
 export function generateCode(params: {
   nodesSystem: NodesSystem,
 }): string {
   let nodesSystem = params.nodesSystem;
+  let codeGenCtx = new CodeGenCtx();
+  // generate all the init once code
+  {
+    let visitedNodeTypes = new Set<string>;
+    for (let node of nodesSystem.nodes()) {
+      let nodeType = node.node.type;
+      if (visitedNodeTypes.has(nodeType.componentType.typeName)) {
+        continue;
+      }
+      visitedNodeTypes.add(nodeType.componentType.typeName);
+      nodeType.generateInitOnceCode?.({ ctx: codeGenCtx, });
+    }
+  }
+  //
   let entityIdOutputAtomsMap = new Map<
     string,
     {
       outputAtoms: Map<string,string>,
     }[]
   >();
-  let codeGenCtx = new CodeGenCtx();
   let stack1 = [ ...nodesSystem.nodes(), ];
   let stack2: typeof stack1 = [];
   while (true) {
