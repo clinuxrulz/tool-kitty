@@ -38,7 +38,10 @@ const MusicEditor: Component<{}> = (props) => {
               "tab": true,
               "tab-active": state.selectedTab == tab
             }}
-            onClick={() => setState("selectedTab", tab)}
+            onClick={() => {
+              setState("selectedTab", tab);
+              import("./SoundFontTest");
+            }}
           >
             {tab}
           </a>

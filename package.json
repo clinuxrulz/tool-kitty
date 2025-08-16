@@ -81,6 +81,7 @@
     "solid-automerge": "1.0.0-beta.6",
     "solid-fs-automerge": "workspace:*",
     "solid-js": "^1.9.3",
+    "soundfont2": "^0.5.0",
     "tailwindcss": "^4.0.14",
     "unique-username-generator": "^1.4.0",
     "uuid": "^11.0.5",
