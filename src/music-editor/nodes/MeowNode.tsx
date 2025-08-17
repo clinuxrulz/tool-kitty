@@ -124,18 +124,20 @@ class MeowNode implements Node<MeowState> {
       let idx = ctx.allocField("0");
       const middle_c_hz = 261.625565;
       ctx.insertCode([
-        "if (meowData == undefined) {",
+        `if (meowData == undefined || ${frequency} == 0.0) {`,
         `  ${out} = 0.0;`,
+        `  ${at} = 0.0;`,
         "} else {",
         "  debugger;",
         `  if (${at} >= meowData.length) {`,
-        `    ${at} = 0.0;`,
+        `    ${out} = 0.0;`,
+        "  } else {",
+        `    ${idx} = Math.floor(${at});`,
+        `    let value = meowData[${idx}];`,
+        `    ${out} = value;`,
+        `    let step = (${frequency} / ${middle_c_hz}) * (meowSampleRate / sampleRate);`,
+        `    ${at} += step;`,
         "  }",
-        `  ${idx} = Math.floor(${at});`,
-        `  let value = meowData[${idx}];`,
-        `  ${out} = value;`,
-        `  let step = (${frequency} / ${middle_c_hz}) * (meowSampleRate / sampleRate);`,
-        `  ${at} += step;`,
         "}",
       ]);
       outputAtoms.set("out", out);

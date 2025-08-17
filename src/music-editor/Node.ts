@@ -35,6 +35,7 @@ export interface Node<A extends object> {
     setSinks: (x: Pin[]) => void,
   }[]>;
   readonly ui?: Accessor<Component | undefined>;
+  readonly init?: (workletNode: AudioWorkletNode) => Promise<void>;
   generateCode?: (params: {
     ctx: CodeGenCtx,
     inputAtoms: Map<string,string>,

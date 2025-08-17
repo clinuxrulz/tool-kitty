@@ -1,4 +1,4 @@
-import { Accessor, Component, createMemo } from "solid-js";
+import { Accessor, Component, createMemo, createSignal } from "solid-js";
 import { pianoKeysComponentType, PianoKeysState } from "../components/PianoKeysComponent";
 import { Node, NodeParams, NodeType } from "../Node";
 import PianoKeys from "../PianoKeys";
@@ -7,6 +7,27 @@ import { CodeGenCtx } from "../CodeGenCtx";
 
 export class PianoKeysNodeType implements NodeType<PianoKeysState> {
   componentType = pianoKeysComponentType;
+  generateInitOnceCode: (params: { ctx: CodeGenCtx; }) => void;
+
+  constructor() {
+    this.generateInitOnceCode = ({ ctx }) => {
+      ctx.insertGlobalCode([
+        "let noteDown = {};",
+      ]);
+      ctx.insertMessageHandlerCode(
+        "NoteOn",
+        [
+          "noteDown[params.id] = true;",
+        ],
+      );
+      ctx.insertMessageHandlerCode(
+        "NoteOff",
+        [
+          "noteDown[params.id] = false;",
+        ],
+      );
+    };
+  }
 
   create(nodeParams: NodeParams<PianoKeysState>) {
     return new PianoKeysNode(nodeParams);
@@ -21,6 +42,7 @@ class PianoKeysNode implements Node<PianoKeysState> {
   outputPins: Accessor<{ name: string; sinks: Accessor<Pin[]>; setSinks: (x: Pin[]) => void, }[]>;
   ui: Accessor<Component | undefined>;
   generateCode: (params: { ctx: CodeGenCtx; inputAtoms: Map<string, string>; }) => { outputAtoms: Map<string, string>; }[];
+  init: (workletNode: AudioWorkletNode) => Promise<void>;
 
   constructor(nodeParams: NodeParams<PianoKeysState>) {
     let state = nodeParams.state;
@@ -33,13 +55,32 @@ class PianoKeysNode implements Node<PianoKeysState> {
         setSinks: (x) => setState("out", x),
       }
     ]);
+    let [ audioWorkletNode, setAudioWorkletNode, ] = createSignal<AudioWorkletNode>();
     this.ui = createMemo(() => () =>
       <PianoKeys
         onNoteOn={(name) => {
-          // TODO
+          let n = audioWorkletNode();
+          if (n == undefined) {
+            return;
+          }
+          n.port.postMessage({
+            type: "NoteOn",
+            params: {
+              id: `${nodeParams.entity}/${name}`,
+            },
+          });
         }}
         onNoteOff={(name) => {
-          // TODO
+          let n = audioWorkletNode();
+          if (n == undefined) {
+            return;
+          }
+          n.port.postMessage({
+            type: "NoteOff",
+            params: {
+              id: `${nodeParams.entity}/${name}`,
+            },
+          });
         }}
       />
     );
@@ -59,6 +100,13 @@ class PianoKeysNode implements Node<PianoKeysState> {
     ];
     const MIDDLE_C_HZ = 261.63;
     this.generateCode = ({ ctx, }) => {
+      {
+        let decl = [];
+        for (let note of NOTES) {
+          decl.push(`noteDown["${nodeParams.entity}/${note}"] = false;`);
+        }
+        ctx.insertGlobalCode(decl);
+      }
       return NOTES.map((note, idx) => {
         const frequency = MIDDLE_C_HZ * Math.pow(2.0, idx / 12.0);
         let out = ctx.allocField("0.0");
@@ -73,6 +121,9 @@ class PianoKeysNode implements Node<PianoKeysState> {
         ]);
         return { outputAtoms, };
       });
+    };
+    this.init = async (workletNode) => {
+      setAudioWorkletNode(workletNode);
     };
   }
 }

@@ -257,6 +257,9 @@ const InstrumentEditor: Component<
           visitedNodeTypeSet.add(nodeType.componentType.typeName);
           await nodeType.initAudioCtx?.(audioCtx, audioWorkletNode);
         }
+        for (let node of nodesSystem.nodes()) {
+          await node.node.init?.(audioWorkletNode);
+        }
         audioWorkletNode.connect(audioCtx.destination);
       })();
       onCleanup(() => {
