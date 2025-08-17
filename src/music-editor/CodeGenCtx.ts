@@ -18,7 +18,7 @@ export class CodeGenCtx {
 
   insertMessageHandlerCode(type: string, lines: string[]) {
     let handler = this.messageHandlers.get(type);
-    let toAdd = lines.map((line) => `      ${line}\r\n`).join("");
+    let toAdd = lines.map((line) => `        ${line}\r\n`).join("");
     if (handler == undefined) {
       handler = toAdd;
     } else {
@@ -46,13 +46,14 @@ export class CodeGenCtx {
             let start: string;
             let isLast = idx == this.messageHandlers.size - 1;
             if (idx == 0) {
-              start = "if";
+              start = "      if";
             } else {
-              start = "} else if";
+              start = "      } else if";
             }
             return (
-              `${start} (data.type == ${type}) {\r\n` +
-              `${code}${isLast ? "}\r\n" : ""}`
+              `${start} (data.type == "${type}") {\r\n` +
+              "        let params = data.params;\r\n" +
+              `${code}${isLast ? "      }\r\n" : ""}`
             );
           },
         ),

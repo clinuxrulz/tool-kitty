@@ -247,8 +247,17 @@ const InstrumentEditor: Component<
       let audioCtx = new AudioContext();
       (async () => {
         await audioCtx.audioWorklet.addModule(url);
-        let node = new AudioWorkletNode(audioCtx, "compiled-graph-audio-worklet-processor");
-        node.connect(audioCtx.destination);
+        let audioWorkletNode = new AudioWorkletNode(audioCtx, "compiled-graph-audio-worklet-processor");
+        let visitedNodeTypeSet = new Set<string>();
+        for (let node of nodesSystem.nodes()) {
+          let nodeType = node.node.type;
+          if (visitedNodeTypeSet.has(nodeType.componentType.typeName)) {
+            continue;
+          }
+          visitedNodeTypeSet.add(nodeType.componentType.typeName);
+          await nodeType.initAudioCtx?.(audioCtx, audioWorkletNode);
+        }
+        audioWorkletNode.connect(audioCtx.destination);
       })();
       onCleanup(() => {
         (async () => {

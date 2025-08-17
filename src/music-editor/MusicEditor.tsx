@@ -40,7 +40,6 @@ const MusicEditor: Component<{}> = (props) => {
             }}
             onClick={() => {
               setState("selectedTab", tab);
-              import("./SoundFontTest");
             }}
           >
             {tab}
