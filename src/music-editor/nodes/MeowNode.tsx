@@ -128,7 +128,6 @@ class MeowNode implements Node<MeowState> {
         `  ${out} = 0.0;`,
         `  ${at} = 0.0;`,
         "} else {",
-        "  debugger;",
         `  if (${at} >= meowData.length) {`,
         `    ${out} = 0.0;`,
         "  } else {",

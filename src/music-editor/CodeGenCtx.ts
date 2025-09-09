@@ -5,6 +5,7 @@ export class CodeGenCtx {
   private messageHandlers = new Map<string,string>();
   private globalCode = "";
   private code_ = "";
+  private postCode = "";
 
   allocField(initValue: string): string {
     let fieldName = `x${this.nextFieldIdx++}`;
@@ -33,6 +34,10 @@ export class CodeGenCtx {
 
   insertCode(lines: string[]) {
     this.code_ += lines.map((line) => `      ${line}\r\n`).join("");
+  }
+
+  insertPostCode(lines: string[]) {
+    this.postCode += lines.map((line) => `      ${line}\r\n`).join("");
   }
 
   get code(): string {
@@ -74,7 +79,7 @@ export class CodeGenCtx {
       "    let output = outputs[0][0];",
       "    for (let i = 0; i < output.length; ++i) {",
       "      let result = 0.0;",
-      `${this.code_}      output[i] = result;`,
+      `${this.code_}${this.postCode}      output[i] = result;`,
       "    }",
       "    return true;",
       "  }",
