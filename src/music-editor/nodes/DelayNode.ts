@@ -53,25 +53,29 @@ class DelayNode implements Node<DelayState> {
       if (delay == undefined) {
         return [];
       }
-      let next = ctx.allocField("false");
-      let startTime = ctx.allocField("0");
-      let running = ctx.allocField("false");
-      ctx.insertCode([
-        `if (${prev}) {`,
-        `  ${running} = true;`,
+      let effect = ctx.allocField(
+        "{\r\n" +
+        "  id: effectId++,\r\n" +
+        "  prev: null,\r\n" +
+        "  next: null,\r\n" +
+        "  update: null, /* () => boolean */\r\n" +
+        "  onDone: [], /* (() => void)[] */" +
+        "}"
+      );
+      let startTime = ctx.allocField("startTime");
+      ctx.insertConstructorCode([
+        `${prev}.onDone.push(() => {`,
         `  ${startTime} = performance.now();`,
-        "}",
-        `if (${running}) {`,
+        `  insertEffectIntoRunning(${effect});`,
+        "});",
+        `${effect}.update = () => {`,
         `  let time = performance.now() - ${startTime};`,
-        `  if (time >= ${delay}) {`,
-        `    ${running} = false;`,
-        `    ${next} = true;`,
-        "  }",
-        "}",
+        "  // return true when done.",
+        `  return time >= ${delay};`,
+        `};`,
+        `effects[${effect}.id] = ${effect};`,
       ]);
-      ctx.insertPostCode([
-        `${next} = false;`,
-      ]);
+      let next = `${effect}`;
       let outputAtoms = new Map<string,string>();
       outputAtoms.set("next", next);
       return [{ outputAtoms, }];
