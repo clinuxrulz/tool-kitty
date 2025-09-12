@@ -13,8 +13,8 @@ export class MeowNodeType implements NodeType<MeowState> {
   constructor() {
     this.initAudioCtx = async (audioCtx, workletNode) => {
       const presetIndex = 0;
-      const sf2Data = await fetch("./Thurston Waffles.sf2").then((x) => x.bytes());
-      const soundfont = new SoundFont2(sf2Data);
+      const sf2Data = await fetch("./Thurston Waffles.sf2").then((x) => x.arrayBuffer());
+      const soundfont = new SoundFont2(new Uint8Array(sf2Data));
       const preset: Preset = soundfont.presets[presetIndex];
       if (!preset) {
           throw new Error(`Preset at index ${presetIndex} not found.`);
@@ -118,15 +118,17 @@ class MeowNode implements Node<MeowState> {
       if (frequency == undefined) {
         return [];
       }
+      let lastFreq = ctx.allocField("0.0");
       let out = ctx.allocField("0.0");
       let outputAtoms = new Map<string,string>();
       let at = ctx.allocField("0.0");
       let idx = ctx.allocField("0");
       const middle_c_hz = 261.625565;
       ctx.insertCode([
-        `if (meowData == undefined || ${frequency} == 0.0) {`,
+        `if (meowData == undefined || ${frequency} != ${lastFreq}) {`,
         `  ${out} = 0.0;`,
         `  ${at} = 0.0;`,
+        `  ${lastFreq} = ${frequency};`,
         "} else {",
         `  if (${at} >= meowData.length) {`,
         `    ${out} = 0.0;`,

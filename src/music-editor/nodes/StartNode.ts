@@ -18,7 +18,7 @@ class StartNode implements Node<StartState> {
   type = startNodeType;
   nodeParams: NodeParams<StartState>;
   outputPins: Accessor<{ name: string; sinks: Accessor<Pin[]>; setSinks: (x: Pin[]) => void; }[]>;
-  //generateCode: (params: { ctx: CodeGenCtx; inputAtoms: Map<string, string>; }) => { outputAtoms: Map<string, string>; }[];
+  generateCode: (params: { ctx: CodeGenCtx; inputAtoms: Map<string, string>; }) => { outputAtoms: Map<string, string>; }[];
 
   constructor(nodeParams: NodeParams<StartState>) {
     let state = nodeParams.state;
@@ -31,5 +31,23 @@ class StartNode implements Node<StartState> {
         setSinks: (x) => setState("next", x),
       },
     ]);
+    this.generateCode = ({ ctx, inputAtoms, }) => {
+      let effect = ctx.allocField(
+        "{\r\n" +
+        "    prev: null,\r\n" +
+        "    next: null,\r\n" +
+        "    update: null, /* () => boolean */\r\n" +
+        "    onDone: [], /* (() => void)[] */\r\n" +
+        "  }"
+      );
+      ctx.insertConstructorCode([
+        `${effect}.update = () => true;`,
+        `this.insertRunningEffect(${effect});`,
+      ]);
+      let next = `${effect}`;
+      let outputAtoms = new Map<string,string>();
+      outputAtoms.set("next", next);
+      return [{ outputAtoms, }];
+    };
   }
 }

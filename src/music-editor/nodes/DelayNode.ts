@@ -44,7 +44,7 @@ class DelayNode implements Node<DelayState> {
         setSinks: (x) => setState("next", x),
       },
     ]);
-    this.generateCode = ({ ctx, inputAtoms }) => {
+    this.generateCode = ({ ctx, inputAtoms, }) => {
       let prev = inputAtoms.get("prev");
       if (prev == undefined) {
         return [];
@@ -55,25 +55,23 @@ class DelayNode implements Node<DelayState> {
       }
       let effect = ctx.allocField(
         "{\r\n" +
-        "  id: effectId++,\r\n" +
-        "  prev: null,\r\n" +
-        "  next: null,\r\n" +
-        "  update: null, /* () => boolean */\r\n" +
-        "  onDone: [], /* (() => void)[] */" +
-        "}"
+        "    prev: null,\r\n" +
+        "    next: null,\r\n" +
+        "    update: null, /* () => boolean */\r\n" +
+        "    onDone: [], /* (() => void)[] */\r\n" +
+        "  }"
       );
-      let startTime = ctx.allocField("startTime");
+      let startTime = ctx.allocField("0.0");
       ctx.insertConstructorCode([
         `${prev}.onDone.push(() => {`,
-        `  ${startTime} = performance.now();`,
-        `  insertEffectIntoRunning(${effect});`,
+        `  ${startTime} = currentTime * 1000.0;`,
+        `  this.insertRunningEffect(${effect});`,
         "});",
         `${effect}.update = () => {`,
-        `  let time = performance.now() - ${startTime};`,
+        `  let time = currentTime * 1000.0 - ${startTime};`,
         "  // return true when done.",
         `  return time >= ${delay};`,
         `};`,
-        `effects[${effect}.id] = ${effect};`,
       ]);
       let next = `${effect}`;
       let outputAtoms = new Map<string,string>();

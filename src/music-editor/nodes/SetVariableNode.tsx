@@ -3,6 +3,7 @@ import { EcsComponentType } from "../../lib";
 import { setVariableComponentType, SetVariableState } from "../components/SetVariableComponent";
 import { Node, NodeParams, NodeType } from "../Node";
 import { Pin } from "../components/Pin";
+import { CodeGenCtx } from "../CodeGenCtx";
 
 export class SetVariableNodeType implements NodeType<SetVariableState> {
   componentType = setVariableComponentType;
@@ -20,6 +21,7 @@ class SetVariableNode implements Node<SetVariableState> {
   inputPins: Accessor<{ name: string; source: Accessor<Pin | undefined>; setSource: (x: Pin | undefined) => void; }[]>;
   outputPins: Accessor<{ name: string; sinks: Accessor<Pin[]>; setSinks: (x: Pin[]) => void; }[]>;
   ui: Accessor<Component | undefined>;
+  generateCode: (params: { ctx: CodeGenCtx; inputAtoms: Map<string, string>; }) => { outputAtoms: Map<string, string>; }[];
   
   constructor(nodeParams: NodeParams<SetVariableState>) {
     let state = nodeParams.state;
@@ -60,5 +62,36 @@ class SetVariableNode implements Node<SetVariableState> {
         </label>
       );
     });
+    this.generateCode = ({ ctx, inputAtoms }) => {
+      let prev = inputAtoms.get("prev");
+      if (prev == undefined) {
+        return [];
+      }
+      let value = inputAtoms.get("value");
+      if (value == undefined) {
+        return [];
+      }
+      let effect = ctx.allocField(
+        "{\r\n" +
+        "    prev: null,\r\n" +
+        "    next: null,\r\n" +
+        "    update: null, /* () => boolean */\r\n" +
+        "    onDone: [], /* (() => void)[] */\r\n" +
+        "  }"
+      );
+      ctx.insertConstructorCode([
+        `${prev}.onDone.push(() => {`,
+        `  this.insertRunningEffect(${effect});`,
+        "});",
+        `${effect}.update = () => {`,
+        `  this.variables["${state.id}"] = ${value};`,
+        `  return true;`,
+        "};",
+      ]);
+      let next = `${effect}`;
+      let outputAtoms = new Map<string,string>();
+      outputAtoms.set("next", next);
+      return [{ outputAtoms, }];
+    };
   }
 }

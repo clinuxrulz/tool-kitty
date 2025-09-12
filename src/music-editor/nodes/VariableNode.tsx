@@ -2,6 +2,7 @@ import { Accessor, Component, createMemo } from "solid-js";
 import { Pin } from "../components/Pin";
 import { variableComponentType, VariableState } from "../components/VariableComponent";
 import { Node, NodeParams, NodeType } from "../Node";
+import { CodeGenCtx } from "../CodeGenCtx";
 
 export class VariableNodeType implements NodeType<VariableState> {
   componentType = variableComponentType;
@@ -18,6 +19,7 @@ class VariableNode implements Node<VariableState> {
   nodeParams: NodeParams<VariableState>;
   outputPins: Accessor<{ name: string; sinks: Accessor<Pin[]>; setSinks: (x: Pin[]) => void; }[]>;
   ui: Accessor<Component | undefined>;
+  generateCode: (params: { ctx: CodeGenCtx; inputAtoms: Map<string, string>; }) => { outputAtoms: Map<string, string>; }[];
 
   constructor(nodeParams: NodeParams<VariableState>) {
     let state = nodeParams.state;
@@ -46,5 +48,14 @@ class VariableNode implements Node<VariableState> {
         </label>
       );
     });
+    this.generateCode = ({ ctx, inputAtoms }) => {
+      ctx.insertConstructorCode([
+        `this.variables["${state.id}"] = 0.0;`
+      ]);
+      let value = `this.variables["${state.id}"]`;
+      let outputAtoms = new Map<string,string>();
+      outputAtoms.set("value", value);
+      return [{ outputAtoms, }];
+    };
   }
 }
