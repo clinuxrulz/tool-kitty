@@ -3,6 +3,7 @@ import { EcsComponentType } from "../ecs/EcsComponent";
 import { Pin } from "./components/Pin";
 import { Accessor, Component } from "solid-js";
 import { CodeGenCtx } from "./CodeGenCtx";
+import { CodeGenNode } from "./code-gen-2";
 
 export interface NodeParams<A extends object> {
   readonly entity: string;
@@ -38,6 +39,7 @@ export interface Node<A extends object> {
   }[]>;
   readonly ui?: Accessor<Component | undefined>;
   readonly init?: (workletNode: AudioWorkletNode) => Promise<void>;
+  readonly macro?: (node: CodeGenNode) => void;
   generateUnorderedInitCode?: (params: {
     ctx: CodeGenCtx,
   }) => void;
