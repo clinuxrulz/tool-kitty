@@ -325,6 +325,7 @@ const RenderNode: Component<{
       <For each={props.node.node.inputPins?.() ?? []}>
         {(inputPin) => {
           let pos = createMemo(() => inputPinPositions()[inputPin.name]);
+          let isEffectPin = inputPin.isEffectPin ?? false;
           return (
             <Show when={pos()}>
               {(pos) => (
@@ -333,11 +334,13 @@ const RenderNode: Component<{
                     cx={pos().dotPos.x}
                     cy={-pos().dotPos.y}
                     r={0.5 * pinDotSize}
-                    fill="black"
+                    fill={isEffectPin ? "purple" : "black"}
                   />
                   <text
                     x={pos().textPos.x}
                     y={-pos().textPos.y}
+                    font-weight={isEffectPin ? "bold" : "normal"}
+                    fill={isEffectPin ? "purple" : "black"}
                   >
                     {inputPin.name}
                   </text>
@@ -350,6 +353,7 @@ const RenderNode: Component<{
       <For each={props.node.node.outputPins?.() ?? []}>
         {(outputPin) => {
           let pos = createMemo(() => outputPinPositions()[outputPin.name]);
+          let isEffectPin = outputPin.isEffectPin ?? false;
           return (
             <Show when={pos()}>
               {(pos) => (
@@ -358,11 +362,13 @@ const RenderNode: Component<{
                     cx={pos().dotPos.x}
                     cy={-pos().dotPos.y}
                     r={0.5 * pinDotSize}
-                    fill="black"
+                    fill={isEffectPin ? "purple" : "black"}
                   />
                   <text
                     x={pos().textPos.x}
                     y={-pos().textPos.y}
+                    font-weight={isEffectPin ? "bold" : "normal"}
+                    fill={isEffectPin ? "purple" : "black"}
                   >
                     {outputPin.name}
                   </text>

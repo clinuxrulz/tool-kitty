@@ -44,6 +44,9 @@ export function generateCode(params: {
     }
     let hasStaleChildren = false;
     for (let source of at.node.inputPins?.() ?? []) {
+      if (source.name == "entry" && (source.isEffectPin ?? false)) {
+        continue;
+      }
       let source2 = source.source()?.target;
       if (source2 == undefined) {
         continue;

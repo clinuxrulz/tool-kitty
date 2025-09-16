@@ -18,8 +18,8 @@ export const setVariableNodeType = new SetVariableNodeType();
 class SetVariableNode implements Node<SetVariableState> {
   type = setVariableNodeType;
   nodeParams: NodeParams<SetVariableState>;
-  inputPins: Accessor<{ name: string; source: Accessor<Pin | undefined>; setSource: (x: Pin | undefined) => void; }[]>;
-  outputPins: Accessor<{ name: string; sinks: Accessor<Pin[]>; setSinks: (x: Pin[]) => void; }[]>;
+  inputPins: Accessor<{ name: string; source: Accessor<Pin | undefined>; setSource: (x: Pin | undefined) => void; isEffectPin?: boolean; }[]>;
+  outputPins: Accessor<{ name: string; sinks: Accessor<Pin[]>; setSinks: (x: Pin[]) => void; isEffectPin?: boolean; }[]>;
   ui: Accessor<Component | undefined>;
   generateCode: (params: { ctx: CodeGenCtx; inputAtoms: Map<string, string>; }) => { outputAtoms: Map<string, string>; }[];
   
@@ -32,6 +32,7 @@ class SetVariableNode implements Node<SetVariableState> {
         name: "prev",
         source: () => state.prev,
         setSource: (x) => setState("prev", x),
+        isEffectPin: true,
       },
       {
         name: "value",
@@ -44,6 +45,7 @@ class SetVariableNode implements Node<SetVariableState> {
         name: "next",
         sinks: () => state.next,
         setSinks: (x) => setState("next", x),
+        isEffectPin: true,
       }
     ]);
     this.ui = createMemo(() => () => {

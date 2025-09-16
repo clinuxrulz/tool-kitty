@@ -28,14 +28,19 @@ export interface Node<A extends object> {
     name: string,
     source: Accessor<Pin | undefined>,
     setSource: (x: Pin | undefined) => void,
+    isEffectPin?: boolean,
   }[]>;
   readonly outputPins?: Accessor<{
     name: string,
     sinks: Accessor<Pin[]>,
     setSinks: (x: Pin[]) => void,
+    isEffectPin?: boolean,
   }[]>;
   readonly ui?: Accessor<Component | undefined>;
   readonly init?: (workletNode: AudioWorkletNode) => Promise<void>;
+  generateUnorderedInitCode?: (params: {
+    ctx: CodeGenCtx,
+  }) => void;
   generateCode?: (params: {
     ctx: CodeGenCtx,
     inputAtoms: Map<string,string>,

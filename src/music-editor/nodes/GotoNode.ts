@@ -1,30 +1,31 @@
-import { Accessor, createMemo, EcsComponentType } from "../../lib";
-import { delayComponentType, DelayState } from "../components/DelayComponent";
-import { Pin } from "../components/Pin";
+import { Accessor, createMemo } from "solid-js";
+import { gotoComponentType, GotoState } from "../components/GotoComponent";
 import { Node, NodeParams, NodeType } from "../Node";
 import { CodeGenCtx } from "../CodeGenCtx";
+import { Pin } from "../components/Pin";
 
-export class DelayNodeType implements NodeType<DelayState> {
-  componentType = delayComponentType;
+export class GotoNodeType implements NodeType<GotoState> {
+  componentType = gotoComponentType;
 
-  create(nodeParams: NodeParams<DelayState>) {
-    return new DelayNode(nodeParams);
+  create(nodeParams: NodeParams<GotoState>) {
+    return new GotoNode(nodeParams);
   }
 }
 
-export const delayNodeType = new DelayNodeType();
+export const gotoNodeType = new GotoNodeType();
 
-class DelayNode implements Node<DelayState> {
-  type = delayNodeType;
-  nodeParams: NodeParams<DelayState>;
+class GotoNode implements Node<GotoState> {
+  type = gotoNodeType;
+  nodeParams: NodeParams<GotoState>;
   inputPins: Accessor<{ name: string; source: Accessor<Pin | undefined>; setSource: (x: Pin | undefined) => void; isEffectPin?: boolean; }[]>;
   outputPins: Accessor<{ name: string; sinks: Accessor<Pin[]>; setSinks: (x: Pin[]) => void; isEffectPin?: boolean; }[]>;
   generateCode: (params: { ctx: CodeGenCtx; inputAtoms: Map<string, string>; }) => { outputAtoms: Map<string, string>; }[];
 
-  constructor(nodeParams: NodeParams<DelayState>) {
+  constructor(nodeParams: NodeParams<GotoState>) {
     let state = nodeParams.state;
     let setState = nodeParams.setState;
     this.nodeParams = nodeParams;
+    //
     this.inputPins = createMemo(() => [
       {
         name: "prev",
@@ -33,9 +34,10 @@ class DelayNode implements Node<DelayState> {
         isEffectPin: true,
       },
       {
-        name: "delay",
-        source: () => state.delay,
-        setSource: (x) => setState("delay", x),
+        name: "entry",
+        source: () => state.entry,
+        setSource: (x) => setState("entry", x),
+        isEffectPin: true,
       },
     ]);
     this.outputPins = createMemo(() => [
@@ -51,8 +53,8 @@ class DelayNode implements Node<DelayState> {
       if (prev == undefined) {
         return [];
       }
-      let delay = inputAtoms.get("delay");
-      if (delay == undefined) {
+      let entry = inputAtoms.get("entry");
+      if (entry == undefined) {
         return [];
       }
       let effect = ctx.allocField(
@@ -63,17 +65,14 @@ class DelayNode implements Node<DelayState> {
         "    onDone: [], /* (() => void)[] */\r\n" +
         "  }"
       );
-      let startTime = ctx.allocField("0.0");
       ctx.insertConstructorCode([
         `${prev}.onDone.push(() => {`,
-        `  ${startTime} = currentTime * 1000.0;`,
         `  this.insertRunningEffect(${effect});`,
         "});",
-        `${effect}.update = () => {`,
-        `  let time = currentTime * 1000.0 - ${startTime};`,
-        "  // return true when done.",
-        `  return time >= ${delay};`,
-        `};`,
+        `${entry}.onDone.push(() => {`,
+        `  this.insertRunningEffect(${effect});`,
+        "});",
+        `${effect}.update = () => true;`,
       ]);
       let next = `${effect}`;
       let outputAtoms = new Map<string,string>();

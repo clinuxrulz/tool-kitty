@@ -17,7 +17,7 @@ export const startNodeType = new StartNodeType();
 class StartNode implements Node<StartState> {
   type = startNodeType;
   nodeParams: NodeParams<StartState>;
-  outputPins: Accessor<{ name: string; sinks: Accessor<Pin[]>; setSinks: (x: Pin[]) => void; }[]>;
+  outputPins: Accessor<{ name: string; sinks: Accessor<Pin[]>; setSinks: (x: Pin[]) => void; isEffectPin?: boolean, }[]>;
   generateCode: (params: { ctx: CodeGenCtx; inputAtoms: Map<string, string>; }) => { outputAtoms: Map<string, string>; }[];
 
   constructor(nodeParams: NodeParams<StartState>) {
@@ -29,6 +29,7 @@ class StartNode implements Node<StartState> {
         name: "next",
         sinks: () => state.next,
         setSinks: (x) => setState("next", x),
+        isEffectPin: true,
       },
     ]);
     this.generateCode = ({ ctx, inputAtoms, }) => {
