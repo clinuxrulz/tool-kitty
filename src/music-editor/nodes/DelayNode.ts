@@ -19,7 +19,7 @@ class DelayNode implements Node<DelayState> {
   nodeParams: NodeParams<DelayState>;
   inputPins: Accessor<{ name: string; source: Accessor<Pin | undefined>; setSource: (x: Pin | undefined) => void; isEffectPin?: boolean; }[]>;
   outputPins: Accessor<{ name: string; sinks: Accessor<Pin[]>; setSinks: (x: Pin[]) => void; isEffectPin?: boolean; }[]>;
-  generateCode: (params: { ctx: CodeGenCtx; inputAtoms: Map<string, string>; }) => { outputAtoms: Map<string, string>; }[];
+  generateCode: (params: { ctx: CodeGenCtx; inputAtoms: Map<string, string>; codeGenNodeId: number;  }) => { outputAtoms: Map<string, string>; }[];
 
   constructor(nodeParams: NodeParams<DelayState>) {
     let state = nodeParams.state;
@@ -46,7 +46,7 @@ class DelayNode implements Node<DelayState> {
         isEffectPin: true,
       },
     ]);
-    this.generateCode = ({ ctx, inputAtoms, }) => {
+    this.generateCode = ({ ctx, inputAtoms, codeGenNodeId, }) => {
       let prev = inputAtoms.get("prev");
       if (prev == undefined) {
         return [];
@@ -55,7 +55,9 @@ class DelayNode implements Node<DelayState> {
       if (delay == undefined) {
         return [];
       }
-      let effect = ctx.allocField(
+      let effect = `this.n_${codeGenNodeId}_next`;
+      ctx.addDeclToExistingForField(
+        effect,
         "{\r\n" +
         "    prev: null,\r\n" +
         "    next: null,\r\n" +

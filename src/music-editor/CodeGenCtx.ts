@@ -13,6 +13,18 @@ export class CodeGenCtx {
     return `this.${fieldName}`;
   }
 
+  allocFieldNoDecl(): string {
+    let fieldName = `x${this.nextFieldIdx++}`;
+    return `this.${fieldName}`;
+  }
+
+  addDeclToExistingForField(fieldName: string, initValue: string) {
+    if (fieldName.startsWith("this.")) {
+      fieldName = fieldName.substring("this.".length);
+    }
+    this.fieldDeclarations += `  ${fieldName} = ${initValue};\r\n`;
+  }
+
   insertConstructorCode(lines: string[]) {
     this.constructorCode += lines.map((line) => `      ${line}\r\n`).join("");
   }

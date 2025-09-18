@@ -6,6 +6,7 @@ import { gotoNodeType } from "./GotoNode";
 import { meowNodeType } from "./MeowNode";
 import { multNodeType } from "./MultNode";
 import { noiseNodeType } from "./NoiseWaveNode";
+import { noteNodeType } from "./NoteNode";
 import { numberNodeType } from "./NumberNode";
 import { pianoKeysNodeType } from "./PianoKeysNode";
 import { releaseNodeType } from "./ReleaseNode";
@@ -25,6 +26,7 @@ const nodeTypes: NodeType<any>[] = [
   meowNodeType,
   multNodeType,
   noiseNodeType,
+  noteNodeType,
   numberNodeType,
   pianoKeysNodeType,
   releaseNodeType,

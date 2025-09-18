@@ -1,14 +1,165 @@
 import { CodeGenCtx } from "./CodeGenCtx";
-import { NodeType } from "./Node";
-import { NodesSystem } from "./systems/NodesSystem";
+import { NodesSystem, NodesSystemNode } from "./systems/NodesSystem";
 
-export function generateCode(params: {
-  nodesSystem: NodesSystem,
-}): string {
+export type CodeGenNode = {
+  id: number,
+  inputs: { [name: string]: { node: CodeGenNode, pin: string, }, },
+  outputs: { [name: string]: { node: CodeGenNode, pin: string, }[], },
+  height: number,
+  node: NodesSystemNode,
+};
+
+export function cloneSubGraph(node: CodeGenNode, recordNewNode: (x: CodeGenNode) => void): CodeGenNode {
+  let clonedNodesMap = new Map<CodeGenNode,CodeGenNode>();
+  let stack = [ node, ];
+  while (true) {
+    let atNode = stack.pop();
+    if (atNode == undefined) {
+      break;
+    }
+    if (clonedNodesMap.has(atNode)) {
+      continue;
+    }
+    let inputs: { [name: string]: { node: CodeGenNode, pin: string, }, } = {};
+    for (let entry of Object.entries(atNode.inputs)) {
+      inputs[entry[0]] = { ...entry[1], };
+    }
+    let newNode: CodeGenNode = {
+      id: 0,
+      inputs,
+      outputs: {},
+      height: atNode.height,
+      node: atNode.node,
+    };
+    recordNewNode(newNode);
+    clonedNodesMap.set(atNode, newNode);
+    for (let outputs of Object.values(atNode.outputs)) {
+      for (let output of outputs) {
+        stack.push(output.node);
+      }
+    }
+  }
+  for (let clonedNode of clonedNodesMap.values()) {
+    for (let entry of Object.entries(clonedNode.inputs)) {
+      let node2 = clonedNodesMap.get(entry[1].node);
+      if (node2 != undefined) {
+        entry[1].node = node2;
+      }
+    }
+  }
+  for (let clonedNode of clonedNodesMap.values()) {
+    for (let [ name, { node, pin } ] of Object.entries(clonedNode.inputs)) {
+      let outputs = node.outputs[pin];
+      let toAdd = { node: clonedNode, pin: name, };
+      if (outputs == undefined) {
+        outputs = [ toAdd, ];
+        node.outputs[pin] = outputs;
+      } else {
+        outputs.push(toAdd);
+      }
+    }
+  }
+  return clonedNodesMap.get(node)!;
+}
+
+export function generateCode(params: { nodesSystem: NodesSystem, }): string {
   let nodesSystem = params.nodesSystem;
-  let codeGenCtx = new CodeGenCtx();
-  // generate all the init once code
+  // Duplicate the graph before applying macros
+  let codeGenNodes: CodeGenNode[] = [];
   {
+    let entityToCodeGenNodeMap = new Map<string,CodeGenNode>();
+    for (let node of nodesSystem.nodes()) {
+      let codeGenNode: CodeGenNode = {
+        id: 0,
+        inputs: {},
+        outputs: {},
+        height: 0,
+        node,
+      };
+      entityToCodeGenNodeMap.set(node.node.nodeParams.entity, codeGenNode);
+      codeGenNodes.push(codeGenNode);
+    }
+    for (let node of entityToCodeGenNodeMap.values()) {
+      for (let input of node.node.node.inputPins?.() ?? []) {
+        let source = input.source();
+        if (source == undefined) {
+          continue;
+        }
+        let target = entityToCodeGenNodeMap.get(source.target);
+        if (target == undefined) {
+          continue;
+        }
+        node.inputs[input.name] = { node: target, pin: source.pin, };
+      }
+    }
+  }
+  for (let codeGenNode of codeGenNodes) {
+    for (let [ name, { node, pin } ] of Object.entries(codeGenNode.inputs)) {
+      let outputs = node.outputs[pin];
+      let toAdd = { node: codeGenNode, pin: name, };
+      if (outputs == undefined) {
+        outputs = [ toAdd, ];
+        node.outputs[pin] = outputs;
+      } else {
+        outputs.push(toAdd);
+      }
+    }
+  }
+  //
+  let queue: CodeGenNode[][] = [];
+  // Apply macros
+  {
+    let macroDoneSet = new Set<CodeGenNode>();
+    while (true) {
+      let macroOccured = false;
+      updateHeights(codeGenNodes);
+      for (let node of codeGenNodes) {
+        let entries = queue[node.height];
+        if (entries == undefined) {
+          entries = [ node, ];
+          queue[node.height] = entries;
+        } else {
+          entries.push(node);
+        }
+      }
+      for (let i = 0; i < queue.length; ++i) {
+        let nodes = queue[i] ?? [];
+        for (let node of nodes) {
+          if (macroDoneSet.has(node)) {
+            continue;
+          }
+          let node2 = node.node.node;
+          if (node2.macro != undefined) {
+            node2.macro(
+              node,
+              (newNode) => codeGenNodes.push(newNode),
+            );
+            macroDoneSet.add(node);
+            macroOccured = true;
+            break;
+          }
+        }
+        if (macroOccured) {
+          break;
+        }
+      }
+      if (!macroOccured) {
+        break;
+      }
+    }
+  }
+  // Update heights again, just in case the macros pushed them around
+  updateHeights(codeGenNodes);
+  // Perform Code Gen
+  {
+    let nextId = 0;
+    for (let node of codeGenNodes) {
+      node.id = nextId++;
+    }
+  }
+  let codeGenCtx = new CodeGenCtx();
+  {
+    // generate all the init once code
     let visitedNodeTypes = new Set<string>;
     for (let node of nodesSystem.nodes()) {
       let nodeType = node.node.type;
@@ -19,126 +170,88 @@ export function generateCode(params: {
       nodeType.generateInitOnceCode?.({ ctx: codeGenCtx, });
     }
   }
-  //
-  let entityIdOutputAtomsMap = new Map<
-    string,
-    {
-      outputAtoms: Map<string,string>,
-    }[]
-  >();
-  let stack1 = [ ...nodesSystem.nodes(), ];
-  let stack2: typeof stack1 = [];
-  while (true) {
-    let at = stack1.pop();
-    if (at == undefined) {
-      let tmp = stack1;
-      stack1 = stack2;
-      stack2 = tmp;
-      at = stack1.pop();
-      if (at == undefined) {
-        break;
-      }
-    }
-    if (entityIdOutputAtomsMap.has(at.node.nodeParams.entity)) {
-      continue;
-    }
-    let hasStaleChildren = false;
-    for (let source of at.node.inputPins?.() ?? []) {
-      if (source.name == "entry" && (source.isEffectPin ?? false)) {
-        continue;
-      }
-      let source2 = source.source()?.target;
-      if (source2 == undefined) {
-        continue;
-      }
-      if (!entityIdOutputAtomsMap.has(source2)) {
-        let node = nodesSystem.lookupNodeById(source2);
-        if (node != undefined) {
-          stack1.push(node);
-          hasStaleChildren = true;
-        }
-      }
-    }
-    if (hasStaleChildren) {
-      stack2.push(at);
+  queue.splice(0, queue.length);
+  for (let node of codeGenNodes) {
+    let entries = queue[node.height];
+    if (entries == undefined) {
+      entries = [ node, ];
+      queue[node.height] = entries;
     } else {
-      let sourceEntityPinInputMap = new Map<string,Map<string,string[]>>();
-      for (let source of at.node.inputPins?.() ?? []) {
-        let source2 = source.source();
-        if (source2 != undefined) {
-          let sourceEntity = source2.target;
-          let pinInputMap: Map<string,string[]>;
-          if (sourceEntityPinInputMap.has(sourceEntity)) {
-            pinInputMap = sourceEntityPinInputMap.get(sourceEntity)!;
-          } else {
-            pinInputMap = new Map<string,string[]>();
-            sourceEntityPinInputMap.set(sourceEntity, pinInputMap);
-          }
-          let outputAtoms = entityIdOutputAtomsMap.get(source2.target) ?? [];
-          pinInputMap.set(
-            source.name,
-            outputAtoms.flatMap((outputAtoms2) => {
-              let x = outputAtoms2.outputAtoms.get(source2.pin);
-              if (x == undefined) {
-                return [];
-              }
-              return [x];
-            })
-          );
+      entries.push(node);
+    }
+  }
+  let nodeOutputAtomsMap = new Map<CodeGenNode,Map<string,string>>();
+  for (let i = 0; i < queue.length; ++i) {
+    let nodes = queue[i] ?? [];
+    for (let node of nodes) {
+      let node2 = node.node.node;
+      let inputAtomsMap = new Map<string,string>();
+      for (let input of Object.entries(node.inputs)) {
+        let atom = nodeOutputAtomsMap.get(input[1].node)?.get(input[1].pin);
+        if (atom != undefined) {
+          inputAtomsMap.set(input[0], atom);
+        } else {
+          inputAtomsMap.set(input[0], `this.n_${input[1].node.id}_${input[1].pin}`);
         }
       }
-      let comboGroups: { inputs: { [ name: string ]: string[] }, idx: number, len: number, }[] = [];
-      for (let entry of sourceEntityPinInputMap.values()) {
-        let comboGroup: { [ name: string ]: string[] } = {};
-        for (let entry2 of entry.entries()) {
-          comboGroup[entry2[0]] = entry2[1];
-        }
-        comboGroups.push({ inputs: comboGroup, idx: 0, len: entry.values().next().value!.length, });
-      }
-      let manyWorldsOutputAtoms: {
-        outputAtoms: Map<string,string>,
-      }[] = [];
-      let doneAll = false;
-      while (true) {
-        //
-        let inputAtoms = new Map<string,string>();
-        for (let comboGroup of comboGroups) {
-          for (let entry of Object.entries(comboGroup.inputs)) {
-            inputAtoms.set(entry[0], entry[1][comboGroup.idx]);
-          }
-        }
-        if (at.node.generateCode != undefined) {
-          manyWorldsOutputAtoms.push(...at.node.generateCode({
-            ctx: codeGenCtx,
-            inputAtoms,
-          }));
-        }
-        // increments comboGroupCounters
-        {
-          let atI = 0;
-          while (true) {
-            if (atI >= comboGroups.length) {
-              doneAll = true;
-              break;
-            }
-            comboGroups[atI].idx++;
-            if (comboGroups[atI].idx >= comboGroups[atI].len) {
-              comboGroups[atI].idx = 0;
-              atI++;
-            } else {
-              break;
-            }
-          }
-          if (doneAll) {
-            break;
-          }
+      if (node2.generateCode != undefined) {
+        let outputAtoms = node2.generateCode({
+          ctx: codeGenCtx,
+          inputAtoms: inputAtomsMap,
+          codeGenNodeId: node.id,
+        });
+        if (outputAtoms.length == 1) {
+          let outputAtoms2 = outputAtoms[0].outputAtoms;
+          nodeOutputAtomsMap.set(node, outputAtoms2);
         }
       }
-      entityIdOutputAtomsMap.set(
-        at.node.nodeParams.entity,
-        manyWorldsOutputAtoms,
-      );
     }
   }
   return codeGenCtx.code;
+}
+
+function updateHeights(nodes: CodeGenNode[]) {
+  let doneNodeSet = new Set<CodeGenNode>();
+  let stack1 = [ ...nodes, ];
+  let stack2: CodeGenNode[] = [];
+  while (true) {
+    let node = stack1.pop();
+    if (node == undefined) {
+      let tmp = stack1;
+      stack1 = stack2;
+      stack2 = tmp;
+      node = stack1.pop();
+      if (node == undefined) {
+        break;
+      }
+    }
+    if (doneNodeSet.has(node)) {
+      continue;
+    }
+    let allInputsDone = true;
+    for (let [name, { node: node2, }] of Object.entries(node.inputs)) {
+      if (node.node.node.inputPins?.().find((x) => x.name == name)?.isEffectPin ?? false) {
+        continue;
+      }
+      if (!doneNodeSet.has(node2)) {
+        allInputsDone = false;
+        break;
+      }
+    }
+    if (!allInputsDone) {
+      stack2.push(node);
+      continue;
+    }
+    let height = 0;
+    for (let [,{ node: node2, pin, }] of Object.entries(node.inputs)) {
+      if (node2.node.node.outputPins?.().find(({ name }) => name == pin)?.isEffectPin ?? false) {
+        continue;
+      }
+      if (node2.height >= height) {
+        height = node2.height + 1;
+      }
+    }
+    node.height = height;
+    doneNodeSet.add(node);
+  }
 }
