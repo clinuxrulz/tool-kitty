@@ -27,9 +27,7 @@ const Knob: Component<{
         "width": `${props.size}px`,
         "height": `${props.size}px`,
         "border-radius": "50%",
-        //"background-image": "radial-gradient(circle at 30% 30%, #dddddd, #777777, #444444)",
-        //"background-image": "conic-gradient(#888888, #ffffff, #888888, #ffffff, #888888, #ffffff, #888888)",
-        "background": "conic-gradient(#BBB, #444, #BBB)",
+        "background": "conic-gradient(from -45deg, #DDD, #444, #DDD)",
         "position": "relative",
       }}
     >
@@ -38,7 +36,6 @@ const Knob: Component<{
           "width": `${0.9*props.size}px`,
           "height": `${0.9*props.size}px`,
           "border-radius": "50%",
-          //"background-image": "radial-gradient(circle at 30% 30%, #dddddd, #777777, #444444)",
           "background-image": "conic-gradient(#888888, #ffffff, #888888, #ffffff, #888888, #ffffff, #888888)",
           "position": "absolute",
           "left": `${0.05*props.size}px`,
@@ -50,11 +47,11 @@ const Knob: Component<{
           "position": "absolute",
           "left": `${indentPos().x}px`,
           "top": `${indentPos().y}px`,
-          "width": `${props.indentSize}px`,
-          "height": `${props.indentSize}px`,
+          "width": `${0.7*props.indentSize}px`,
+          "height": `${0.7*props.indentSize}px`,
           "border-radius": "50%",
           //"background-image": "radial-gradient(circle at 30% 30%, #777777, #999999, #dddddd)",
-          "background-color": "#700"
+          "background-color": "#800"
         }}
       />
     </div>
