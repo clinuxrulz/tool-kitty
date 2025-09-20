@@ -39,7 +39,7 @@ const Knob: Component<{
           "width": `${props.indentSize}px`,
           "height": `${props.indentSize}px`,
           "border-radius": "50%",
-          "background-image": "radial-gradient(circle at 30% 30%, #444444, #777777, #dddddd)",
+          "background-image": "radial-gradient(circle at 30% 30%, #777777, #999999, #dddddd)",
         }}
       />
     </div>
