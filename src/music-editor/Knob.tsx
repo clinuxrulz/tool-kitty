@@ -11,10 +11,15 @@ const Knob: Component<{
   let indentAngle = createMemo(() => {
     return (props.value - props.valueAt0Pi) * 2.0 * Math.PI / (props.valueAt2Pi - props.valueAt0Pi);
   });
+  let indentR = createMemo(() => 0.7 * 0.5 * props.size);
   let indentPos = createMemo(() => {
     let ca = Math.cos(indentAngle());
     let sa = Math.sin(indentAngle());
-    
+    let r = indentR();
+    return {
+      x: 0.5 * props.size - r * sa - 0.5 * props.indentSize,
+      y: 0.5 * props.size - r * ca - 0.5 * props.indentSize,
+    };
   });
   return (
     <div
@@ -23,9 +28,20 @@ const Knob: Component<{
         "height": `${props.size}px`,
         "border-radius": "50%",
         "background-image": "radial-gradient(circle at 30% 30%, #dddddd, #777777, #444444)",
+        "position": "relative",
       }}
     >
-
+      <div
+        style={{
+          "position": "absolute",
+          "left": `${indentPos().x}px`,
+          "top": `${indentPos().y}px`,
+          "width": `${props.indentSize}px`,
+          "height": `${props.indentSize}px`,
+          "border-radius": "50%",
+          "background-image": "radial-gradient(circle at 30% 30%, #444444, #777777, #dddddd)",
+        }}
+      />
     </div>
   );
 };
