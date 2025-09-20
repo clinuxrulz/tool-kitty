@@ -36,6 +36,7 @@ class KnobNode implements Node<KnobState> {
       return (
         <Knob
           size={100}
+          indentSize={10}
           value={value()}
           setValue={setValue}
           valueAt0Pi={0}
