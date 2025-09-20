@@ -32,7 +32,7 @@ class KnobNode implements Node<KnobState> {
       },
     ]);
     this.ui = createMemo(() => () =>
-      <Knob size={50} />
+      <Knob size={100} />
     );
   }
 }
