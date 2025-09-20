@@ -27,7 +27,8 @@ const Knob: Component<{
         "width": `${props.size}px`,
         "height": `${props.size}px`,
         "border-radius": "50%",
-        "background-image": "radial-gradient(circle at 30% 30%, #dddddd, #777777, #444444)",
+        //"background-image": "radial-gradient(circle at 30% 30%, #dddddd, #777777, #444444)",
+        "background-image": "conic-gradient(#888888, #ffffff, #888888, #ffffff, #888888, #ffffff, #888888)",
         "position": "relative",
       }}
     >
