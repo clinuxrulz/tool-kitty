@@ -1,6 +1,12 @@
 import { Component } from "solid-js";
 
-const Knob: Component<{ size: number, }> = (props) => {
+const Knob: Component<{
+  size: number,
+  value: number,
+  setValue: (x: number) => void,
+  valueAt0Pi: number,
+  valueAt2Pi: number,
+}> = (props) => {
   return (
     <div
       style={{

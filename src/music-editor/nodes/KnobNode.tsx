@@ -1,4 +1,4 @@
-import { Accessor, Component, createMemo } from "solid-js";
+import { Accessor, Component, createMemo, createSignal } from "solid-js";
 import { knobComponentType, KnobState } from "../components/KnobComponent";
 import { Node, NodeParams, NodeType } from "../Node";
 import { Pin } from "../components/Pin";
@@ -31,8 +31,17 @@ class KnobNode implements Node<KnobState> {
         setSinks: (x) => setState("out", x),
       },
     ]);
-    this.ui = createMemo(() => () =>
-      <Knob size={100} />
-    );
+    this.ui = createMemo(() => () => {
+      let [ value, setValue, ] = createSignal(0);
+      return (
+        <Knob
+          size={100}
+          value={value()}
+          setValue={setValue}
+          valueAt0Pi={0}
+          valueAt2Pi={100}
+        />
+      );
+    });
   }
 }
