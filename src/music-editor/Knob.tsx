@@ -50,7 +50,6 @@ const Knob: Component<{
           "width": `${0.7*props.indentSize}px`,
           "height": `${0.7*props.indentSize}px`,
           "border-radius": "50%",
-          //"background-image": "radial-gradient(circle at 30% 30%, #777777, #999999, #dddddd)",
           "background-color": "#800"
         }}
       />
