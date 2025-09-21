@@ -38,6 +38,7 @@ export interface Node<A extends object> {
     isEffectPin?: boolean,
   }[]>;
   readonly ui?: Accessor<Component | undefined>;
+  readonly disablePan?: Accessor<boolean>;
   readonly init?: (workletNode: AudioWorkletNode) => Promise<void>;
   readonly macro?: (node: CodeGenNode, recordNewNode: (x: CodeGenNode) => void) => void;
   generateUnorderedInitCode?: (params: {

@@ -1,4 +1,6 @@
-import { Component, createMemo } from "solid-js";
+import { Component, createMemo, createSignal, onCleanup } from "solid-js";
+import { createStore } from "solid-js/store";
+import { NoTrack } from "../util";
 
 const Knob: Component<{
   size: number,
@@ -7,7 +9,26 @@ const Knob: Component<{
   maxValue: number,
   value: number,
   setValue: (x: number) => void,
+  setDisablePan: (x: boolean) => void,
 }> = (props) => {
+  let [ state, setState, ] = createStore<{
+    dragging: NoTrack<{
+      pointerId: number,
+      startX: number,
+      startY: number,
+      startValue: number,
+      dadx: number,
+      dady: number,
+    }> | undefined,
+  }>({
+    dragging: undefined,
+  });
+  let [ svg, setSvg, ] = createSignal<SVGSVGElement>();
+  onCleanup(() => {
+    if (state.dragging) {
+      props.setDisablePan(false);
+    }
+  });
   let minAngle = -165.0;
   let maxAngle = -minAngle;
   let angle = createMemo(() =>
@@ -25,8 +46,63 @@ const Knob: Component<{
   shadowDropShadow.setAttribute("stdDeviation", "0.5");
   shadowDropShadow.setAttribute("flood-opacity", "0.9");
   shadowDropShadow.setAttribute("flood-color", "black");
+  let onPointerDown = (e: PointerEvent) => {
+    let svg2 = svg()!;
+    let rect = svg2.getBoundingClientRect();
+    let x = e.clientX - rect.left;
+    let y = e.clientY - rect.top;
+    let dx = x - 0.5 * rect.width;
+    let dy = y - 0.5 * rect.width;
+    console.log("x", x.toFixed());
+    console.log("y", y.toFixed());
+    console.log("dx", dx.toFixed());
+    console.log("dy", dy.toFixed());
+    let m = dx * dx + dy * dy;
+    if (m > rect.width * rect.width) {
+      return;
+    }
+    let r = Math.sqrt(m);
+    let p = 2 * Math.PI * r;
+    let da = 360.0 / p;
+    let dadx = dy > 0 ? -da : da;
+    let dady = dx > 0 ? da : -da;
+    setState("dragging", new NoTrack({
+      pointerId: e.pointerId,
+      startX: x,
+      startY: y,
+      startValue: props.value,
+      dadx,
+      dady,
+    }));
+    svg2.setPointerCapture(e.pointerId);
+    props.setDisablePan(true);
+  };
+  let onPointerMove = (e: PointerEvent) => {
+    if (state.dragging == undefined || e.pointerId != state.dragging.value.pointerId) {
+      return;
+    }
+    let svg2 = svg()!;
+    let dragging = state.dragging.value;
+    let rect = svg2.getBoundingClientRect();
+    let x = e.clientX - rect.left;
+    let y = e.clientY - rect.top;
+    let angle = minAngle + (dragging.startValue - props.minValue) * (maxAngle - minAngle) / (props.maxValue - props.minValue)
+      + (x - dragging.startX) * dragging.dadx
+      + (y - dragging.startY) * dragging.dady;
+    let value = props.minValue + (angle - minAngle) * (props.maxValue - props.minValue) / (maxAngle - minAngle);
+    value = Math.max(props.minValue, Math.min(props.maxValue, value));
+    props.setValue(value);
+  };
+  let onPointerUp = (e: PointerEvent) => {
+    if (state.dragging != undefined && state.dragging.value.pointerId == e.pointerId) {
+      let svg2 = svg()!;
+      svg2.releasePointerCapture(state.dragging.value.pointerId);
+      props.setDisablePan(false);
+    }
+  };
   return (
     <svg
+      ref={setSvg}
       style={{
         "width": `${props.size}px`,
         "height": `${props.size}px`,
@@ -36,6 +112,9 @@ const Knob: Component<{
       }}
       version="1.1"
       viewBox="-16 -16 32 32"
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
     >
       <defs>
         <linearGradient id="shape-fill" x1="0" x2="0" y1="0" y2="1">

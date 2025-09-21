@@ -22,6 +22,7 @@ export type NodesSystemNode = {
 export class NodesSystem {
   nodes: Accessor<NodesSystemNode[]>;
   lookupNodeById: (nodeId: string) => NodesSystemNode | undefined;
+  disablePan: Accessor<boolean>;
 
   constructor(params: {
     world: Accessor<IEcsWorld>,
@@ -114,5 +115,13 @@ export class NodesSystem {
     };
     this.nodes = nodes;
     this.lookupNodeById = lookupNodeById;
+    this.disablePan = createMemo(() => {
+      for (let node of nodes()) {
+        if (node.node.disablePan?.() ?? false) {
+          return true;
+        }
+      }
+      return false;
+    });
   }
 }

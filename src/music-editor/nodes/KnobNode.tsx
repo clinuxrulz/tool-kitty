@@ -19,6 +19,7 @@ class KnobNode implements Node<KnobState> {
   nodeParams: NodeParams<KnobState>;
   outputPins: Accessor<{ name: string; sinks: Accessor<Pin[]>; setSinks: (x: Pin[]) => void; isEffectPin?: boolean; }[]>;
   ui: Accessor<Component | undefined>;
+  disablePan: Accessor<boolean>;
 
   constructor(nodeParams: NodeParams<KnobState>) {
     let state = nodeParams.state;
@@ -31,8 +32,10 @@ class KnobNode implements Node<KnobState> {
         setSinks: (x) => setState("out", x),
       },
     ]);
+    let [ disablePan, setDisablePan, ] = createSignal(false);
     this.ui = createMemo(() => () => {
       let [ value, setValue, ] = createSignal(0);
+      /*
       let done = false;
       onCleanup(() => done = true);
       let update = (t: number) => {
@@ -42,7 +45,8 @@ class KnobNode implements Node<KnobState> {
         setValue(0.5 + 0.5 * Math.sin(t * 0.002));
         requestAnimationFrame(update);
       };
-      requestAnimationFrame(update)
+      requestAnimationFrame(update)*/
+      onCleanup(() => setDisablePan(false));
       let size = 100;
       return (
         <div>
@@ -69,9 +73,11 @@ class KnobNode implements Node<KnobState> {
             maxValue={1.0}
             value={value()}
             setValue={setValue}
+            setDisablePan={setDisablePan}
           />
         </div>
       );
     });
+    this.disablePan = disablePan;
   }
 }

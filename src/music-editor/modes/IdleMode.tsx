@@ -132,6 +132,9 @@ export class IdleMode implements Mode {
         }
       }
       //
+      if (modeParams.nodesSystem.disablePan()) {
+        return;
+      }
       let nodeId = nodeUnderMouseById();
       if (nodeId == undefined) {
         return;

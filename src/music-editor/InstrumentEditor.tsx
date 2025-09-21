@@ -33,6 +33,7 @@ const InstrumentEditor: Component<
     mkMode: () => Mode,
     showCode: boolean,
     makeSound: boolean,
+    freezePanZoom: boolean,
   }>({
     pan: Vec2.zero,
     scale: 1.0,
@@ -40,6 +41,7 @@ const InstrumentEditor: Component<
     mkMode: () => new IdleMode(modeParams),
     showCode: false,
     makeSound: false,
+    freezePanZoom: false,
   });
   let undoManager = new UndoManager();
   let svgElement!: SVGSVGElement;
@@ -123,7 +125,7 @@ const InstrumentEditor: Component<
     releasePointerCapture: (pointerId) =>
       svgElement.releasePointerCapture(pointerId),
     disableOneFingerPan: createMemo(() =>
-      mode().disablePan?.() ?? false
+      (mode().disablePan?.() ?? false) || state.freezePanZoom || nodesSystem.disablePan()
     ),
   });
   let highlightedObjectsById = createMemo(() =>
@@ -316,6 +318,15 @@ const InstrumentEditor: Component<
               onChange={(e) => setState("makeSound", e.currentTarget.checked)}
             />
             Make Sound
+          </label>
+          <label class="label" style="margin-left: 5px;">
+            <input
+              type="checkbox"
+              class="checkbox"
+              checked={state.freezePanZoom}
+              onChange={(e) => setState("freezePanZoom", e.currentTarget.checked)}
+            />
+            Freeze Pan/Zoom
           </label>
         </div>
         <div
