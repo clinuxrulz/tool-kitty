@@ -18,6 +18,7 @@ import { setVariableComponentType } from "./SetVariableComponent";
 import { meowComponentType } from "./MeowComponent";
 import { gotoComponentType } from "./GotoComponent";
 import { noteComponentType } from "./NoteComponent";
+import { knobComponentType } from "./KnobComponent";
 
 export const registry = new EcsRegistry([
   ...baseRegistry.componentTypes,
@@ -25,6 +26,7 @@ export const registry = new EcsRegistry([
   attackComponentType,
   delayComponentType,
   gotoComponentType,
+  knobComponentType,
   meowComponentType,
   multComponentType,
   noiseWaveComponentType,
