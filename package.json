@@ -61,6 +61,7 @@
     "@solid-primitives/set": "^0.6.0",
     "@solidjs/router": "^0.15.3",
     "@tailwindcss/vite": "^4.0.14",
+    "@tonejs/midi": "^2.0.28",
     "@typescript/vfs": "^1.6.1",
     "@unocss/reset": "^65.4.3",
     "@valtown/codemirror-ts": "3.0.0-10",

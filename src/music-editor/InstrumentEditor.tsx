@@ -14,6 +14,7 @@ import { AddNodeMode } from "./modes/AddNodeMode";
 import { PickingSystem } from "./systems/PickingSystem";
 import { ReactiveSet } from "@solid-primitives/set";
 import { generateCode } from "./code-gen";
+import { importMidi } from "./import_midi";
 
 const InstrumentEditor: Component<
   Overwrite<
@@ -273,6 +274,8 @@ const InstrumentEditor: Component<
     },
   ));
   //
+  let [ importMidiInput, setImportMidiInput ] = createSignal<HTMLInputElement>();
+  //
   return (
     <div
       {...rest}
@@ -300,6 +303,32 @@ const InstrumentEditor: Component<
             disabled={selectedEntitySet.size == 0}
           >
             Delete
+          </button>
+          <button
+            class="btn btn-primary"
+            onClick={() => {
+              let x = importMidiInput();
+              if (x == undefined) {
+                return;
+              }
+              x.click();
+            }}
+          >
+            Import Midi
+            <input
+              ref={setImportMidiInput}
+              type="file"
+              hidden
+              onInput={(e) => {
+                let files = e.currentTarget.files;
+                if (files == null || files.length != 1) {
+                  return;
+                }
+                let file = files[0];
+                importMidi(props.world, file);
+                e.currentTarget.value = "";
+              }}
+            />
           </button>
           <label class="label" style="margin-left: 5px;">
             <input
