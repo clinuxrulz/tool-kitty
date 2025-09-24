@@ -61,13 +61,16 @@ export class MeowNodeType implements NodeType<MeowState> {
         "let meowOriginalPitch = undefined;",
         "let meowSampleRate = undefined;",
         "let meowData = undefined;",
+        "let meowStepPerHz = undefined;",
       ]);
+      const middle_c_hz = 261.625565;
       ctx.insertMessageHandlerCode(
         "meowData",
         [
           "meowOriginalPitch = params.meowOriginalPitch;",
           "meowSampleRate = params.meowSampleRate;",
           "meowData = params.meowData;",
+          `meowStepPerHz = meowSampleRate / (sampleRate * ${middle_c_hz});`,
         ]
       );
     };
@@ -136,7 +139,7 @@ class MeowNode implements Node<MeowState> {
         `    ${idx} = Math.floor(${at});`,
         `    let value = meowData[${idx}];`,
         `    ${out} = value;`,
-        `    let step = (${frequency} / ${middle_c_hz}) * (meowSampleRate / sampleRate);`,
+        `    let step = ${frequency} * meowStepPerHz;`,
         `    ${at} += step;`,
         "  }",
         "}",

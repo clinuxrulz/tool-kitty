@@ -281,7 +281,7 @@ export async function importMidi(world: EcsWorld, file: File) {
       }
     }
     atX += 200.0;
-    limit--;
+    limit -= events.length;
     if (limit <= 0) {
       break;
     }
