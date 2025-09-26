@@ -282,6 +282,7 @@ export async function importMidi(world: EcsWorld, file: File) {
     }
     atX += 200.0;
     limit -= events.length;
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     if (limit <= 0) {
       break;
     }

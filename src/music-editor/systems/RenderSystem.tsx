@@ -90,65 +90,69 @@ export class RenderSystem {
   }
 }
 
+let calcSvgTextSize = (() => {
+  let cache = new Map<string,Vec2>();
+  return (text: string): Vec2 => {
+    let result = cache.get(text);
+    if (result != undefined) {
+      return result;
+    }
+    let { svg, dispose, } = createRoot((dispose) => {
+      return {
+        svg: createMeasurementSvg(),
+        dispose,
+      }
+    });
+    let text2 = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    let text3 = document.createTextNode(text);
+    text2.appendChild(text3);
+    svg.appendChild(text2);
+    let size = text2.getBBox();
+    dispose();
+    result = Vec2.create(size.width, size.height);
+    cache.set(text, result);
+    return result;
+  };
+})();
+
+let cachedExtraUiSizeByKey = (() => {
+  let cache = new Map<string,Vec2>();
+  return (key: string, calc: () => Vec2): Vec2 => {
+    let result = cache.get(key);
+    if (result != undefined) {
+      return result;
+    }
+    result = calc();
+    cache.set(key, result);
+    return result;
+  }
+})();
+
 const RenderNode: Component<{
   node: NodesSystemNode,
   isHighlighted: boolean,
   isSelected: boolean,
 }> = (props) => {
   let titleSize = createMemo(() => {
-      let { svg, dispose, } = createRoot((dispose) => {
-        return {
-          svg: createMeasurementSvg(),
-          dispose,
-        }
-      });
-      let text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-      let text2 = document.createTextNode(props.node.node.type.componentType.typeName);
-      text.appendChild(text2);
-      svg.appendChild(text);
-      let size = text.getBBox();
-      dispose();
-      return Vec2.create(size.width, size.height);
+    return calcSvgTextSize(props.node.node.type.componentType.typeName);
   });
   let inputPinSizes = createMemo(mapArray(
     () => props.node.node.inputPins?.() ?? [],
     (inputPin) => {
-      let { svg, dispose, } = createRoot((dispose) => {
-        return {
-          svg: createMeasurementSvg(),
-          dispose,
-        }
-      });
-      let text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-      let text2 = document.createTextNode(inputPin.name);
-      text.appendChild(text2);
-      svg.appendChild(text);
-      let size = text.getBBox();
-      dispose();
+      let size = calcSvgTextSize(inputPin.name);
       return {
         name: inputPin.name,
-        size: Vec2.create(size.width, size.height),
+        size,
       };
     },
   ));
   let outputPinSizes = createMemo(mapArray(
     () => props.node.node.outputPins?.() ?? [],
     (outputPin) => {
-      let { svg, dispose, } = createRoot((dispose) => {
-        return {
-          svg: createMeasurementSvg(),
-          dispose,
-        }
-      });
-      let text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-      let text2 = document.createTextNode(outputPin.name);
-      text.appendChild(text2);
-      svg.appendChild(text);
-      let size = text.getBBox();
-      dispose();
+      let size = calcSvgTextSize(outputPin.name);
       return {
         name: outputPin.name,
-        size: Vec2.create(size.width, size.height),
+        size,
       };
     },
   ));
@@ -157,14 +161,16 @@ const RenderNode: Component<{
     if (Ui == undefined) {
       return undefined;
     }
-    let div = createMeasurementDiv();
-    let span = document.createElement("div");
-    span.style.setProperty("display", "inline-block");
-    div.append(span);
-    let dispose = render(() => <Ui/>, span);
-    let rect = span.getBoundingClientRect();
-    dispose();
-    return Vec2.create(rect.width, rect.height);
+    return cachedExtraUiSizeByKey(props.node.node.type.componentType.typeName, () => {
+      let div = createMeasurementDiv();
+      let span = document.createElement("div");
+      span.style.setProperty("display", "inline-block");
+      div.append(span);
+      let dispose = render(() => <Ui/>, span);
+      let rect = span.getBoundingClientRect();
+      dispose();
+      return Vec2.create(rect.width, rect.height);
+    });
   });
   const boxPadding = 5.0;
   const pinDotSize = 2.0;
