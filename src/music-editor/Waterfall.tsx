@@ -1,5 +1,21 @@
 import { Component, createComputed, createMemo, createSignal, on } from "solid-js";
 
+type Note = {
+  isAlive: boolean,
+  prev: Note,
+  next: Note | undefined,
+};
+
+type NotesGLState = {
+  maxNotes: number,
+  numNotes: number,
+  notesGLVertexBuffer: WebGLBuffer | undefined,
+  notesHead: Note,
+  notesTail: Note,
+  freeNotesHead: Note,
+  freeNotesTail: Node,
+}
+
 const Waterfall: Component<{
 }> = (props) => {
   let [canvas, setCanvas,] = createSignal<HTMLCanvasElement>();
