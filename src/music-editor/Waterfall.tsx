@@ -82,6 +82,14 @@ function allocNote(state: NotesGLState): Note {
 }
 
 function freeNote(state: NotesGLState, note: Note) {
+  if (note.isAlive) {
+    let prev = note.prev;
+    let next = note.next;
+    prev.next = next;
+    if (next != undefined) {
+      next.prev = prev;
+    }
+  }
   note.next = undefined;
   note.isAlive = false;
   if (state.freeNotesHead == undefined) {
