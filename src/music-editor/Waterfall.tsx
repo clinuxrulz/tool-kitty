@@ -1,6 +1,12 @@
 import { Component, createComputed, createMemo, createSignal, on } from "solid-js";
 
 type Note = {
+  startTime: number,
+  holdTime: number,
+  note: number,
+  colourR: number,
+  colourG: number,
+  colourB: number,
   isAlive: boolean,
   prev: Note,
   next: Note | undefined,
@@ -18,6 +24,8 @@ type NotesGLState = {
   freeNotesHead: Note | undefined,
   freeNotesTail: Node | undefined,
 }
+
+const INIT_MAX_NOTES = 10_000;
 
 const Waterfall: Component<{
 }> = (props) => {
@@ -47,6 +55,15 @@ const Waterfall: Component<{
   return (
     <canvas ref={setCanvas} style={{ "width": "100%", "height": "100%", }} />
   );
+}
+
+function initGL(gl: WebGLRenderingContext): NotesGLState {
+  let state: NotesGLState = {
+    maxNotes: INIT_MAX_NOTES,
+    numNotes: 0,
+
+  };
+  return state;
 }
 
 function useGl(gl: WebGLRenderingContext) {
