@@ -14,6 +14,8 @@ type Note = {
 };
 
 type NotesGLState = {
+  time: number,
+  fallSpeed: number,
   maxNotes: number,
   numNotes: number,
   notesVertices: Float32Array,
@@ -107,6 +109,8 @@ function freeNote(state: NotesGLState, note: Note) {
 
 function initGL(gl: WebGLRenderingContext): NotesGLState {
   let state: NotesGLState = {
+    time: 0.0,
+    fallSpeed: 0.01,
     maxNotes: INIT_MAX_NOTES,
     numNotes: 0,
     notesVertices: new Float32Array(INIT_MAX_NOTES * 2 * 6),
