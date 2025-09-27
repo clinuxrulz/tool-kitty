@@ -78,6 +78,7 @@ function allocNote(state: NotesGLState): Note {
     tail.next = note;
     note.prev = tail;
   }
+  state.numNotes++;
   return note;
 }
 
@@ -100,6 +101,7 @@ function freeNote(state: NotesGLState, note: Note) {
     tail.next = note;
     note.prev = tail;
   }
+  state.numNotes--;
 }
 
 function initGL(gl: WebGLRenderingContext): NotesGLState {
