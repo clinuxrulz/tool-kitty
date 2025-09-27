@@ -57,6 +57,26 @@ const Waterfall: Component<{
   );
 }
 
+function allocNote(state: NotesGLState): Note {
+  if (state.freeNotesTail == undefined) {
+    // Error for now, but I will make it a warning later
+    throw new Error("INIT_MAX_NOTES too small");
+  }
+  let note = state.freeNotesTail;
+  if (state.freeNotesTail == state.freeNotesHead) {
+    state.freeNotesHead = state.freeNotesTail = undefined;
+  } else {
+    state.freeNotesTail = state.freeNotesTail.prev;
+    state.freeNotesTail.next = undefined;
+  }
+  note.isAlive = true;
+  if (state.notesHead == undefined) {
+    state.notesHead = state.notesTail = note;
+  }
+  // TODO
+  return note;
+}
+
 function freeNote(state: NotesGLState, note: Note) {
   note.next = undefined;
   note.isAlive = false;
