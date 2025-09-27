@@ -9,11 +9,14 @@ type Note = {
 type NotesGLState = {
   maxNotes: number,
   numNotes: number,
+  notesVertices: Float32Array,
+  notesColours: Float32Array,
   notesGLVertexBuffer: WebGLBuffer | undefined,
-  notesHead: Note,
-  notesTail: Note,
-  freeNotesHead: Note,
-  freeNotesTail: Node,
+  notesGLColourBuffer: WebGLBuffer | undefined,
+  notesHead: Note | undefined,
+  notesTail: Note | undefined,
+  freeNotesHead: Note | undefined,
+  freeNotesTail: Node | undefined,
 }
 
 const Waterfall: Component<{
