@@ -22,11 +22,11 @@ const Waterfall: Component<{
       if (gl == undefined) {
         return;
       }
-
+      useGl(gl);
     },
   ));
   return (
-    <canvas ref={setCanvas} width="100%" height="100%" />
+    <canvas ref={setCanvas} style={{ "width": "100%", "height": "100%", }} />
   );
 }
 
@@ -103,3 +103,5 @@ function initShaderProgram(gl: WebGLRenderingContext, vsSource: string, fsSource
   }
   return shaderProgram;
 }
+
+export default Waterfall;

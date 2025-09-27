@@ -4,6 +4,7 @@ import PianoKeys from "./PianoKeys";
 import { createStore } from "solid-js/store";
 import { EcsWorld } from "../lib";
 import InstrumentEditor from "./InstrumentEditor";
+import Waterfall from "./Waterfall";
 
 const MusicEditor: Component<{}> = (props) => {
   const tabs = [
@@ -52,6 +53,9 @@ const MusicEditor: Component<{}> = (props) => {
             onNoteOn={(name) => sound.noteOn(name)}
             onNoteOff={(name) => sound.noteOff(name)}
           />
+          <div style={{ "flex-grow": "1", }}>
+            <Waterfall/>
+          </div>
         </Match>
         <Match when={state.selectedTab == "Instrument Editor"}>
           <InstrumentEditor
