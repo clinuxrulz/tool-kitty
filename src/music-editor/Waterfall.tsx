@@ -58,11 +58,15 @@ const Waterfall: Component<{
 }
 
 function freeNote(state: NotesGLState, note: Note) {
-  note.prev = note;
   note.next = undefined;
   note.isAlive = false;
   if (state.freeNotesHead == undefined) {
+    note.prev = note;
     state.freeNotesHead = state.freeNotesTail = note;
+  } else {
+    let tail = state.freeNotesTail!;
+    tail.next = note;
+    note.prev = tail;
   }
 }
 
