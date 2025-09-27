@@ -17,8 +17,8 @@ type NotesGLState = {
   numNotes: number,
   notesVertices: Float32Array,
   notesColours: Float32Array,
-  notesGLVertexBuffer: WebGLBuffer | undefined,
-  notesGLColourBuffer: WebGLBuffer | undefined,
+  notesGLVertexBuffer: WebGLBuffer,
+  notesGLColourBuffer: WebGLBuffer,
   notesHead: Note | undefined,
   notesTail: Note | undefined,
   freeNotesHead: Note | undefined,
@@ -61,7 +61,14 @@ function initGL(gl: WebGLRenderingContext): NotesGLState {
   let state: NotesGLState = {
     maxNotes: INIT_MAX_NOTES,
     numNotes: 0,
-
+    notesVertices: new Float32Array(INIT_MAX_NOTES * 2 * 6),
+    notesColours: new Float32Array(INIT_MAX_NOTES * 4),
+    notesGLVertexBuffer: gl.createBuffer(),
+    notesGLColourBuffer: gl.createBuffer(),
+    notesHead: undefined,
+    notesTail: undefined,
+    freeNotesHead: undefined,
+    freeNotesTail: undefined,
   };
   return state;
 }
