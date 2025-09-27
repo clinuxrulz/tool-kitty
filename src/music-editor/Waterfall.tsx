@@ -83,6 +83,21 @@ function initGL(gl: WebGLRenderingContext): NotesGLState {
     freeNotesHead: undefined,
     freeNotesTail: undefined,
   };
+  for (let i = 0; i < INIT_MAX_NOTES; ++i) {
+    let note: Note = {
+      startTime: 0.0,
+      holdTime: 0.0,
+      note: 0.0,
+      colourR: 0.0,
+      colourG: 0.0,
+      colourB: 0.0,
+      isAlive: false,
+      prev: undefined!,
+      next: undefined,
+    };
+    note.prev = note;
+    freeNote(state, note);
+  }
   return state;
 }
 
