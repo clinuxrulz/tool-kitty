@@ -71,9 +71,13 @@ function allocNote(state: NotesGLState): Note {
   }
   note.isAlive = true;
   if (state.notesHead == undefined) {
+    note.prev = note;
     state.notesHead = state.notesTail = note;
+  } else {
+    let tail = state.notesTail!;
+    tail.next = note;
+    note.prev = tail;
   }
-  // TODO
   return note;
 }
 
