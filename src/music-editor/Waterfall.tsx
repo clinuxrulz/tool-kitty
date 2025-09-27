@@ -22,7 +22,7 @@ type NotesGLState = {
   notesHead: Note | undefined,
   notesTail: Note | undefined,
   freeNotesHead: Note | undefined,
-  freeNotesTail: Node | undefined,
+  freeNotesTail: Note | undefined,
 }
 
 const INIT_MAX_NOTES = 10_000;
@@ -55,6 +55,15 @@ const Waterfall: Component<{
   return (
     <canvas ref={setCanvas} style={{ "width": "100%", "height": "100%", }} />
   );
+}
+
+function freeNote(state: NotesGLState, note: Note) {
+  note.prev = note;
+  note.next = undefined;
+  note.isAlive = false;
+  if (state.freeNotesHead == undefined) {
+    state.freeNotesHead = state.freeNotesTail = note;
+  }
 }
 
 function initGL(gl: WebGLRenderingContext): NotesGLState {
