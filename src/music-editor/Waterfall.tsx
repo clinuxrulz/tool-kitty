@@ -7,6 +7,7 @@ type Note = {
   colourR: number,
   colourG: number,
   colourB: number,
+  colourA: number,
   isAlive: boolean,
   prev: Note,
   next: Note | undefined,
@@ -125,6 +126,7 @@ function initGL(gl: WebGLRenderingContext): NotesGLState {
       colourR: 0.0,
       colourG: 0.0,
       colourB: 0.0,
+      colourA: 0.0,
       isAlive: false,
       prev: undefined!,
       next: undefined,
@@ -133,6 +135,21 @@ function initGL(gl: WebGLRenderingContext): NotesGLState {
     freeNote(state, note);
   }
   return state;
+}
+
+function drawGl(gl: WebGLRenderingContext, state: NotesGLState) {
+  let i = 0;
+  let j = 0;
+  let at = state.notesHead;
+  while (at != undefined) {
+    state.notesColours[j++] = at.colourR;
+    state.notesColours[j++] = at.colourG;
+    state.notesColours[j++] = at.colourB;
+    state.notesColours[j++] = at.colourA;
+    at = at.next;
+  }
+  gl.bindBuffer(gl.ARRAY_BUFFER, state.notesGLColourBuffer);
+  gl.bufferSubData(gl.ARRAY_BUFFER, 0, state.notesColours);
 }
 
 function useGl(gl: WebGLRenderingContext) {
