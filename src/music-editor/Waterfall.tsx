@@ -148,14 +148,15 @@ async function importMidi(state: NotesGLState, file: File) {
   let midi = new Midi(await file.arrayBuffer());
   let notes: Note[] = [];
   for (let track of midi.tracks) {
+    let colour = generateRandomBrightColour();
     for (let note of track.notes) {
       let note2: Note = {
         startTime: note.time * 1000.0,
         holdTime: note.duration * 1000.0,
         note: note.midi,
-        colourR: 0.0,
-        colourG: 0.0,
-        colourB: 1.0,
+        colourR: colour.r,
+        colourG: colour.g,
+        colourB: colour.b,
         colourA: 1.0,
         isAlive: false,
         prev: undefined!,
@@ -171,13 +172,14 @@ async function importMidi(state: NotesGLState, file: File) {
   }
 }
 
-function insertNote(state: NotesGLState, node: Note) {
+function insertNote(state: NotesGLState, note: Note) {
   if (state.notesHead == undefined) {
-    state.notesHead = state.notesTail = node;
+    state.notesHead = state.notesTail = note;
   } else {
     let tail = state.notesTail!;
-    tail.next = node;
-    node.prev = tail;
+    tail.next = note;
+    note.prev = tail;
+    state.notesTail = note;
   }
 }
 
@@ -206,8 +208,8 @@ function updateWindow(state: NotesGLState) {
     }
     if (atNote.startTime + atNote.holdTime <= tMin) {
       state.numVisibleNotes--;
-      state.visibleNotesStart = atNote;
       atNote = atNote.next;
+      state.visibleNotesStart = atNote;
       continue;
     }
     break;
@@ -269,7 +271,7 @@ function initGL(gl: WebGLRenderingContext, canvas: HTMLCanvasElement): NotesGLSt
     width: canvas.width,
     height: canvas.height,
     time: 0.0,
-    fallSpeed: 10.0,
+    fallSpeed: 1.0,
     maxNotes: INIT_MAX_NOTES,
     numNotes: 0,
     notesVertices: new Float32Array(INIT_MAX_NOTES * (2 + 4 + 2) * 6),
@@ -325,7 +327,6 @@ function initGL(gl: WebGLRenderingContext, canvas: HTMLCanvasElement): NotesGLSt
 
     void main(void) {
         gl_FragColor = vColour;
-        gl_FragColor.r = vTextureCoord.x;
     }
   `;
   const program = initShaderProgram(
@@ -391,22 +392,6 @@ function initGL(gl: WebGLRenderingContext, canvas: HTMLCanvasElement): NotesGLSt
   gl.enableVertexAttribArray(positionLocation);
   gl.enableVertexAttribArray(colourLocation);
   gl.enableVertexAttribArray(textureCoordLocation);
-  for (let i = 0; i < INIT_MAX_NOTES; ++i) {
-    let note: Note = {
-      startTime: 0.0,
-      holdTime: 0.0,
-      note: 0.0,
-      colourR: 0.0,
-      colourG: 0.0,
-      colourB: 0.0,
-      colourA: 0.0,
-      isAlive: false,
-      prev: undefined!,
-      next: undefined,
-    };
-    note.prev = note;
-    freeNote(state, note);
-  }
   gl.viewport(0, 0, canvas.width, canvas.height);
   return state;
 }
@@ -416,64 +401,71 @@ function drawGl(gl: WebGLRenderingContext, state: NotesGLState) {
   let at = state.visibleNotesStart;
   let noteStartX = 0.0;
   let noteStepX = state.width / 88.0;
-  while (at != state.visibleNotesEnd?.next && at != undefined) {
-    let x1 = noteStartX + (at.note - 21) * noteStepX;
-    let y1 = state.height - (state.time - at.startTime) * state.fallSpeed;
-    let x2 = x1 + noteStepX;
-    let y2 = y1;
-    let x3 = x2;
-    let y3 = y2 + at.holdTime * state.fallSpeed;
-    let x4 = x1;
-    let y4 = y3;
-    state.notesVertices[i + 0] = x1;
-    state.notesVertices[i + 1] = y1;
-    state.notesVertices[i + 2] = at.colourR;
-    state.notesVertices[i + 3] = at.colourG;
-    state.notesVertices[i + 4] = at.colourB;
-    state.notesVertices[i + 5] = at.colourA;
-    i += (2 + 4 + 2);
-    state.notesVertices[i + 0] = x2;
-    state.notesVertices[i + 1] = y2;
-    state.notesVertices[i + 2] = at.colourR;
-    state.notesVertices[i + 3] = at.colourG;
-    state.notesVertices[i + 4] = at.colourB;
-    state.notesVertices[i + 5] = at.colourA;
-    i += (2 + 4 + 2);
-    state.notesVertices[i + 0] = x3;
-    state.notesVertices[i + 1] = y3;
-    state.notesVertices[i + 2] = at.colourR;
-    state.notesVertices[i + 3] = at.colourG;
-    state.notesVertices[i + 4] = at.colourB;
-    state.notesVertices[i + 5] = at.colourA;
-    i += (2 + 4 + 2);
-    state.notesVertices[i + 0] = x1;
-    state.notesVertices[i + 1] = y1;
-    state.notesVertices[i + 2] = at.colourR;
-    state.notesVertices[i + 3] = at.colourG;
-    state.notesVertices[i + 4] = at.colourB;
-    state.notesVertices[i + 5] = at.colourA;
-    i += (2 + 4 + 2);
-    state.notesVertices[i + 0] = x3;
-    state.notesVertices[i + 1] = y3;
-    state.notesVertices[i + 2] = at.colourR;
-    state.notesVertices[i + 3] = at.colourG;
-    state.notesVertices[i + 4] = at.colourB;
-    state.notesVertices[i + 5] = at.colourA;
-    i += (2 + 4 + 2);
-    state.notesVertices[i + 0] = x4;
-    state.notesVertices[i + 1] = y4;
-    state.notesVertices[i + 2] = at.colourR;
-    state.notesVertices[i + 3] = at.colourG;
-    state.notesVertices[i + 4] = at.colourB;
-    state.notesVertices[i + 5] = at.colourA;
-    i += (2 + 4 + 2);
-    at = at.next;
-  }
-  gl.bindBuffer(gl.ARRAY_BUFFER, state.notesGLVertexBuffer);
-  gl.bufferSubData(gl.ARRAY_BUFFER, 0, state.notesVertices);
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
   gl.clear(gl.COLOR_BUFFER_BIT);
-  gl.drawArrays(gl.TRIANGLES, 0, state.numVisibleNotes * 6);
+  while (at != state.visibleNotesEnd?.next && at != undefined) {
+    let noteCount = 0;
+    while (at != state.visibleNotesEnd?.next && at != undefined) {
+      let x1 = noteStartX + (at.note - 21) * noteStepX;
+      let y1 = state.height - (state.time - at.startTime) * state.fallSpeed;
+      let x2 = x1 + noteStepX;
+      let y2 = y1;
+      let x3 = x2;
+      let y3 = y2 + at.holdTime * state.fallSpeed;
+      let x4 = x1;
+      let y4 = y3;
+      state.notesVertices[i + 0] = x1;
+      state.notesVertices[i + 1] = y1;
+      state.notesVertices[i + 2] = at.colourR;
+      state.notesVertices[i + 3] = at.colourG;
+      state.notesVertices[i + 4] = at.colourB;
+      state.notesVertices[i + 5] = at.colourA;
+      i += (2 + 4 + 2);
+      state.notesVertices[i + 0] = x2;
+      state.notesVertices[i + 1] = y2;
+      state.notesVertices[i + 2] = at.colourR;
+      state.notesVertices[i + 3] = at.colourG;
+      state.notesVertices[i + 4] = at.colourB;
+      state.notesVertices[i + 5] = at.colourA;
+      i += (2 + 4 + 2);
+      state.notesVertices[i + 0] = x3;
+      state.notesVertices[i + 1] = y3;
+      state.notesVertices[i + 2] = at.colourR;
+      state.notesVertices[i + 3] = at.colourG;
+      state.notesVertices[i + 4] = at.colourB;
+      state.notesVertices[i + 5] = at.colourA;
+      i += (2 + 4 + 2);
+      state.notesVertices[i + 0] = x1;
+      state.notesVertices[i + 1] = y1;
+      state.notesVertices[i + 2] = at.colourR;
+      state.notesVertices[i + 3] = at.colourG;
+      state.notesVertices[i + 4] = at.colourB;
+      state.notesVertices[i + 5] = at.colourA;
+      i += (2 + 4 + 2);
+      state.notesVertices[i + 0] = x3;
+      state.notesVertices[i + 1] = y3;
+      state.notesVertices[i + 2] = at.colourR;
+      state.notesVertices[i + 3] = at.colourG;
+      state.notesVertices[i + 4] = at.colourB;
+      state.notesVertices[i + 5] = at.colourA;
+      i += (2 + 4 + 2);
+      state.notesVertices[i + 0] = x4;
+      state.notesVertices[i + 1] = y4;
+      state.notesVertices[i + 2] = at.colourR;
+      state.notesVertices[i + 3] = at.colourG;
+      state.notesVertices[i + 4] = at.colourB;
+      state.notesVertices[i + 5] = at.colourA;
+      i += (2 + 4 + 2);
+      at = at.next;
+      ++noteCount;
+      if (noteCount >= INIT_MAX_NOTES) {
+        break;
+      }
+    }
+    gl.bindBuffer(gl.ARRAY_BUFFER, state.notesGLVertexBuffer);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, state.notesVertices.subarray(0, noteCount * 8 * 6));
+    gl.drawArrays(gl.TRIANGLES, 0, noteCount * 6);
+  }
 }
 
 function loadShader(gl: WebGLRenderingContext, type: number, source: string) {
@@ -506,6 +498,38 @@ function initShaderProgram(gl: WebGLRenderingContext, vsSource: string, fsSource
     return undefined;
   }
   return shaderProgram;
+}
+
+interface RGBColour {
+  r: number;
+  g: number;
+  b: number;
+}
+
+function hsvToRgb(h: number, s: number, v: number): RGBColour {
+  let r: number, g: number, b: number;
+  const i = Math.floor(h * 6);
+  const f = h * 6 - i;
+  const p = v * (1 - s);
+  const q = v * (1 - f * s);
+  const t = v * (1 - (1 - f) * s);
+  switch (i % 6) {
+      case 0: r = v; g = t; b = p; break;
+      case 1: r = q; g = v; b = p; break;
+      case 2: r = p; g = v; b = t; break;
+      case 3: r = p; g = q; b = v; break;
+      case 4: r = t; g = p; b = v; break;
+      case 5: r = v; g = p; b = q; break;
+      default: r = 0; g = 0; b = 0; break;
+  }
+  return { r, g, b };
+}
+
+function generateRandomBrightColour(): RGBColour {
+    const h = Math.random();
+    const s = Math.random() * (1.0 - 0.7) + 0.7; 
+    const v = 1.0; 
+   return hsvToRgb(h, s, v);
 }
 
 export default Waterfall;
