@@ -207,6 +207,7 @@ function updateWindow(state: NotesGLState) {
     if (atNote.startTime + atNote.holdTime <= tMin) {
       state.numVisibleNotes--;
       state.visibleNotesStart = atNote;
+      atNote = atNote.next;
       continue;
     }
     break;
