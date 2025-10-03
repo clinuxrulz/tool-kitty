@@ -1,5 +1,8 @@
 import { Component, createComputed, createEffect, createMemo, createSignal, on } from "solid-js";
 import { Midi } from "@tonejs/midi";
+import { SoundFont2, Preset, Sample, Instrument } from "soundfont2";
+import musicAudioWorkletProcessorUrl from "./music-audio-worklet-processor?worker&url";
+import { type NoteEvent } from "./music-audio-worklet-processor";
 
 type Note = {
   startTime: number,
@@ -86,7 +89,33 @@ const Waterfall: Component<{
     drawGl(gl2, glState2);
     requestAnimationFrame(update);
   };
-  let run = () => {
+  let run = async () => {
+    let glState2 = glState();
+    if (glState2 == undefined) {
+      return;
+    }
+    let [ audioCtx, workletNode, ] = await startAudio();
+    let noteEvents: NoteEvent[] = [];
+    let note = glState2.notesHead;
+    while (note != undefined) {
+      noteEvents.push({
+        time: (note.startTime) * 0.001,
+        note: note.note,
+        type: "On",
+      });
+      noteEvents.push({
+        time: (note.startTime + note.holdTime) * 0.001,
+        note: note.note,
+        type: "Off",
+      });
+      note = note.next;
+    }
+    workletNode.port.postMessage({
+      type: "musicData",
+      params: {
+        noteEvents,
+      },
+    });
     running = true;
     firstUpdate = true;
     requestAnimationFrame(update);
@@ -531,5 +560,60 @@ function generateRandomBrightColour(): RGBColour {
     const v = 1.0; 
    return hsvToRgb(h, s, v);
 }
+
+async function startAudio(): Promise<[ AudioContext, AudioWorkletNode, ]> {
+  let audioCtx = new AudioContext();
+  await audioCtx.audioWorklet.addModule(musicAudioWorkletProcessorUrl);
+  let audioWorkletNode = new AudioWorkletNode(audioCtx, "music-audio-worklet-processor");
+  initAudioCtx(audioCtx, audioWorkletNode);
+  audioWorkletNode.connect(audioCtx.destination);
+  return [ audioCtx, audioWorkletNode, ];
+}
+
+let initAudioCtx = async (audioCtx: AudioContext, workletNode: AudioWorkletNode) => {
+  const presetIndex = 0;
+  const sf2Data = await fetch("./Thurston Waffles.sf2").then((x) => x.arrayBuffer());
+  const soundfont = new SoundFont2(new Uint8Array(sf2Data));
+  const preset: Preset = soundfont.presets[presetIndex];
+  if (!preset) {
+      throw new Error(`Preset at index ${presetIndex} not found.`);
+  }
+  const instrument: Instrument = soundfont.instruments[preset.header.bagIndex];
+  if (!instrument) {
+      throw new Error(`No instrument found for preset at index ${presetIndex}`);
+  }
+  const findSampleForNote = (instr: Instrument, note: number): Sample | null => {
+    for (const zone of instr.zones) {
+      if (zone.keyRange == undefined) {
+        continue;
+      }
+        // Check if the note is within the zone's key range.
+        if (note >= zone.keyRange.lo && note <= zone.keyRange.hi) {
+            return zone.sample;
+        }
+    }
+    return null;
+  };
+  let noteNumber = 60;
+  const sample: Sample | null = findSampleForNote(instrument, noteNumber);
+  if (!sample) {
+      throw new Error(`No sample found for note ${noteNumber} in preset ${presetIndex}.`);
+  }
+  const sampleRate: number = sample.header.sampleRate;
+  const totalSamples: number = sample.data.length;
+  const channelData: Float32Array = new Float32Array(totalSamples);
+  for (let i = 0; i < totalSamples; i++) {
+      channelData[i] = sample.data[i] / 32768.0;
+  }
+  const samplePitch: number = sample.header.originalPitch;
+  workletNode.port.postMessage({
+    type: "meowData",
+    params: {
+      meowOriginalPitch: samplePitch,
+      meowSampleRate: sampleRate,
+      meowData: channelData,
+    },
+  });
+};
 
 export default Waterfall;
