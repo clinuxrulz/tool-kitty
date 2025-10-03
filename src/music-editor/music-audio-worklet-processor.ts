@@ -6,7 +6,8 @@ let meowStepPerHz: number | undefined = undefined;
 const middle_c_hz = 261.625565;
 
 type Meow = {
-  activeRefCount: number,
+  activeId: number,
+  active: boolean,
   at: number,
   step: number,
   prev: Meow,
@@ -14,6 +15,7 @@ type Meow = {
 };
 
 export type NoteEvent = {
+  id: number,
   time: number,
   note: number,
   type: "On" | "Off",
@@ -41,7 +43,7 @@ class MusicAudioWorkletProcessor extends AudioWorkletProcessor {
         meowStepPerHz = meowSampleRate / (sampleRate * middle_c_hz);
         this.meow = Array(128).fill(undefined).map((_, idx) => {
           let n: Meow = {
-            activeRefCount: 0,
+            activeId: 0,
             at: 0.0,
             step: middle_c_hz * Math.pow(2.0, (idx-60)/12.0) * meowStepPerHz!,
             prev: undefined!,
@@ -75,7 +77,7 @@ class MusicAudioWorkletProcessor extends AudioWorkletProcessor {
         let meow = this.meow[e.note];
         if (meow != undefined) {
           if (e.type == "On") {
-            if (meow.activeRefCount == 0) {
+            if (!meow.active) {
               if (this.activeMeowsHead == undefined) {
                 this.activeMeowsHead = this.activeMeowsTail = meow;
               } else {
@@ -84,12 +86,13 @@ class MusicAudioWorkletProcessor extends AudioWorkletProcessor {
                 meow.prev = tail;
                 this.activeMeowsTail = tail;
               }
+              meow.active = true;
             }
-            meow.activeRefCount++;
+            meow.activeId = e.id;
             meow.at = 0.0;
-          } else if (e.type == "Off") {
-            meow.activeRefCount--;
-            if (meow.activeRefCount == 0) {
+          } else if (e.type == "Off" && e.id == meow.activeId) {
+            meow.activeId = -1;
+            if (meow.active) {
               meow.prev.next = meow.next;
               if (meow.next != undefined) {
                 meow.next.prev = meow.prev;
@@ -102,6 +105,7 @@ class MusicAudioWorkletProcessor extends AudioWorkletProcessor {
               }
               meow.prev = meow;
               meow.next = undefined;
+              meow.active = false;
             }
           }
         }

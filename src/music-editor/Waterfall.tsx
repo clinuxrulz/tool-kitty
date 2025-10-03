@@ -97,13 +97,17 @@ const Waterfall: Component<{
     let [ audioCtx, workletNode, ] = await startAudio();
     let noteEvents: NoteEvent[] = [];
     let note = glState2.notesHead;
+    let nextId = 0;
     while (note != undefined) {
+      let id = nextId++;
       noteEvents.push({
+        id,
         time: (note.startTime) * 0.001,
         note: note.note,
         type: "On",
       });
       noteEvents.push({
+        id,
         time: (note.startTime + note.holdTime) * 0.001,
         note: note.note,
         type: "Off",
