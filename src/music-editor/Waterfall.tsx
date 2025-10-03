@@ -110,7 +110,24 @@ const Waterfall: Component<{
       });
       note = note.next;
     }
-    noteEvents.sort((a, b) => a.time - b.time);
+    noteEvents.sort((a, b) => {
+      let x = a.time - b.time;
+      if (x != 0.0) {
+        return x;
+      }
+      x = a.note - b.note;
+      if (x != 0.0) {
+        return x;
+      }
+      if (a.type == b.type) {
+        return 0.0;
+      }
+      if (a.type == "Off") {
+        return -1.0;
+      } else {
+        return 1.0;
+      }
+    });
     workletNode.port.postMessage({
       type: "musicData",
       params: {
@@ -301,7 +318,7 @@ function initGL(gl: WebGLRenderingContext, canvas: HTMLCanvasElement): NotesGLSt
     width: canvas.width,
     height: canvas.height,
     time: 0.0,
-    fallSpeed: 1.0,
+    fallSpeed: 0.5,
     maxNotes: INIT_MAX_NOTES,
     numNotes: 0,
     notesVertices: new Float32Array(INIT_MAX_NOTES * (2 + 4 + 2) * 6),
