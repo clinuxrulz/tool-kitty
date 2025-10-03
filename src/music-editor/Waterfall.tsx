@@ -110,6 +110,7 @@ const Waterfall: Component<{
       });
       note = note.next;
     }
+    noteEvents.sort((a, b) => a.time - b.time);
     workletNode.port.postMessage({
       type: "musicData",
       params: {
