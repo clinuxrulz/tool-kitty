@@ -36,6 +36,8 @@ type NotesGLState = {
   visibleNotesEnd: Note | undefined,
   numVisibleNotes: number,
   program: WebGLProgram | undefined,
+  pianoVertices: Float32Array,
+  pianoGLVertexBuffer: WebGLBuffer,
   pianoProgram: WebGLProgram | undefined,
 }
 
@@ -338,6 +340,8 @@ function initGL(gl: WebGLRenderingContext, canvas: HTMLCanvasElement): NotesGLSt
     visibleNotesEnd: undefined,
     numVisibleNotes: 0,
     program: undefined,
+    pianoVertices: new Float32Array(6),
+    pianoGLVertexBuffer: gl.createBuffer(),
     pianoProgram: undefined,
   };
   for (let i = 0, j = 0; i < INIT_MAX_NOTES; ++i) {
@@ -456,11 +460,20 @@ function initGL(gl: WebGLRenderingContext, canvas: HTMLCanvasElement): NotesGLSt
   gl.enableVertexAttribArray(positionLocation);
   gl.enableVertexAttribArray(colourLocation);
   gl.enableVertexAttribArray(textureCoordLocation);
+  gl.useProgram(pianoProgram);
+  const pianoPositionLocation = gl.getAttribLocation(pianoProgram, "aVertexPosition");
+  // TODO: Upto here
   gl.viewport(0, 0, canvas.width, canvas.height);
   return state;
 }
 
 function drawGl(gl: WebGLRenderingContext, state: NotesGLState) {
+  if (state.program == undefined) {
+    return;
+  }
+  if (state.pianoProgram == undefined) {
+    return;
+  }
   let i = 0;
   let at = state.visibleNotesStart;
   let noteStartX = 0.0;
@@ -526,6 +539,7 @@ function drawGl(gl: WebGLRenderingContext, state: NotesGLState) {
         break;
       }
     }
+    gl.useProgram(state.program);
     gl.bindBuffer(gl.ARRAY_BUFFER, state.notesGLVertexBuffer);
     gl.bufferSubData(gl.ARRAY_BUFFER, 0, state.notesVertices.subarray(0, noteCount * 8 * 6));
     gl.drawArrays(gl.TRIANGLES, 0, noteCount * 6);
