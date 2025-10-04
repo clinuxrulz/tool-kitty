@@ -594,7 +594,7 @@ async function startAudio(): Promise<[ AudioContext, AudioWorkletNode, ]> {
 
 let initAudioCtx = async (audioCtx: AudioContext, workletNode: AudioWorkletNode) => {
   const presetIndex = 0;
-  const sf2Data = await fetch("./Thurston Waffles.sf2").then((x) => x.arrayBuffer());
+  const sf2Data = await fetch("./UprightPianoKW-small-20190703.sf2").then((x) => x.arrayBuffer());
   const soundfont = new SoundFont2(new Uint8Array(sf2Data));
   const preset: Preset = soundfont.presets[presetIndex];
   if (!preset) {
