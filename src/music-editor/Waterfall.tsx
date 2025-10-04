@@ -3,6 +3,8 @@ import { Midi } from "@tonejs/midi";
 import { SoundFont2, Preset, Sample, Instrument } from "soundfont2";
 import musicAudioWorkletProcessorUrl from "./music-audio-worklet-processor?worker&url";
 import { type NoteEvent } from "./music-audio-worklet-processor";
+import keysVertexShaderCode from "./shaders/keys.vert.glsl?raw";
+import keysFragmentShaderCode from "./shaders/keys.frag.glsl?raw";
 
 type Note = {
   startTime: number,
@@ -34,6 +36,7 @@ type NotesGLState = {
   visibleNotesEnd: Note | undefined,
   numVisibleNotes: number,
   program: WebGLProgram | undefined,
+  pianoProgram: WebGLProgram | undefined,
 }
 
 const INIT_MAX_NOTES = 10_000;
@@ -335,6 +338,7 @@ function initGL(gl: WebGLRenderingContext, canvas: HTMLCanvasElement): NotesGLSt
     visibleNotesEnd: undefined,
     numVisibleNotes: 0,
     program: undefined,
+    pianoProgram: undefined,
   };
   for (let i = 0, j = 0; i < INIT_MAX_NOTES; ++i) {
     state.notesVertices[j + 6] = 0.0;
@@ -388,7 +392,16 @@ function initGL(gl: WebGLRenderingContext, canvas: HTMLCanvasElement): NotesGLSt
   if (program == undefined) {
     return undefined;
   }
+  const pianoProgram = initShaderProgram(
+    gl,
+    keysVertexShaderCode,
+    keysFragmentShaderCode,
+  );
+  if (pianoProgram == undefined) {
+    return undefined;
+  }
   state.program = program;
+  state.pianoProgram = pianoProgram;
   gl.useProgram(program);
   const modelViewMatrixLocation = gl.getUniformLocation(program, "uModelViewMatrix");
   function createOrtho2D(left: number, right: number, bottom: number, top: number) {
