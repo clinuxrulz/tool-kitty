@@ -44,6 +44,7 @@ class MusicAudioWorkletProcessor extends AudioWorkletProcessor {
         this.meow = Array(128).fill(undefined).map((_, idx) => {
           let n: Meow = {
             activeId: 0,
+            active: false,
             at: 0.0,
             step: middle_c_hz * Math.pow(2.0, (idx-60)/12.0) * meowStepPerHz!,
             prev: undefined!,
