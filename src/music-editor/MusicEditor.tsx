@@ -26,7 +26,8 @@ const MusicEditor: Component<{}> = (props) => {
       style={{
         "flex-grow": "1",
         "display": "flex",
-        "flex-direction": "column"
+        "flex-direction": "column",
+        "overflow": "hidden",
       }}
     >
       <div
@@ -56,9 +57,7 @@ const MusicEditor: Component<{}> = (props) => {
           />
         </Match>
         <Match when={state.selectedTab == "Waterfall"}>
-          <div style={{ "flex-grow": "1", }}>
-            <Waterfall/>
-          </div>
+          <Waterfall/>
         </Match>
         <Match when={state.selectedTab == "Instrument Editor"}>
           <InstrumentEditor

@@ -3,6 +3,10 @@ import { Midi } from "@tonejs/midi";
 import { SoundFont2, Preset, Sample, Instrument } from "soundfont2";
 import musicAudioWorkletProcessorUrl from "./music-audio-worklet-processor?worker&url";
 import { type NoteEvent } from "./music-audio-worklet-processor";
+import keysVertexShaderCode from "./shaders/keys.vert.glsl?raw";
+import keysFragmentShaderCode from "./shaders/keys.frag.glsl?raw";
+
+const FOV_Y = 50.0;
 
 type Note = {
   startTime: number,
@@ -34,20 +38,33 @@ type NotesGLState = {
   visibleNotesEnd: Note | undefined,
   numVisibleNotes: number,
   program: WebGLProgram | undefined,
+  positionLocation: number,
+  colourLocation: number,
+  textureCoordLocation: number,
+  pianoVertices: Float32Array,
+  pianoGLVertexBuffer: WebGLBuffer,
+  pianoProgram: WebGLProgram | undefined,
+  pianoPositionLocation: number,
 }
 
 const INIT_MAX_NOTES = 10_000;
 
 const Waterfall: Component<{
 }> = (props) => {
+  let [ canvasDiv, setCanvasDiv, ] = createSignal<HTMLDivElement>();
   let [canvas, setCanvas,] = createSignal<HTMLCanvasElement>();
   let [ gl, setGl, ] = createSignal<WebGLRenderingContext>();
   createEffect(on(
-    canvas,
-    (canvas) => {
-      if (canvas == undefined) {
+    [ canvasDiv, canvas, ],
+    ([ canvasDiv, canvas, ]) => {
+      if (canvasDiv == undefined || canvas == undefined) {
         return undefined;
       }
+      let rect = canvasDiv.getBoundingClientRect();
+      canvas.width = rect.width * window.devicePixelRatio;
+      canvas.height = rect.height * window.devicePixelRatio;
+      canvas.style.setProperty("width", `${rect.width}px`);
+      canvas.style.setProperty("height", `${rect.height}px`);
       setGl(canvas.getContext("webgl") ?? undefined);
     },
   ));
@@ -145,10 +162,10 @@ const Waterfall: Component<{
   return (
     <div
       style={{
-        "width": "100%",
-        "height": "100%",
+        "flex-grow": "1",
         "display": "flex",
         "flex-direction": "column",
+        "overflow": "hidden",
       }}
     >
       <div>
@@ -185,12 +202,14 @@ const Waterfall: Component<{
           Run
         </button>
       </div>
-      <canvas
-        ref={setCanvas}
+      <div
         style={{
           "flex-grow": "1",
         }}
-      />
+        ref={setCanvasDiv}
+      >
+        <canvas ref={setCanvas}/>
+      </div>
     </div>
   );
 }
@@ -315,9 +334,10 @@ function freeNote(state: NotesGLState, note: Note) {
 }
 
 function initGL(gl: WebGLRenderingContext, canvas: HTMLCanvasElement): NotesGLState | undefined {
-  let rect = canvas.getBoundingClientRect();
-  canvas.width = rect.width;
-  canvas.height = rect.height;
+  //let rect = canvas.getBoundingClientRect();
+  //canvas.width = rect.width;
+  //canvas.height = rect.height;
+  const focalLength = 0.5 * canvas.height / Math.tan(0.5 * FOV_Y * Math.PI / 180.0);
   let state: NotesGLState = {
     width: canvas.width,
     height: canvas.height,
@@ -335,6 +355,13 @@ function initGL(gl: WebGLRenderingContext, canvas: HTMLCanvasElement): NotesGLSt
     visibleNotesEnd: undefined,
     numVisibleNotes: 0,
     program: undefined,
+    positionLocation: -1,
+    colourLocation: -1,
+    textureCoordLocation: -1,
+    pianoVertices: new Float32Array(12),
+    pianoGLVertexBuffer: gl.createBuffer(),
+    pianoProgram: undefined,
+    pianoPositionLocation: -1,
   };
   for (let i = 0, j = 0; i < INIT_MAX_NOTES; ++i) {
     state.notesVertices[j + 6] = 0.0;
@@ -388,7 +415,16 @@ function initGL(gl: WebGLRenderingContext, canvas: HTMLCanvasElement): NotesGLSt
   if (program == undefined) {
     return undefined;
   }
+  const pianoProgram = initShaderProgram(
+    gl,
+    keysVertexShaderCode,
+    keysFragmentShaderCode,
+  );
+  if (pianoProgram == undefined) {
+    return undefined;
+  }
   state.program = program;
+  state.pianoProgram = pianoProgram;
   gl.useProgram(program);
   const modelViewMatrixLocation = gl.getUniformLocation(program, "uModelViewMatrix");
   function createOrtho2D(left: number, right: number, bottom: number, top: number) {
@@ -411,13 +447,13 @@ function initGL(gl: WebGLRenderingContext, canvas: HTMLCanvasElement): NotesGLSt
     false,
     modelViewMatrix,
   );
-  const positionLocation = gl.getAttribLocation(program, 'aVertexPosition');
-  const colourLocation = gl.getAttribLocation(program, "aColour");
-  const textureCoordLocation = gl.getAttribLocation(program, 'aTextureCoord');
+  state.positionLocation = gl.getAttribLocation(program, 'aVertexPosition');
+  state.colourLocation = gl.getAttribLocation(program, "aColour");
+  state.textureCoordLocation = gl.getAttribLocation(program, 'aTextureCoord');
   gl.bindBuffer(gl.ARRAY_BUFFER, state.notesGLVertexBuffer);
   gl.bufferData(gl.ARRAY_BUFFER, state.notesVertices, gl.DYNAMIC_DRAW);
   gl.vertexAttribPointer(
-    positionLocation,
+    state.positionLocation,
     2,
     gl.FLOAT,
     false,
@@ -425,7 +461,7 @@ function initGL(gl: WebGLRenderingContext, canvas: HTMLCanvasElement): NotesGLSt
     0 * 4,
   );
   gl.vertexAttribPointer(
-    colourLocation,
+    state.colourLocation,
     4,
     gl.FLOAT,
     false,
@@ -433,21 +469,93 @@ function initGL(gl: WebGLRenderingContext, canvas: HTMLCanvasElement): NotesGLSt
     4 * 4,
   );
   gl.vertexAttribPointer(
-    textureCoordLocation,
+    state.textureCoordLocation,
     2,
     gl.FLOAT,
     false,
     (2 + 4 + 2) * 4,
     6 * 4,
   );
-  gl.enableVertexAttribArray(positionLocation);
-  gl.enableVertexAttribArray(colourLocation);
-  gl.enableVertexAttribArray(textureCoordLocation);
+  gl.useProgram(pianoProgram);
+  const pianoModelViewMatrixLocation = gl.getUniformLocation(pianoProgram, "uModelViewMatrix");
+  gl.uniformMatrix4fv(
+    pianoModelViewMatrixLocation,
+    false,
+    modelViewMatrix,
+  );
+  const uFocalLengthLocation = gl.getUniformLocation(pianoProgram, "uFocalLength");
+  gl.uniform1f(
+    uFocalLengthLocation,
+    focalLength,
+  );
+  const resolutionLocation = gl.getUniformLocation(pianoProgram, "resolution");
+  const uOffsetYLocations = gl.getUniformLocation(pianoProgram, "uOffsetY");
+  let pianoHeight: number;
+  {
+    let d = 52.0 * 200.0 * focalLength / state.width;
+    let wy = -1.0;
+    let wz = 3.0;
+    let wm = Math.sqrt(wy*wy + wz*wz);
+    wy /= wm;
+    wz /= wm;
+    let vy = wz;
+    let vz = -wy;
+    let roy = wy * d - 600.0;
+    let roz = wz * d + 50.0;
+    let t = ((-600.0 - roy) * -wy + (-50.0 - roz) * -wz);
+    let y0 = t * -0.5 * state.height / focalLength;
+    let z0 = t;
+    let y1 = y0 + 1200.0 * vy + 400.0 * -wy;
+    let z1 = z0 + 1200.0 * vz + 400.0 * -wz;
+    let y2 = y0 + 200.0 * -wy;
+    let z2 = z0 + 200.0 * -wz;
+    let py0 = y0 * focalLength / z0;
+    let py1 = y1 * focalLength / z1;
+    pianoHeight = Math.abs(py1 - py0);
+    gl.uniform1f(
+      uOffsetYLocations,
+      y2,
+    );
+  }
+  gl.uniform2f(
+    resolutionLocation,
+    state.width,
+    state.height,
+  );
+  state.pianoPositionLocation = gl.getAttribLocation(pianoProgram, "aVertexPosition");
+  state.pianoVertices[0] = 0.0;
+  state.pianoVertices[1] = 0.0;
+  state.pianoVertices[2] = state.width;
+  state.pianoVertices[3] = 0.0;
+  state.pianoVertices[4] = state.width;
+  state.pianoVertices[5] = pianoHeight;
+  state.pianoVertices[6] = 0.0;
+  state.pianoVertices[7] = 0.0;
+  state.pianoVertices[8] = state.width;
+  state.pianoVertices[9] = pianoHeight;
+  state.pianoVertices[10] = 0.0;
+  state.pianoVertices[11] = pianoHeight;
+  gl.bindBuffer(gl.ARRAY_BUFFER, state.pianoGLVertexBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, state.pianoVertices, gl.DYNAMIC_DRAW);
+  gl.vertexAttribPointer(
+    state.pianoPositionLocation,
+    2,
+    gl.FLOAT,
+    false,
+    0,
+    0,
+  );
   gl.viewport(0, 0, canvas.width, canvas.height);
   return state;
 }
 
 function drawGl(gl: WebGLRenderingContext, state: NotesGLState) {
+  if (state.program == undefined) {
+    return;
+  }
+  if (state.pianoProgram == undefined) {
+    return;
+  }
   let i = 0;
   let at = state.visibleNotesStart;
   let noteStartX = 0.0;
@@ -513,10 +621,56 @@ function drawGl(gl: WebGLRenderingContext, state: NotesGLState) {
         break;
       }
     }
-    gl.bindBuffer(gl.ARRAY_BUFFER, state.notesGLVertexBuffer);
-    gl.bufferSubData(gl.ARRAY_BUFFER, 0, state.notesVertices.subarray(0, noteCount * 8 * 6));
-    gl.drawArrays(gl.TRIANGLES, 0, noteCount * 6);
+    if (noteCount != undefined) {
+      gl.useProgram(state.program);
+      gl.bindBuffer(gl.ARRAY_BUFFER, state.notesGLVertexBuffer);
+      gl.bufferSubData(gl.ARRAY_BUFFER, 0, state.notesVertices.subarray(0, noteCount * 8 * 6));
+      gl.vertexAttribPointer(
+        state.positionLocation,
+        2,
+        gl.FLOAT,
+        false,
+        (2 + 4 + 2) * 4,
+        0 * 4,
+      );
+      gl.vertexAttribPointer(
+        state.colourLocation,
+        4,
+        gl.FLOAT,
+        false,
+        (2 + 4 + 2) * 4,
+        4 * 4,
+      );
+      gl.vertexAttribPointer(
+        state.textureCoordLocation,
+        2,
+        gl.FLOAT,
+        false,
+        (2 + 4 + 2) * 4,
+        6 * 4,
+      );
+      gl.enableVertexAttribArray(state.positionLocation);
+      gl.enableVertexAttribArray(state.colourLocation);
+      gl.enableVertexAttribArray(state.textureCoordLocation);
+      gl.drawArrays(gl.TRIANGLES, 0, noteCount * 6);
+      gl.disableVertexAttribArray(state.positionLocation);
+      gl.disableVertexAttribArray(state.colourLocation);
+      gl.disableVertexAttribArray(state.textureCoordLocation);
+    }
   }
+  gl.useProgram(state.pianoProgram);
+  gl.bindBuffer(gl.ARRAY_BUFFER, state.pianoGLVertexBuffer);
+  gl.vertexAttribPointer(
+    state.pianoPositionLocation,
+    2,
+    gl.FLOAT,
+    false,
+    0,
+    0,
+  );
+  gl.enableVertexAttribArray(state.pianoPositionLocation);
+  gl.drawArrays(gl.TRIANGLES, 0, 6);
+  gl.disableVertexAttribArray(state.pianoPositionLocation);
 }
 
 function loadShader(gl: WebGLRenderingContext, type: number, source: string) {
