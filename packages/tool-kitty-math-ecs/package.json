@@ -1,0 +1,20 @@
+{
+  "name": "tool-kitty-math-ecs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.ts",
+  "scripts": {
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.9.0",
+  "devDependencies": {
+    "vite-plugin-dts": "^4.5.3"
+  },
+  "dependencies": {
+    "tool-kitty-ecs": "workspace:*",
+    "tool-kitty-math": "workspace:*",
+    "tool-kitty-type-schema": "workspace:*"
+  }
+}

@@ -2,8 +2,8 @@ import { Component, Match, Switch, untrack } from "solid-js";
 import { Sound } from "./Sound";
 import PianoKeys from "./PianoKeys";
 import { createStore } from "solid-js/store";
-import { EcsWorld } from "../lib";
-import InstrumentEditor from "./InstrumentEditor";
+import { EcsWorld } from "tool-kitty-ecs";
+import { InstrumentEditor } from "tool-kitty-instrument-editor";
 import Waterfall from "./Waterfall";
 
 const MusicEditor: Component<{}> = (props) => {

@@ -1,0 +1,102 @@
+import { Accessor, Component, createMemo } from "solid-js";
+import { setVariableComponentType, SetVariableState } from "../components/SetVariableComponent";
+import { Node, NodeParams, NodeType, Pin } from "tool-kitty-node-editor";
+import { NodeExt, NodeTypeExt } from "../NodeExt";
+
+export class SetVariableNodeType implements NodeType<NodeTypeExt,NodeExt,SetVariableState> {
+  componentType = setVariableComponentType;
+  ext: NodeTypeExt = {};
+
+  create(nodeParams: NodeParams<SetVariableState>) {
+    return new SetVariableNode(nodeParams);
+  }
+}
+
+export const setVariableNodeType = new SetVariableNodeType();
+
+class SetVariableNode implements Node<NodeTypeExt,NodeExt,SetVariableState> {
+  type = setVariableNodeType;
+  nodeParams: NodeParams<SetVariableState>;
+  inputPins: Accessor<{ name: string; source: Accessor<Pin | undefined>; setSource: (x: Pin | undefined) => void; isEffectPin?: boolean; }[]>;
+  outputPins: Accessor<{ name: string; sinks: Accessor<Pin[]>; setSinks: (x: Pin[]) => void; isEffectPin?: boolean; }[]>;
+  ui: Accessor<Component | undefined>;
+  ext: NodeExt;
+  
+  constructor(nodeParams: NodeParams<SetVariableState>) {
+    let state = nodeParams.state;
+    let setState = nodeParams.setState;
+    this.nodeParams = nodeParams;
+    this.inputPins = createMemo(() => [
+      {
+        name: "prev",
+        source: () => state.prev,
+        setSource: (x) => setState("prev", x),
+        isEffectPin: true,
+      },
+      {
+        name: "value",
+        source: () => state.value,
+        setSource: (x) => setState("value", x),
+      },
+    ]);
+    this.outputPins = createMemo(() => [
+      {
+        name: "next",
+        sinks: () => state.next,
+        setSinks: (x) => setState("next", x),
+        isEffectPin: true,
+      }
+    ]);
+    this.ui = createMemo(() => () => {
+      return (
+        <label>
+          <span style="color: black; padding-right: 5px;">Id:</span>
+          <input
+            class="input"
+            type="text"
+            size={8}
+            value={state.id}
+            onInput={(e) => {
+              setState("id", e.currentTarget.value);
+            }}
+          />
+        </label>
+      );
+    });
+    this.ext = {
+      generateCode: ({ ctx, inputAtoms, codeGenNodeId }) => {
+        let prev = inputAtoms.get("prev");
+        if (prev == undefined) {
+          return [];
+        }
+        let value = inputAtoms.get("value");
+        if (value == undefined) {
+          return [];
+        }
+        let effect = `this.n_${codeGenNodeId}_next`;
+        ctx.addDeclToExistingForField(
+          effect,
+          "{\r\n" +
+          "    prev: null,\r\n" +
+          "    next: null,\r\n" +
+          "    update: null, /* () => boolean */\r\n" +
+          "    onDone: [], /* (() => void)[] */\r\n" +
+          "  }"
+        );
+        ctx.insertConstructorCode([
+          `${prev}.onDone.push(() => {`,
+          `  this.insertRunningEffect(${effect});`,
+          "});",
+          `${effect}.update = () => {`,
+          `  this.variables["${state.id}"] = ${value};`,
+          `  return true;`,
+          "};",
+        ]);
+        let next = `${effect}`;
+        let outputAtoms = new Map<string,string>();
+        outputAtoms.set("next", next);
+        return [{ outputAtoms, }];
+      }
+    };
+  }
+}

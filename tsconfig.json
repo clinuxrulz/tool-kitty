@@ -19,6 +19,8 @@
   },
   "exclude": [
     "solid-fs-components",
-    "examples"
+    "examples",
+    "node_modules",
+    "**/dist"
   ]
 }

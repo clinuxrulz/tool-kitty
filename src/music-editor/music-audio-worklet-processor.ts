@@ -5,6 +5,8 @@ let meowStepPerHz: number | undefined = undefined;
 
 const middle_c_hz = 261.625565;
 
+declare const sampleRate: number;
+
 type Meow = {
   activeId: number,
   active: boolean,

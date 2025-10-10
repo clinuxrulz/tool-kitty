@@ -1,0 +1,20 @@
+{
+  "name": "tool-kitty-ecs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.ts",
+  "scripts": {
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.9.0",
+  "devDependencies": {
+    "vite-plugin-dts": "^4.5.3"
+  },
+  "dependencies": {
+    "control-flow-as-value": "workspace: *",
+    "tool-kitty-util": "workspace:*",
+    "tool-kitty-type-schema": "workspace:*"
+  }
+}
