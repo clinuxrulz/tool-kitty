@@ -151,6 +151,9 @@ importers:
       tool-kitty-instrument-editor:
         specifier: workspace:*
         version: link:packages/tool-kitty-instrument-editor
+      tool-kitty-model-editor:
+        specifier: workspace:*
+        version: link:packages/tool-kitty-model-editor
       unique-username-generator:
         specifier: ^1.4.0
         version: 1.4.0
@@ -322,6 +325,25 @@ importers:
         version: 4.5.3(@types/node@22.14.1)(rollup@4.27.4)(typescript@5.8.2)(vite@6.0.0(@types/node@22.14.1)(jiti@2.4.2)(lightningcss@1.29.2))
 
   packages/tool-kitty-model-editor:
+    dependencies:
+      tool-kitty-ecs:
+        specifier: workspace:*
+        version: link:../tool-kitty-ecs
+      tool-kitty-math:
+        specifier: workspace:*
+        version: link:../tool-kitty-math
+      tool-kitty-math-ecs:
+        specifier: workspace:*
+        version: link:../tool-kitty-math-ecs
+      tool-kitty-node-editor:
+        specifier: workspace:*
+        version: link:../tool-kitty-node-editor
+      tool-kitty-type-schema:
+        specifier: workspace:*
+        version: link:../tool-kitty-type-schema
+      tool-kitty-util:
+        specifier: workspace:*
+        version: link:../tool-kitty-util
     devDependencies:
       vite-plugin-dts:
         specifier: ^4.5.3

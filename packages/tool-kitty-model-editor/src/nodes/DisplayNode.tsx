@@ -1,0 +1,45 @@
+import { Accessor, Component, createMemo } from "solid-js";
+import { displayComponentType, DisplayState } from "../components/DisplayComponent";
+import { Node, NodeParams, NodeType, Pin } from "tool-kitty-node-editor";
+import { NodeExt, NodeTypeExt } from "../NodeExt";
+
+export class DisplayNodeType implements NodeType<NodeTypeExt,NodeExt,DisplayState> {
+  componentType = displayComponentType;
+  ext: NodeTypeExt = {};
+
+  create(nodeParams: NodeParams<DisplayState>) {
+    return new DisplayNode(nodeParams);
+  }
+}
+
+export const displayNodeType = new DisplayNodeType();
+
+class DisplayNode implements Node<NodeTypeExt,NodeExt,DisplayState> {
+  type = displayNodeType;
+  nodeParams: NodeParams<DisplayState>;
+  inputPins: Accessor<{ name: string; source: Accessor<Pin | undefined>; setSource: (x: Pin | undefined) => void; }[]>;
+  ui: Accessor<Component | undefined>;
+  ext: NodeExt = {};
+
+  constructor(nodeParams: NodeParams<DisplayState>) {
+    let state = nodeParams.state;
+    let setState = nodeParams.setState;
+    this.nodeParams = nodeParams;
+    this.inputPins = createMemo(() => [
+      {
+        name: "in",
+        source: () => state.in,
+        setSource: (x) => setState("in", x),
+      },
+    ]);
+    this.ui = createMemo(() => () =>
+      <i
+        class="fa-solid fa-desktop"
+        style={{
+          "font-size": "24px",
+          "color": "green",
+        }}
+      />
+    );
+  }
+}

@@ -11,5 +11,13 @@
   "packageManager": "pnpm@10.9.0",
   "devDependencies": {
     "vite-plugin-dts": "^4.5.3"
+  },
+  "dependencies": {
+    "tool-kitty-ecs": "workspace:*",
+    "tool-kitty-node-editor": "workspace:*",
+    "tool-kitty-math": "workspace:*",
+    "tool-kitty-math-ecs": "workspace:*",
+    "tool-kitty-type-schema": "workspace:*",
+    "tool-kitty-util": "workspace:*"
   }
 }

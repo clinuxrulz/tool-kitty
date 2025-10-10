@@ -91,6 +91,9 @@ const App: Component<{
           <button class="btn" onClick={() => navigate("/music-editor")}>
             Music Editor
           </button>
+          <button class="btn" onClick={() => navigate("/model-editor")}>
+            Model Editor
+          </button>
           <button class="btn" onClick={() => navigate("/script-editor")}>
             Script Editor
           </button>
