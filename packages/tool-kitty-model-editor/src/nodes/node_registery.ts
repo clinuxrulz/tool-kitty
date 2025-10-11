@@ -8,6 +8,7 @@ import { translateNodeType } from "./TranslateNode";
 import { boxNodeType } from "./BoxNode";
 import { unionNodeType } from "./UnionNode";
 import { differenceNodeType } from "./DifferenceNode";
+import { repeatNodeType } from "./RepeatNode";
 
 export const nodeRegistry = new NodeRegistry<NodeTypeExt,NodeExt>();
 
@@ -16,6 +17,7 @@ nodeRegistry.registerNodeTypes([
   differenceNodeType,
   displayNodeType,
   numberNodeType,
+  repeatNodeType,
   sphereNodeType,
   translateNodeType,
   unionNodeType,

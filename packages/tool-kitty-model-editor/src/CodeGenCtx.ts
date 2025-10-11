@@ -42,7 +42,7 @@ float map(vec3 p) {
 bool march(vec3 ro, vec3 rd, out float t) {
   vec3 p = ro;
   t = 0.0;
-  for (int i = 0; i < 20; ++i) {
+  for (int i = 0; i < 100; ++i) {
     vec3 p = ro + rd*t;
     float d = map(p);
     if (abs(d) < 1.0) {

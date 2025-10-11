@@ -7,6 +7,7 @@ import { boxComponentType } from "./BoxComponent";
 import { translateComponentType } from "./TranslateComponent";
 import { unionComponentType } from "./UnionComponent";
 import { differenceComponentType } from "./DifferenceComponent";
+import { repeatComponentType } from "./RepeatComponent";
 
 export const registry = new EcsRegistry([
   ...defaultRegistry.componentTypes,
@@ -14,6 +15,7 @@ export const registry = new EcsRegistry([
   differenceComponentType,
   displayComponentType,
   numberComponentType,
+  repeatComponentType,
   sphereComponentType,
   translateComponentType,
   unionComponentType,
