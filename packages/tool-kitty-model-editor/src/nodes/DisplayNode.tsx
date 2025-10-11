@@ -2,6 +2,7 @@ import { Accessor, Component, createMemo } from "solid-js";
 import { displayComponentType, DisplayState } from "../components/DisplayComponent";
 import { Node, NodeParams, NodeType, Pin } from "tool-kitty-node-editor";
 import { NodeExt, NodeTypeExt } from "../NodeExt";
+import { PinValue } from "../CodeGenCtx";
 
 export class DisplayNodeType implements NodeType<NodeTypeExt,NodeExt,DisplayState> {
   componentType = displayComponentType;
@@ -41,5 +42,17 @@ class DisplayNode implements Node<NodeTypeExt,NodeExt,DisplayState> {
         }}
       />
     );
+    this.ext.generateCode = ({ ctx, inputs }) => {
+      let in_ = inputs.get("in");
+      if (in_?.type != "Model") {
+        return undefined;
+      }
+      let in2 = in_.value;
+      let { sdfFuncName, colourFuncName, } = in2;
+      ctx.insertCode([
+        `d = min(d, ${sdfFuncName}(p));`
+      ]);
+      return new Map<string,PinValue>();
+    };
   }
 }

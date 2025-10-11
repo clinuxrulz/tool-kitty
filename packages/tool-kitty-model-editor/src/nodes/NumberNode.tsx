@@ -4,6 +4,7 @@ import { numberComponentType, NumberState } from "../components/NumberComponent"
 import { Node, NodeParams, NodeType, Pin } from "tool-kitty-node-editor";
 import { untrack } from "solid-js/web";
 import { NodeExt, NodeTypeExt } from "../NodeExt";
+import { PinValue } from "../CodeGenCtx";
 
 export class NumberNodeType implements NodeType<NodeTypeExt,NodeExt,NumberState> {
   componentType = numberComponentType;
@@ -63,5 +64,24 @@ class NumberNode implements Node<NodeTypeExt,NodeExt,NumberState> {
         />
       );
     });
+    this.ext.generateCode = ({ ctx: _1, inputs: _2, }) => {
+      return new Map<string,PinValue>([
+        [
+          "out",
+          {
+            type: "Atom",
+            value: toGlslFloatString(state.value),
+          },
+        ],
+      ]);
+    };
   }
+}
+
+function toGlslFloatString(num: number): string {
+  let str = num.toString();
+  if (!str.includes('.') && !str.includes('e') && !str.includes('E')) {
+    str += '.0';
+  }
+  return str;
 }

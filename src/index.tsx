@@ -180,7 +180,7 @@ render(() => {
       />
       <Route path="/script-editor" component={() => <ScriptEditor />} />
       <Route path="/music-editor" component={MusicEditor}/>
-      <Route path="/model-editor" component={() => (<ModelEditor style="flex-grow: 1;" world={new EcsWorld()}/>)}/>
+      <Route path="/model-editor" component={() => (<ModelEditor style="flex-grow: 1; overflow: hidden;" world={new EcsWorld()}/>)}/>
       <Route path="/code-mirror" component={() => <CodeMirror />} />
       <Route
         path="/colour-picker"

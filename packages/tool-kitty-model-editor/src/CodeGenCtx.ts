@@ -11,48 +11,19 @@ export type PinValue = {
 
 export class CodeGenCtx {
   private nextId: number = 0;
-  private funcCode = new Map<string,{
-    declaration: string[],
-    body: string[],
-  }>();
+  private globalCode: string[] = [];
   private mainBody: string[] = [];
-  private inFn: string | undefined;
 
   allocVar() {
     return `x${this.nextId++}`;
   }
 
-  insertCode(code: string[]) {
-    let body: string[];
-    if (this.inFn != undefined) {
-      body = this.funcCode.get(this.inFn)!.body;
-    } else {
-      body = this.mainBody;
-    }
-    code.push(...code);
+  insertGlobalCode(code: string[]) {
+    this.globalCode.push(...code);
   }
 
-  implFn(params: {
-    declaration: string[],
-    body: () => void,
-  }): string {
-    let fnName = this.allocVar();
-    let oldInFn = this.inFn;
-    this.inFn = fnName;
-    try {
-      let fn: {
-        declaration: string[],
-        body: string[],
-      } = {
-        declaration: params.declaration,
-        body: [],
-      };
-      params.body();
-      this.funcCode.set(fnName, fn);
-      return fnName;
-    } finally {
-      this.inFn = oldInFn;
-    }
+  insertCode(code: string[]) {
+    this.mainBody.push(...code);
   }
 
   genCode(): string {
@@ -60,16 +31,12 @@ export class CodeGenCtx {
 uniform vec2 resolution;
 uniform float uFocalLength;
 
-${this.funcCode.entries().flatMap(([_funcName, { declaration, body }]) => [
-  ...declaration, " {\r\n",
-  ...body.map((line) => `  ${line}`),
-  "}\r\n",
-]).toArray()}
+${this.globalCode.join("\r\n")}
 
 float map(vec3 p) {
-  let d = 10_000.0;
-  ${this.mainBody.map((line) => `${line}\r\n`).join("  ")}
-  return p.length - 10.0;
+  float d = 10000.0;
+  ${this.mainBody.join("\r\n  ")}
+  return d;
 }
 
 bool march(vec3 ro, vec3 rd, out float t) {
@@ -109,7 +76,6 @@ void main(void) {
     (gl_FragCoord.y - 0.5 * resolution.y) * v +
     -fl * w
   );
-  ro -= uOffsetY * v;
   float t = 0.0;
   bool hit = march(ro, rd, t);
   if (!hit) {

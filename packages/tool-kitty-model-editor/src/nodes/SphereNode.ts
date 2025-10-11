@@ -2,6 +2,7 @@ import { Node, NodeParams, NodeType, Pin } from "tool-kitty-node-editor";
 import { sphereComponentType, SphereState } from "../components/SphereComponent";
 import { NodeExt, NodeTypeExt } from "../NodeExt";
 import { Accessor, createMemo } from "solid-js";
+import { PinValue } from "../CodeGenCtx";
 
 export class SphereNodeType implements NodeType<NodeTypeExt,NodeExt,SphereState> {
   componentType = sphereComponentType;
@@ -39,5 +40,36 @@ class SphereNode implements Node<NodeTypeExt,NodeExt,SphereState> {
         setSinks: (x) => setState("out", x),
       },
     ]);
+    this.ext.generateCode = ({ ctx, inputs, }) => {
+      let radius = inputs.get("radius");
+      if (radius?.type != "Atom") {
+        return undefined;
+      }
+      let radius2 = radius.value;
+      let sdfFn = ctx.allocVar();
+      ctx.insertGlobalCode([
+        `float ${sdfFn}(vec3 p) {`,
+        `  return length(p) - ${radius2};`,
+        "}",
+      ]);
+      let colourFn = ctx.allocVar();
+      ctx.insertGlobalCode([
+        `void ${colourFn}(vec3 p, out vec4 c) {`,
+        `  c = vec4(0.7, 0.7, 0.7, 1.0);`,
+        "}",
+      ]);
+      return new Map<string,PinValue>([
+        [
+          "out",
+          {
+            type: "Model",
+            value: {
+              sdfFuncName: sdfFn,
+              colourFuncName: colourFn,
+            },
+          },
+        ],
+      ]);
+    };
   }
 }
