@@ -1,36 +1,41 @@
 import { Node, NodeParams, NodeType, Pin } from "tool-kitty-node-editor";
-import { sphereComponentType, SphereState } from "../components/SphereComponent";
 import { NodeExt, NodeTypeExt } from "../NodeExt";
 import { Accessor, createMemo } from "solid-js";
 import { PinValue } from "../CodeGenCtx";
+import { translateComponentType, TranslateState } from "../components/TranslateComponent";
 
-export class SphereNodeType implements NodeType<NodeTypeExt,NodeExt,SphereState> {
-  componentType = sphereComponentType;
+export class TranslateNodeType implements NodeType<NodeTypeExt,NodeExt,TranslateState> {
+  componentType = translateComponentType;
   ext: NodeTypeExt = {};
 
-  create(nodeParams: NodeParams<SphereState>) {
+  create(nodeParams: NodeParams<TranslateState>) {
     return new SphereNode(nodeParams);
   }
 }
 
-export const sphereNodeType = new SphereNodeType();
+export const translateNodeType = new TranslateNodeType();
 
-class SphereNode implements Node<NodeTypeExt,NodeExt,SphereState> {
-  type = sphereNodeType;
-  nodeParams: NodeParams<SphereState>;
+class SphereNode implements Node<NodeTypeExt,NodeExt,TranslateState> {
+  type = translateNodeType;
+  nodeParams: NodeParams<TranslateState>;
   inputPins: Accessor<{ name: string; source: Accessor<Pin | undefined>; setSource: (x: Pin | undefined) => void; isEffectPin?: boolean; }[]>;
   outputPins: Accessor<{ name: string; sinks: Accessor<Pin[]>; setSinks: (x: Pin[]) => void; isEffectPin?: boolean; }[]>;
   ext: NodeExt = {};
 
-  constructor(nodeParams: NodeParams<SphereState>) {
+  constructor(nodeParams: NodeParams<TranslateState>) {
     let state = nodeParams.state;
     let setState = nodeParams.setState;
     this.nodeParams = nodeParams;
     this.inputPins = createMemo(() => [
       {
-        name: "radius",
-        source: () => state.radius,
-        setSource: (x) => setState("radius", x),
+        name: "model",
+        source: () => state.model,
+        setSource: (x) => setState("model", x),
+      },
+      {
+        name: "offset",
+        source: () => state.offset,
+        setSource: (x) => setState("offset", x),
       },
     ]);
     this.outputPins = createMemo(() => [
@@ -41,21 +46,26 @@ class SphereNode implements Node<NodeTypeExt,NodeExt,SphereState> {
       },
     ]);
     this.ext.generateCode = ({ ctx, inputs, }) => {
-      let radius = inputs.get("radius");
-      if (radius?.type != "Atom") {
+      let model_ = inputs.get("model");
+      if (model_?.type != "Model") {
         return undefined;
       }
-      let radius2 = radius.value;
+      let model = model_.value;
+      let offset_ = inputs.get("offset");
+      if (offset_?.type != "Atom") {
+        return undefined;
+      }
+      let offset = offset_.value;
       let sdfFn = ctx.allocVar();
       ctx.insertGlobalCode([
         `float ${sdfFn}(vec3 p) {`,
-        `  return length(p) - ${radius2};`,
+        `  return ${model.sdfFuncName}(p - ${offset});`,
         "}",
       ]);
       let colourFn = ctx.allocVar();
       ctx.insertGlobalCode([
         `void ${colourFn}(vec3 p, out vec4 c) {`,
-        `  c = vec4(0.7, 0.7, 0.7, 1.0);`,
+        `  ${model.colourFuncName}(p - ${offset}, c);`,
         "}",
       ]);
       return new Map<string,PinValue>([
