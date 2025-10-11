@@ -13,6 +13,9 @@ type GLState = {
   positionLocation: number,
   verticesGLBuffer: WebGLBuffer,
   vertices: Float32Array,
+  vertexShader: WebGLShader,
+  fragmentShader: WebGLShader,
+  shaderProgram: WebGLProgram,
 };
 
 const FOV_Y = 50.0;
@@ -76,20 +79,116 @@ const ModelEditor: Component<
   ));
   let glState: GLState | undefined = undefined;
   createEffect(on(
-    [ gl, canvas, code, ],
-    ([ gl, canvas, code, ]) => {
+    [ gl, canvas, ],
+    ([ gl, canvas, ]) => {
       if (gl == undefined || canvas == undefined) {
+        return;
+      }
+      let code2 = code();
+      if (code2 == undefined) {
+        return;
+      }
+      glState = initGL(gl, canvas, code2);
+    },
+  ))
+  createEffect(on(
+    [ gl, code, ],
+    ([ gl, code, ]) => {
+      let canvas2 = canvas();
+      if (canvas2 == undefined) {
+        return;
+      }
+      let width = canvas2.width;
+      let height = canvas2.height;
+      const focalLength = 0.5 * height / Math.tan(0.5 * FOV_Y * Math.PI / 180.0);
+      if (glState == undefined) {
+        return;
+      }
+      if (gl == undefined) {
         return;
       }
       if (code == undefined) {
         return;
       }
-      if (glState != undefined) {
-        // TODO: Free up old resources
+      let newFramementShader = loadShader(gl, gl.FRAGMENT_SHADER, code);
+      if (newFramementShader == undefined) {
+        return;
       }
-      glState = initGL(gl, canvas, code);
+      gl.detachShader(glState.shaderProgram, glState.fragmentShader);
+      gl.deleteShader(glState.fragmentShader);
+      glState.fragmentShader = newFramementShader;
+      gl.attachShader(glState.shaderProgram, glState.fragmentShader);
+      gl.linkProgram(glState.shaderProgram);
+      if (!gl.getProgramParameter(glState.shaderProgram, gl.LINK_STATUS)) {
+        console.error('ERROR linking program:', gl.getProgramInfoLog(glState.shaderProgram));
+        return;
+      }
+      let shaderProgram = glState.shaderProgram;
+      gl.useProgram(shaderProgram);
+      const positionLocation = gl.getAttribLocation(shaderProgram, "aVertexPosition");
+      const focalLengthLocation = gl.getUniformLocation(shaderProgram, "uFocalLength");
+      const modelViewMatrixLocation = gl.getUniformLocation(shaderProgram, "uModelViewMatrix");
+      const resolutionLocation = gl.getUniformLocation(shaderProgram, "resolution");
+      gl.uniform1f(
+        focalLengthLocation,
+        focalLength,
+      );
+      gl.uniform2f(
+        resolutionLocation,
+        width,
+        height,
+      );
+      const vertices = glState.vertices;
+      vertices[0] = 0.0;
+      vertices[1] = 0.0;
+      vertices[2] = width;
+      vertices[3] = 0.0;
+      vertices[4] = width;
+      vertices[5] = height;
+      vertices[6] = 0.0;
+      vertices[7] = 0.0;
+      vertices[8] = width;
+      vertices[9] = height;
+      vertices[10] = 0.0;
+      vertices[11] = height;
+      let verticesGLBuffer = glState.verticesGLBuffer;
+      gl.bindBuffer(gl.ARRAY_BUFFER, verticesGLBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.DYNAMIC_DRAW);
+      gl.vertexAttribPointer(
+        positionLocation,
+        2,
+        gl.FLOAT,
+        false,
+        0,
+        0,
+      );
+      function createOrtho2D(left: number, right: number, bottom: number, top: number) {
+          var near = -1, far = 1, rl = right-left, tb = top-bottom, fn = far-near;
+          return [        2/rl,               0,              0,  0,
+                            0,             2/tb,              0,  0,
+                            0,                0,          -2/fn,  0,
+              -(right+left)/rl, -(top+bottom)/tb, -(far+near)/fn,  1];
+      }
+      const modelViewMatrix = new Float32Array(
+        createOrtho2D(
+          0.0,
+          width,
+          0.0,
+          height,
+        ),
+      );
+      gl.uniformMatrix4fv(
+        modelViewMatrixLocation,
+        false,
+        modelViewMatrix,
+      );
+      gl.viewport(0, 0, width, height);
+      gl.enableVertexAttribArray(positionLocation);
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
+      gl.disableVertexAttribArray(positionLocation);
     },
-  ))
+    { defer: true, },
+  ));
   return (
     <div
       {...rest}
@@ -181,10 +280,18 @@ function loadShader(gl: WebGLRenderingContext, type: number, source: string) {
   return shader;
 }
 
-function initShaderProgram(gl: WebGLRenderingContext, vsSource: string, fsSource: string) {
+function initShaderProgram(gl: WebGLRenderingContext, vsSource: string, fsSource: string): {
+  vertexShader: WebGLShader,
+  fragmentShader: WebGLShader,
+  shaderProgram: WebGLProgram,
+} | undefined {
   const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vsSource);
+  if (vertexShader == undefined) {
+    return undefined;
+  }
   const fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, fsSource);
-  if (vertexShader == undefined || fragmentShader == undefined) {
+  if (fragmentShader == undefined) {
+    gl.deleteShader(vertexShader);
     return undefined;
   }
   const shaderProgram = gl.createProgram();
@@ -193,35 +300,52 @@ function initShaderProgram(gl: WebGLRenderingContext, vsSource: string, fsSource
   gl.linkProgram(shaderProgram);
   if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
     console.error('Unable to initialize the shader program: ' + gl.getProgramInfoLog(shaderProgram));
+    gl.detachShader(shaderProgram, vertexShader);
+    gl.detachShader(shaderProgram, fragmentShader);
+    gl.deleteShader(vertexShader);
+    gl.deleteShader(fragmentShader);
+    gl.deleteProgram(shaderProgram)
     return undefined;
   }
-  return shaderProgram;
+  return {
+    vertexShader,
+    fragmentShader,
+    shaderProgram,
+  }
 }
 
 function initGL(gl: WebGLRenderingContext, canvas: HTMLCanvasElement, fragmentShaderCode: string): GLState | undefined {
   let width = canvas.width;
   let height = canvas.height;
   const focalLength = 0.5 * height / Math.tan(0.5 * FOV_Y * Math.PI / 180.0);
-  const program = initShaderProgram(
-    gl,
-    `attribute vec4 aVertexPosition;
+  let vertexShader: WebGLShader;
+  let fragmentShader: WebGLShader;
+  let shaderProgram: WebGLProgram;
+  {
+    const program = initShaderProgram(
+      gl,
+      `attribute vec4 aVertexPosition;
 
-uniform mat4 uModelViewMatrix;
+  uniform mat4 uModelViewMatrix;
 
-void main(void) {
-  gl_Position = uModelViewMatrix * aVertexPosition;
-}
-`,
-    fragmentShaderCode,
-  );
-  if (program == undefined) {
-    return undefined;
+  void main(void) {
+    gl_Position = uModelViewMatrix * aVertexPosition;
   }
-  gl.useProgram(program);
-  const positionLocation = gl.getAttribLocation(program, "aVertexPosition");
-  const focalLengthLocation = gl.getUniformLocation(program, "uFocalLength");
-  const modelViewMatrixLocation = gl.getUniformLocation(program, "uModelViewMatrix");
-  const resolutionLocation = gl.getUniformLocation(program, "resolution");
+  `,
+      fragmentShaderCode,
+    );
+    if (program == undefined) {
+      return undefined;
+    }
+    vertexShader = program.vertexShader;
+    fragmentShader = program.fragmentShader;
+    shaderProgram = program.shaderProgram;
+  }
+  gl.useProgram(shaderProgram);
+  const positionLocation = gl.getAttribLocation(shaderProgram, "aVertexPosition");
+  const focalLengthLocation = gl.getUniformLocation(shaderProgram, "uFocalLength");
+  const modelViewMatrixLocation = gl.getUniformLocation(shaderProgram, "uModelViewMatrix");
+  const resolutionLocation = gl.getUniformLocation(shaderProgram, "resolution");
   gl.uniform1f(
     focalLengthLocation,
     focalLength,
@@ -285,6 +409,9 @@ void main(void) {
     positionLocation,
     verticesGLBuffer,
     vertices,
+    vertexShader,
+    fragmentShader,
+    shaderProgram,
   };
   return state;
 }
