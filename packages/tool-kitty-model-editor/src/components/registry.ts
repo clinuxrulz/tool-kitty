@@ -9,6 +9,7 @@ import { unionComponentType } from "./UnionComponent";
 import { differenceComponentType } from "./DifferenceComponent";
 import { repeatComponentType } from "./RepeatComponent";
 import { transform2DComponentType } from "tool-kitty-math-ecs";
+import { scaleComponentType } from "./ScaleComponent";
 
 export const registry = new EcsRegistry([
   ...defaultRegistry.componentTypes,
@@ -17,6 +18,7 @@ export const registry = new EcsRegistry([
   displayComponentType,
   numberComponentType,
   repeatComponentType,
+  scaleComponentType,
   sphereComponentType,
   transform2DComponentType,
   translateComponentType,
