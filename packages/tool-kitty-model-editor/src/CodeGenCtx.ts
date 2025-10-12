@@ -27,7 +27,7 @@ export class CodeGenCtx {
   }
 
   genCode(): string {
-    let result = `precision mediump float;
+    let result = `precision highp float;
 uniform vec2 resolution;
 uniform float uFocalLength;
 
@@ -64,11 +64,11 @@ vec3 normal(vec3 p) {
 
 void main(void) {
   float fl = uFocalLength;
-  float d = 52.0 * 200.0 * fl / resolution.x;
+  float d = 10000.0;
   float mx = max(resolution.x, resolution.y);
   vec2 uv = gl_FragCoord.xy / mx;
-  vec3 w = normalize(vec3(0, -1, 3));
-  vec3 ro = w * d + vec3(0.0, -600.0, 50.0);
+  vec3 w = normalize(vec3(0.0, 0.0, 1.0));
+  vec3 ro = w * d;
   vec3 u = normalize(cross(vec3(0,1,0),w));
   vec3 v = cross(w,u);
   vec3 rd = normalize(
