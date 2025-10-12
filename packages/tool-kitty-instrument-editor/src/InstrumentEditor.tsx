@@ -10,6 +10,7 @@ import { importMidi } from "./import_midi";
 import { NodeEditorUI, NodesSystem } from "tool-kitty-node-editor";
 import { nodeRegistry } from "./nodes/node_registry";
 import { NodeExt, NodeTypeExt } from "./NodeExt";
+import { registry } from "./components/registry";
 
 const InstrumentEditor: Component<
   Overwrite<
@@ -129,6 +130,7 @@ const InstrumentEditor: Component<
           onInit={(controller) => {
             setNodesSystem(controller.nodesSystem);
           }}
+          componentRegistry={registry}
           nodeRegistry={nodeRegistry}
           world={props.world}
           toolbar={

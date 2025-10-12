@@ -6,6 +6,7 @@ import { NodeExt, NodeTypeExt } from "./NodeExt";
 import { nodeRegistry } from "./nodes/node_registery";
 import { createStore } from "solid-js/store";
 import { generateCode } from "./code-gen";
+import { registry } from "./components/registry";
 
 type GLState = {
   width: number,
@@ -214,6 +215,7 @@ const ModelEditor: Component<
             onInit={(controller) => {
               setNodesSystem(controller.nodesSystem);
             }}
+            componentRegistry={registry}
             nodeRegistry={nodeRegistry}
             world={props.world}
             toolbar={<>

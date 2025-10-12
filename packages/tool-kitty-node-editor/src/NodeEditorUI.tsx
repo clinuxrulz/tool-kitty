@@ -1,6 +1,6 @@
-import { ComponentProps, createComputed, createMemo, createSignal, JSX, mapArray, on, onCleanup, onMount, Show, splitProps, untrack } from "solid-js";
+import { batch, ComponentProps, createComputed, createMemo, createSignal, JSX, mapArray, on, onCleanup, onMount, Show, splitProps, untrack } from "solid-js";
 import { Vec2 } from "tool-kitty-math";
-import { EcsWorld } from "tool-kitty-ecs";
+import { EcsRegistry, EcsWorld } from "tool-kitty-ecs";
 import { createStore } from "solid-js/store";
 import { createPanZoomManager, Overwrite, UndoManager } from "tool-kitty-util";
 import { ModeParams } from "./ModeParams";
@@ -12,6 +12,7 @@ import { AddNodeMode } from "./modes/AddNodeMode";
 import { PickingSystem } from "./systems/PickingSystem";
 import { ReactiveSet } from "@solid-primitives/set";
 import { NodeRegistry } from "./NodeRegistry";
+import FileSaver from "file-saver";
 
 export type NodeEditorController<TYPE_EXT,INST_EXT> = {
   nodesSystem: NodesSystem<TYPE_EXT,INST_EXT>,
@@ -22,6 +23,7 @@ function NodeEditorUI<TYPE_EXT,INST_EXT>(props_:
     ComponentProps<"div">,
     {
       onInit: (controller: NodeEditorController<TYPE_EXT,INST_EXT>) => void,
+      componentRegistry: EcsRegistry,
       nodeRegistry: NodeRegistry<TYPE_EXT,INST_EXT>,
       world: EcsWorld,
       toolbar: JSX.Element,
@@ -30,6 +32,7 @@ function NodeEditorUI<TYPE_EXT,INST_EXT>(props_:
 ): JSX.Element {
   let [ props, rest, ] = splitProps(props_, [
     "onInit",
+    "componentRegistry",
     "nodeRegistry",
     "world",
     "toolbar",
@@ -220,6 +223,31 @@ function NodeEditorUI<TYPE_EXT,INST_EXT>(props_:
     nodesSystem,
   });
   //
+  let [ fileInputElement, setFileInputElement, ] = createSignal<HTMLInputElement>();
+  const load = async (file: File) => {
+    let data = await file.text().then((x) => JSON.parse(x));
+    let newWorld = EcsWorld.fromJson(props.componentRegistry, data);
+    if (newWorld.type == "Err") {
+      alert(newWorld.message);
+      return;
+    }
+    let newWorld2 = newWorld.value;
+    batch(() => {
+      let world = props.world;
+      for (let entity of [...world.entities()]) {
+        world.destroyEntity(entity);
+      }
+      for (let entity of newWorld2.entities()) {
+        let components = newWorld2.getComponents(entity);
+        world.createEntityWithId(entity, components);
+      }
+    });
+  };
+  const save = () => {
+    let data = JSON.stringify(props.world.toJson(), undefined, 2);
+    let blob = new Blob([ data ], { type: "application/json" });
+    FileSaver.saveAs(blob, "node-graph.json");
+  };
   return (
     <div
       {...rest}
@@ -235,12 +263,42 @@ function NodeEditorUI<TYPE_EXT,INST_EXT>(props_:
         <div>
           <button
             class="btn btn-primary"
+            style="margin-left: 5px;"
+            onClick={() => fileInputElement()?.click()}
+          >
+            <i class="fa-solid fa-upload"></i>
+          </button>
+          <input
+            ref={setFileInputElement}
+            type="file"
+            hidden
+            onChange={(e) => {
+              let files = e.currentTarget.files;
+              if (files?.length != 1) {
+                return;
+              }
+              let file = files[0];
+              load(file);
+              e.currentTarget.value = "";
+            }}
+          />
+          <button
+            class="btn btn-primary"
+            style="margin-left: 5px;"
+            onClick={() => save()}
+          >
+            <i class="fa-solid fa-download"></i>
+          </button>
+          <button
+            class="btn btn-primary"
+            style="margin-left: 5px;"
             onClick={() => setMode(() => new AddNodeMode(modeParams))}
           >
             Add Node
           </button>
           <button
             class="btn btn-primary"
+            style="margin-left: 5px;"
             onClick={() => {
               deleteSelectedObjects();
             }}

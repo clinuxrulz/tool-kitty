@@ -18,6 +18,7 @@ import { meowComponentType } from "./MeowComponent";
 import { gotoComponentType } from "./GotoComponent";
 import { noteComponentType } from "./NoteComponent";
 import { knobComponentType } from "./KnobComponent";
+import { transform2DComponentType } from "tool-kitty-math-ecs";
 
 export const registry = new EcsRegistry([
   ...defaultRegistry.componentTypes,
@@ -39,5 +40,6 @@ export const registry = new EcsRegistry([
   speakerComponentType,
   squareWaveComponentType,
   startComponentType,
+  transform2DComponentType,
   variableComponentType,
 ]);
