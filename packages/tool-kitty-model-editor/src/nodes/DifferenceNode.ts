@@ -74,7 +74,7 @@ class DifferenceNode implements Node<NodeTypeExt,NodeExt,DifferenceState> {
           `  float d1 = -${model1.sdfFuncName}(p);`,
           `  float d2 = ${model2.sdfFuncName}(p);`,
           `  float h = max(k-abs(d1-d2),0.0);`,
-          "  return min(d1, d2) - h*h*0.25/k;",
+          "  return -(min(d1, d2) - h*h*0.25/k);",
           "}",
         ]);
       } else {

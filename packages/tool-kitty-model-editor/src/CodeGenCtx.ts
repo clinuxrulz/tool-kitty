@@ -45,7 +45,7 @@ bool march(vec3 ro, vec3 rd, out float t) {
   for (int i = 0; i < 100; ++i) {
     vec3 p = ro + rd*t;
     float d = map(p);
-    if (abs(d) < 1.0) {
+    if (abs(d) <= 0.01) {
       return true;
     }
     t += d;
@@ -54,7 +54,7 @@ bool march(vec3 ro, vec3 rd, out float t) {
 }
 
 vec3 normal(vec3 p) {
-  float d = 0.001;
+  float d = 0.01;
   float mp = map(p);
   float dx = map(p + vec3(d,0,0)) - mp;
   float dy = map(p + vec3(0,d,0)) - mp;
