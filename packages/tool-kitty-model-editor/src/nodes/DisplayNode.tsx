@@ -52,6 +52,14 @@ class DisplayNode implements Node<NodeTypeExt,NodeExt,DisplayState> {
       ctx.insertCode([
         `d = min(d, ${sdfFuncName}(p));`
       ]);
+      let d = ctx.allocVar();
+      ctx.insertColourCode([
+        `float ${d} = ${sdfFuncName}(p);`,
+        `if (${d} < d) {`,
+        `  d = ${d};`,
+        `  ${colourFuncName}(p, c);`,
+        "}",
+      ]);
       return new Map<string,PinValue>();
     };
   }

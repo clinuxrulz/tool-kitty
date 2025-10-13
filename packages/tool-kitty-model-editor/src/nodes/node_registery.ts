@@ -10,15 +10,23 @@ import { unionNodeType } from "./UnionNode";
 import { differenceNodeType } from "./DifferenceNode";
 import { repeatNodeType } from "./RepeatNode";
 import { scaleNodeType } from "./ScaleNode";
+import { rotateNodeType } from "./RotateNode";
+import { infiniteCylinderNodeType } from "./InfiniteCylinderNode";
+import { colourNodeType } from "./ColourNode";
+import { applyColourNodeType } from "./ApplyColourNode";
 
 export const nodeRegistry = new NodeRegistry<NodeTypeExt,NodeExt>();
 
 nodeRegistry.registerNodeTypes([
+  applyColourNodeType,
   boxNodeType,
+  colourNodeType,
   differenceNodeType,
   displayNodeType,
+  infiniteCylinderNodeType,
   numberNodeType,
   repeatNodeType,
+  rotateNodeType,
   scaleNodeType,
   sphereNodeType,
   translateNodeType,

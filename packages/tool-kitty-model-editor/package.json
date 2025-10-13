@@ -13,6 +13,7 @@
     "vite-plugin-dts": "^4.5.3"
   },
   "dependencies": {
+    "tool-kitty-components": "workspace: *",
     "tool-kitty-ecs": "workspace:*",
     "tool-kitty-node-editor": "workspace:*",
     "tool-kitty-math": "workspace:*",

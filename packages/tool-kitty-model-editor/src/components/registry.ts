@@ -10,14 +10,22 @@ import { differenceComponentType } from "./DifferenceComponent";
 import { repeatComponentType } from "./RepeatComponent";
 import { transform2DComponentType } from "tool-kitty-math-ecs";
 import { scaleComponentType } from "./ScaleComponent";
+import { rotateComponentType } from "./RotateComponent";
+import { infiniteCylinderComponentType } from "./InfiniteCylinderComponent";
+import { colourComponentType } from "./ColourComponent";
+import { applyColourComponentType } from "./ApplyColourComponent";
 
 export const registry = new EcsRegistry([
   ...defaultRegistry.componentTypes,
+  applyColourComponentType,
   boxComponentType,
+  colourComponentType,
   differenceComponentType,
   displayComponentType,
+  infiniteCylinderComponentType,
   numberComponentType,
   repeatComponentType,
+  rotateComponentType,
   scaleComponentType,
   sphereComponentType,
   transform2DComponentType,

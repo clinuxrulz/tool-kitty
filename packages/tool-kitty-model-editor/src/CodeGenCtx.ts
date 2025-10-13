@@ -13,6 +13,7 @@ export class CodeGenCtx {
   private nextId: number = 0;
   private globalCode: string[] = [];
   private mainBody: string[] = [];
+  private colourBody: string[] = [];
 
   allocVar() {
     return `x${this.nextId++}`;
@@ -26,10 +27,18 @@ export class CodeGenCtx {
     this.mainBody.push(...code);
   }
 
+  insertColourCode(code: string[]) {
+    this.colourBody.push(...code);
+  }
+
   genCode(): string {
     let result = `precision highp float;
 uniform vec2 resolution;
 uniform float uFocalLength;
+
+void defaultColour(vec3 p, out vec4 c) {
+  c = vec4(1.0, 1.0, 1.0, 1.0);
+}
 
 ${this.globalCode.join("\r\n")}
 
@@ -37,6 +46,11 @@ float map(vec3 p) {
   float d = 10000.0;
   ${this.mainBody.join("\r\n  ")}
   return d;
+}
+
+void colourMap(vec3 p, out vec4 c) {
+  float d = 10000.0;
+  ${this.colourBody.join("\r\n  ")}
 }
 
 bool march(vec3 ro, vec3 rd, out float t) {
@@ -85,10 +99,9 @@ void main(void) {
   vec3 p = ro + rd*t;
   vec3 n = normal(p);
   float s = dot(n,normalize(vec3(1,1,1))) + 0.2;
-  if (p.z > 101.0) {
-    s *= 0.5;
-  }
-  gl_FragColor = vec4(s,s,s,1.0);
+  vec4 c = vec4(1.0, 1.0, 1.0, 1.0);
+  colourMap(p, c);
+  gl_FragColor = vec4(c.r * s, c.g * s, c.b * s, c.a);
 }`;
     return result;
   }
