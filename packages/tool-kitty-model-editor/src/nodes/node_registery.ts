@@ -14,10 +14,12 @@ import { rotateNodeType } from "./RotateNode";
 import { infiniteCylinderNodeType } from "./InfiniteCylinderNode";
 import { colourNodeType } from "./ColourNode";
 import { applyColourNodeType } from "./ApplyColourNode";
+import { applyCheckersNodeType } from "./ApplyCheckersNode";
 
 export const nodeRegistry = new NodeRegistry<NodeTypeExt,NodeExt>();
 
 nodeRegistry.registerNodeTypes([
+  applyCheckersNodeType,
   applyColourNodeType,
   boxNodeType,
   colourNodeType,

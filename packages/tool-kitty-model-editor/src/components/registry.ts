@@ -14,9 +14,11 @@ import { rotateComponentType } from "./RotateComponent";
 import { infiniteCylinderComponentType } from "./InfiniteCylinderComponent";
 import { colourComponentType } from "./ColourComponent";
 import { applyColourComponentType } from "./ApplyColourComponent";
+import { applyCheckersComponentType } from "./ApplyCheckersComponent";
 
 export const registry = new EcsRegistry([
   ...defaultRegistry.componentTypes,
+  applyCheckersComponentType,
   applyColourComponentType,
   boxComponentType,
   colourComponentType,
