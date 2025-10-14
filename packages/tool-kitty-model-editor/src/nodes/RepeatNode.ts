@@ -60,7 +60,6 @@ class RepeatNode implements Node<NodeTypeExt,NodeExt,RepeatState> {
       ctx.insertGlobalCode([
         `float ${sdfFn}(vec3 p) {`,
         `  vec3 s = ${step};`,
-        "  p += 0.5 * s;",
         "  vec3 id = vec3(floor(p.x/s.x + 0.5),floor(p.y/s.y + 0.5),floor(p.z/s.z + 0.5));",
         "  vec3  o = sign(p-s*id);",
         "  float d = 1e20;",
@@ -78,7 +77,10 @@ class RepeatNode implements Node<NodeTypeExt,NodeExt,RepeatState> {
       let colourFn = ctx.allocVar();
       ctx.insertGlobalCode([
         `void ${colourFn}(vec3 p, out vec4 c) {`,
-        `  c = vec4(0.7, 0.7, 0.7, 1.0);`,
+        `  vec3 s = ${step};`,
+        "  vec3 id = vec3(floor(p.x/s.x + 0.5),floor(p.y/s.y + 0.5),floor(p.z/s.z + 0.5));",
+        "  p = p-s*id;",
+        `  ${model.colourFuncName}(p, c);`,
         "}",
       ]);
       return new Map<string,PinValue>([
