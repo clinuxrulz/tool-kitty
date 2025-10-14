@@ -87,7 +87,14 @@ class DifferenceNode implements Node<NodeTypeExt,NodeExt,DifferenceState> {
       let colourFn = ctx.allocVar();
       ctx.insertGlobalCode([
         `void ${colourFn}(vec3 p, out vec4 c) {`,
-        `  c = vec4(0.7, 0.7, 0.7, 1.0);`,
+        `  float d1 = ${model1.sdfFuncName}(p);`,
+        `  float d2 = ${model2.sdfFuncName}(p);`,
+        `  float t = d1 + d2;`,
+        `  vec4 c1;`,
+        `  vec4 c2;`,
+        `  ${model1.colourFuncName}(p, c1);`,
+        `  ${model2.colourFuncName}(p, c2);`,
+        `  c = (c1 * d2 + c2 * d1) / t;`,
         "}",
       ]);
       return new Map<string,PinValue>([
