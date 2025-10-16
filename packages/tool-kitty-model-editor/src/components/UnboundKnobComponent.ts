@@ -1,10 +1,10 @@
 import { EcsComponentType } from "tool-kitty-ecs";
 import { pinTypeSchema } from "tool-kitty-node-editor";
-import { tsArray, tsNumber, tsObject, TypeSchema, TypeSchemaType } from "tool-kitty-type-schema";
+import { tsArray, tsDefault, tsNumber, tsObject, TypeSchema, TypeSchemaType } from "tool-kitty-type-schema";
 
 const typeSchema = tsObject({
   value: tsNumber(),
-  sensitivity: tsNumber(),
+  sensitivity: tsDefault(1.0, tsNumber()),
   out: tsArray(pinTypeSchema),
 });
 
