@@ -1,6 +1,7 @@
 import { Component, createMemo, createSignal, onCleanup } from "solid-js";
 import { createStore } from "solid-js/store";
 import { NoTrack } from "tool-kitty-util";
+import { v4 as uuid } from "uuid";
 
 const Knob: Component<{
   size: number,
@@ -104,6 +105,11 @@ const Knob: Component<{
       setState("dragging", undefined);
     }
   };
+  let shapeFillId = uuid();
+  let shapeId = uuid();
+  let shapeMaskId = uuid();
+  let lightsId = uuid();
+  let shadowId = uuid();
   return (
     <svg
       ref={setSvg}
@@ -112,7 +118,6 @@ const Knob: Component<{
         "height": `${props.size}px`,
         "user-select": "none",
         "outline": "none",
-        "--rot": `${angle()}deg`,
       }}
       version="1.1"
       viewBox="-16 -16 32 32"
@@ -121,25 +126,25 @@ const Knob: Component<{
       onPointerUp={onPointerUp}
     >
       <defs>
-        <linearGradient id="shape-fill" x1="0" x2="0" y1="0" y2="1">
+        <linearGradient id={shapeFillId} x1="0" x2="0" y1="0" y2="1">
           <stop offset="0%" stop-color="rgb(80, 80, 81)"/>
           <stop offset="100%" stop-color="rgb(30, 30, 31)"/>
         </linearGradient>
-        <path id="shape" d="
+        <path id={shapeId} d="
         M14.876 -5.890A-16 -16 0 0 0 14.876 5.890A16 16 0 0 112.539 9.938A-16 -16 0 0 0 2.337 15.828
         A16 16 0 0 1-2.337 15.828A-16 -16 0 0 0 -12.539 9.938A16 16 0 0 1-14.876 5.890A-16 -16 0 0 0 -14.876 -5.890
         A16 16 0 0 1-12.539 -9.938A-16 -16 0 0 0 -2.337 -15.828A16 16 0 0 12.337 -15.828A-16 -16 0 0 0 12.539 -9.938
         A16 16 0 0 114.876 -5.890"></path>
-        <clipPath id="shape-mask" style="transform: rotate(var(--rot)) scale(0.87)">
-          <use href="#shape"/>
+        <clipPath id={shapeMaskId} style={`transform: rotate(${angle()}deg) scale(0.87)`}>
+          <use href={`#${shapeId}`}/>
         </clipPath>
-        <filter id="lights">
+        <filter id={lightsId}>
           {lightsDropShadow}
           {/*
           <feDropShadow dx="-0.3" dy="-0.3" stdDeviation="0.1" flood-opacity="0.7" flood-color="white"/>
           */}
         </filter>
-        <filter id="shadow">
+        <filter id={shadowId}>
           {shadowDropShadow}
           {/*
           <feDropShadow dx="1.5" dy="1.5" stdDeviation="0.5" flood-opacity="0.9" flood-color="black"/>
@@ -147,15 +152,15 @@ const Knob: Component<{
         </filter>
       </defs>
       <circle cx="0" cy="0" r="15.0" fill="rgb(36, 36, 37)" stroke="rgb(28, 28, 29)" stroke-width="0.5"></circle>
-      <g filter="url(#shadow)">
-        <g filter="url(#lights)">
-          <g clip-path="url(#shape-mask)">
-            <rect x="-16" y="-16" width="32" height="32" fill="url(#shape-fill)"></rect>
+      <g filter={`url(#${shadowId})`}>
+        <g filter={`url(#${lightsId})`}>
+          <g clip-path={`url(#${shapeMaskId})`}>
+            <rect x="-16" y="-16" width="32" height="32" fill={`url(#${shapeFillId})`}></rect>
             <circle cx="-28" cy="-28" r="32" fill="rgba(250, 250, 255, .16)"></circle>
           </g>
         </g>
       </g>
-      <g style="transform: rotate(var(--rot))">
+      <g style={`transform: rotate(${angle()}deg)`}>
         <circle cx="0" cy="-11" r="1.1" fill="black"></circle>
         <circle cx="0" cy="-11" r="0.8" fill="white"></circle>
       </g>

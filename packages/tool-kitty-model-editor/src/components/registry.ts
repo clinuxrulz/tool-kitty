@@ -16,6 +16,7 @@ import { colourComponentType } from "./ColourComponent";
 import { applyColourComponentType } from "./ApplyColourComponent";
 import { applyCheckersComponentType } from "./ApplyCheckersComponent";
 import { knobComponentType } from "tool-kitty-instrument-editor/src/components/KnobComponent";
+import { unboundKnobComponentType } from "./UnboundKnobComponent";
 
 export const registry = new EcsRegistry([
   ...defaultRegistry.componentTypes,
@@ -34,6 +35,7 @@ export const registry = new EcsRegistry([
   sphereComponentType,
   transform2DComponentType,
   translateComponentType,
+  unboundKnobComponentType,
   unionComponentType,
   vec3ComponentType,
 ]);
