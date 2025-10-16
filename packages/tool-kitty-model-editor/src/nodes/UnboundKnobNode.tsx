@@ -37,7 +37,9 @@ export class UnboundKnobNode implements Node<NodeTypeExt,NodeExt,UnboundKnobStat
     ]);
     this.ui = createMemo(() => () => {
       let [ textValue, setTextValue, ] = createSignal(state.value.toFixed(3));
+      let [ textSensitivity, setTextSensitivity, ] = createSignal(state.sensitivity.toFixed(3));
       let skipSetTextValue = false;
+      let skipSetTextSensitivity = false;
       createEffect(on(
         () => state.value,
         (value) => {
@@ -47,6 +49,15 @@ export class UnboundKnobNode implements Node<NodeTypeExt,NodeExt,UnboundKnobStat
           setTextValue(value.toFixed(3));
         },
         { defer: true, },
+      ));
+      createEffect(on(
+        () => state.sensitivity,
+        (sensitivity) => {
+          if (skipSetTextSensitivity) {
+            return;
+          }
+          setTextSensitivity(sensitivity.toFixed(3));
+        },
       ));
       return (
         <div
@@ -75,11 +86,31 @@ export class UnboundKnobNode implements Node<NodeTypeExt,NodeExt,UnboundKnobStat
               }
             }}
           />
+          <label class="label" style="color: black;">Sensitivity</label>
+          <input
+            class="input"
+            type="text"
+            size={5}
+            value={textSensitivity()}
+            onInput={(e) => {
+              let textSensitivity = e.currentTarget.value;
+              setTextSensitivity(textSensitivity);
+              let value = Number.parseFloat(textSensitivity.trim());
+              if (!Number.isNaN(value)) {
+                try {
+                  skipSetTextSensitivity = true;
+                  setState("sensitivity", value);
+                } finally {
+                  skipSetTextSensitivity = false;
+                }
+              }
+            }}
+          />
           <Knob
             size={100}
             indentSize={10}
             minValue={0.0}
-            maxValue={100.0}
+            maxValue={100.0 * state.sensitivity}
             unbounded={true}
             value={state.value}
             setValue={(x) => setState("value", x)}
