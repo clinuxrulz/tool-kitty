@@ -95,6 +95,10 @@ const ModelEditor: Component<
   createEffect(on(
     [ gl, code, ],
     ([ gl, code, ]) => {
+      let nodesSystem2 = nodesSystem();
+      if (nodesSystem2 == undefined) {
+        return undefined;
+      }
       let canvas2 = canvas();
       if (canvas2 == undefined) {
         return;
@@ -139,6 +143,26 @@ const ModelEditor: Component<
         width,
         height,
       );
+      let rerender: () => void;
+      {
+        let aboutToRender = false;
+        rerender = () => {
+          if (aboutToRender) {
+            return;
+          }
+          aboutToRender = true;
+          requestAnimationFrame(() => {
+            aboutToRender = false;
+            gl.bindBuffer(gl.ARRAY_BUFFER, verticesGLBuffer);
+            gl.enableVertexAttribArray(positionLocation);
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+            gl.disableVertexAttribArray(positionLocation);
+          });
+        };
+      }
+      for (let node of nodesSystem2.nodes()) {
+        node.node.ext.init?.({ gl, program: shaderProgram, rerender, });
+      }
       const vertices = glState.vertices;
       vertices[0] = 0.0;
       vertices[1] = 0.0;

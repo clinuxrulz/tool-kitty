@@ -15,6 +15,7 @@ import { infiniteCylinderNodeType } from "./InfiniteCylinderNode";
 import { colourNodeType } from "./ColourNode";
 import { applyColourNodeType } from "./ApplyColourNode";
 import { applyCheckersNodeType } from "./ApplyCheckersNode";
+import { unboundKnobNodeType } from "./UnboundKnobNode";
 
 export const nodeRegistry = new NodeRegistry<NodeTypeExt,NodeExt>();
 
@@ -26,6 +27,7 @@ nodeRegistry.registerNodeTypes([
   differenceNodeType,
   displayNodeType,
   infiniteCylinderNodeType,
+  unboundKnobNodeType,
   numberNodeType,
   repeatNodeType,
   rotateNodeType,

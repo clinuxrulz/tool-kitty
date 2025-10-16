@@ -266,6 +266,9 @@ importers:
       tool-kitty-math:
         specifier: workspace:*
         version: link:../tool-kitty-math
+      tool-kitty-util:
+        specifier: workspace:*
+        version: link:../tool-kitty-util
     devDependencies:
       vite-plugin-dts:
         specifier: ^4.5.3
