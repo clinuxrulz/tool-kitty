@@ -18,6 +18,7 @@ import { applyCheckersComponentType } from "./ApplyCheckersComponent";
 import { knobComponentType } from "tool-kitty-instrument-editor/src/components/KnobComponent";
 import { unboundKnobComponentType } from "./UnboundKnobComponent";
 import { cylinderComponentType } from "./CylinderComponent";
+import { sinXYZFieldComponentType } from "./SinXYZFieldComponent";
 
 export const registry = new EcsRegistry([
   ...defaultRegistry.componentTypes,
@@ -34,6 +35,7 @@ export const registry = new EcsRegistry([
   repeatComponentType,
   rotateComponentType,
   scaleComponentType,
+  sinXYZFieldComponentType,
   sphereComponentType,
   transform2DComponentType,
   translateComponentType,

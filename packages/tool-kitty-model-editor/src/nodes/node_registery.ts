@@ -17,6 +17,7 @@ import { applyColourNodeType } from "./ApplyColourNode";
 import { applyCheckersNodeType } from "./ApplyCheckersNode";
 import { unboundKnobNodeType } from "./UnboundKnobNode";
 import { cylinderNodeType } from "./CylinderNode";
+import { sinXYZFieldNodeType } from "./SinXYZFieldNode";
 
 export const nodeRegistry = new NodeRegistry<NodeTypeExt,NodeExt>();
 
@@ -34,6 +35,7 @@ nodeRegistry.registerNodeTypes([
   repeatNodeType,
   rotateNodeType,
   scaleNodeType,
+  sinXYZFieldNodeType,
   sphereNodeType,
   translateNodeType,
   unionNodeType,
