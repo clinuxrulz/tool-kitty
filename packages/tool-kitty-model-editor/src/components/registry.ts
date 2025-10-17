@@ -19,6 +19,7 @@ import { knobComponentType } from "tool-kitty-instrument-editor/src/components/K
 import { unboundKnobComponentType } from "./UnboundKnobComponent";
 import { cylinderComponentType } from "./CylinderComponent";
 import { sinXYZFieldComponentType } from "./SinXYZFieldComponent";
+import { displaceComponentType } from "./DisplaceComponent";
 
 export const registry = new EcsRegistry([
   ...defaultRegistry.componentTypes,
@@ -28,6 +29,7 @@ export const registry = new EcsRegistry([
   colourComponentType,
   cylinderComponentType,
   differenceComponentType,
+  displaceComponentType,
   displayComponentType,
   infiniteCylinderComponentType,
   knobComponentType,
