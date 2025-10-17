@@ -72,6 +72,28 @@ class RepeatRotationalNode implements Node<NodeTypeExt,NodeExt,RepeatRotationalS
         `,
         "}",
       ]);
+      let colourFn = ctx.allocVar();
+      ctx.insertGlobalCode([`
+        void ${colourFn}(vec3 p, out vec4 c) {
+          float sp = 6.283185/float(${count});
+          float an = atan(p.y,p.x);
+          float id = floor(an/sp);
+          float a1 = sp*(id+0.0);
+          float a2 = sp*(id+1.0);
+          vec2 r1 = mat2(cos(a1),-sin(a1),sin(a1),cos(a1))*p.xy;
+          vec2 r2 = mat2(cos(a2),-sin(a2),sin(a2),cos(a2))*p.xy;
+          vec3 p1 = vec3(r1.x, r1.y, p.z);
+          vec3 p2 = vec3(r2.x, r2.y, p.z);
+          float d1 = ${model.sdfFuncName}(p1);
+          float d2 = ${model.sdfFuncName}(p2);
+          if (d1 < d2) {
+            p = p1;
+          } else {
+            p = p2;
+          }
+          ${model.colourFuncName}(p, c);
+        }
+      `]);
       return new Map<string,PinValue>([
         [
           "out",
@@ -79,7 +101,7 @@ class RepeatRotationalNode implements Node<NodeTypeExt,NodeExt,RepeatRotationalS
             type: "Model",
             value: {
               sdfFuncName: sdfFn,
-              colourFuncName: "defaultColour",
+              colourFuncName: colourFn,
             },
           },
         ],
