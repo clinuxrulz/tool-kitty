@@ -19,6 +19,7 @@ import { unboundKnobNodeType } from "./UnboundKnobNode";
 import { cylinderNodeType } from "./CylinderNode";
 import { sinXYZFieldNodeType } from "./SinXYZFieldNode";
 import { displaceNodeType } from "./DisplaceNode";
+import { repeatRotationalNodeType } from "./RepeatRotationalNode";
 
 export const nodeRegistry = new NodeRegistry<NodeTypeExt,NodeExt>();
 
@@ -35,6 +36,7 @@ nodeRegistry.registerNodeTypes([
   unboundKnobNodeType,
   numberNodeType,
   repeatNodeType,
+  repeatRotationalNodeType,
   rotateNodeType,
   scaleNodeType,
   sinXYZFieldNodeType,

@@ -20,6 +20,7 @@ import { unboundKnobComponentType } from "./UnboundKnobComponent";
 import { cylinderComponentType } from "./CylinderComponent";
 import { sinXYZFieldComponentType } from "./SinXYZFieldComponent";
 import { displaceComponentType } from "./DisplaceComponent";
+import { repeatRotationalComponentType } from "./RepeatRotationalComponent";
 
 export const registry = new EcsRegistry([
   ...defaultRegistry.componentTypes,
@@ -35,6 +36,7 @@ export const registry = new EcsRegistry([
   knobComponentType,
   numberComponentType,
   repeatComponentType,
+  repeatRotationalComponentType,
   rotateComponentType,
   scaleComponentType,
   sinXYZFieldComponentType,
