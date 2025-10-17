@@ -17,6 +17,7 @@ import { applyColourComponentType } from "./ApplyColourComponent";
 import { applyCheckersComponentType } from "./ApplyCheckersComponent";
 import { knobComponentType } from "tool-kitty-instrument-editor/src/components/KnobComponent";
 import { unboundKnobComponentType } from "./UnboundKnobComponent";
+import { cylinderComponentType } from "./CylinderComponent";
 
 export const registry = new EcsRegistry([
   ...defaultRegistry.componentTypes,
@@ -24,6 +25,7 @@ export const registry = new EcsRegistry([
   applyColourComponentType,
   boxComponentType,
   colourComponentType,
+  cylinderComponentType,
   differenceComponentType,
   displayComponentType,
   infiniteCylinderComponentType,
