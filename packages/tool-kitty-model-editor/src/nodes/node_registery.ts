@@ -20,12 +20,14 @@ import { cylinderNodeType } from "./CylinderNode";
 import { sinXYZFieldNodeType } from "./SinXYZFieldNode";
 import { displaceNodeType } from "./DisplaceNode";
 import { repeatRotationalNodeType } from "./RepeatRotationalNode";
+import { bendNodeType } from "./BendNode";
 
 export const nodeRegistry = new NodeRegistry<NodeTypeExt,NodeExt>();
 
 nodeRegistry.registerNodeTypes([
   applyCheckersNodeType,
   applyColourNodeType,
+  bendNodeType,
   boxNodeType,
   colourNodeType,
   cylinderNodeType,

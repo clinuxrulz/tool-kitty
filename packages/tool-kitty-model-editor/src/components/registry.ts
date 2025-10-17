@@ -21,11 +21,13 @@ import { cylinderComponentType } from "./CylinderComponent";
 import { sinXYZFieldComponentType } from "./SinXYZFieldComponent";
 import { displaceComponentType } from "./DisplaceComponent";
 import { repeatRotationalComponentType } from "./RepeatRotationalComponent";
+import { bendComponentType } from "./BendComponent";
 
 export const registry = new EcsRegistry([
   ...defaultRegistry.componentTypes,
   applyCheckersComponentType,
   applyColourComponentType,
+  bendComponentType,
   boxComponentType,
   colourComponentType,
   cylinderComponentType,
