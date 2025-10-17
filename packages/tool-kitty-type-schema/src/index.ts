@@ -109,7 +109,9 @@ export type TypeSchemaType<A> =
                         ? A
                         : A extends TypeSchemaJson
                           ? any
-                          : never;
+                          : A extends TypeSchemaDefault<infer B>
+                            ? B
+                            : never;
 
 export function tsMaybeUndefined<TS>(
   element: TS,
