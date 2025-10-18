@@ -3,6 +3,7 @@ import { NodeExt, NodeTypeExt } from "../NodeExt";
 import { Accessor, createMemo } from "solid-js";
 import { PinValue } from "../CodeGenCtx";
 import { displaceComponentType, DisplaceState } from "../components/DisplaceComponent";
+import { glsl } from "@bigmistqke/view.gl/tag";
 
 export class DisplaceNodeType implements NodeType<NodeTypeExt,NodeExt,DisplaceState> {
   componentType = displaceComponentType;
@@ -57,26 +58,26 @@ class DisplaceNode implements Node<NodeTypeExt,NodeExt,DisplaceState> {
       }
       let model2 = model2_.value;
       let sdfFn = ctx.allocVar();
-      ctx.insertGlobalCode([
-        `float ${sdfFn}(vec3 p) {`,
-        `  float d1 = ${model1.sdfFuncName}(p);`,
-        `  float d2 = ${model2.sdfFuncName}(p);`,
-        "  return d1 + d2;",
-        "}",
-      ]);
+      ctx.insertGlobalCode(glsl`
+        float ${sdfFn}(vec3 p) {
+          float d1 = ${model1.sdfFuncName}(p);
+          float d2 = ${model2.sdfFuncName}(p);
+          return d1 + d2;
+        }
+      `);
       let colourFn = ctx.allocVar();
-      ctx.insertGlobalCode([
-        `void ${colourFn}(vec3 p, out vec4 c) {`,
-        `  float d1 = ${model1.sdfFuncName}(p);`,
-        `  float d2 = ${model2.sdfFuncName}(p);`,
-        `  float t = d1 + d2;`,
-        `  vec4 c1;`,
-        `  vec4 c2;`,
-        `  ${model1.colourFuncName}(p, c1);`,
-        `  ${model2.colourFuncName}(p, c2);`,
-        `  c = (c1 * d2 + c2 * d1) / t;`,
-        "}",
-      ]);
+      ctx.insertGlobalCode(glsl`
+        void ${colourFn}(vec3 p, out vec4 c) {
+          float d1 = ${model1.sdfFuncName}(p);
+          float d2 = ${model2.sdfFuncName}(p);
+          float t = d1 + d2;
+          vec4 c1;
+          vec4 c2;
+          ${model1.colourFuncName}(p, c1);
+          ${model2.colourFuncName}(p, c2);
+          c = (c1 * d2 + c2 * d1) / t;
+        }
+      `);
       return new Map<string,PinValue>([
         [
           "out",

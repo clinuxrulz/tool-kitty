@@ -3,6 +3,7 @@ import { NodeExt, NodeTypeExt } from "../NodeExt";
 import { Accessor, createMemo } from "solid-js";
 import { PinValue } from "../CodeGenCtx";
 import { bendComponentType, BendState } from "../components/BendComponent";
+import { glsl } from "@bigmistqke/view.gl/tag";
 
 export class BendNodeType implements NodeType<NodeTypeExt,NodeExt,BendState> {
   componentType = bendComponentType;
@@ -57,16 +58,16 @@ class BendNode implements Node<NodeTypeExt,NodeExt,BendState> {
       }
       let k = k_.value;
       let sdfFn = ctx.allocVar();
-      ctx.insertGlobalCode([
-        `float ${sdfFn}(vec3 p) {`,
-        `  float k = ${k};
-    float c = cos(k*p.x);
-    float s = sin(k*p.x);
-    mat2  m = mat2(c,-s,s,c);
-    vec3  q = vec3(m*p.xy,p.z);
-    return ${model.sdfFuncName}(q);`,
-                "}",
-      ]);
+      ctx.insertGlobalCode(glsl`
+        float ${sdfFn}(vec3 p) {
+          float k = ${k};
+          float c = cos(k*p.x);
+          float s = sin(k*p.x);
+          mat2  m = mat2(c,-s,s,c);
+          vec3  q = vec3(m*p.xy,p.z);
+          return ${model.sdfFuncName}(q);
+        }
+      `);
       return new Map<string,PinValue>([
         [
           "out",

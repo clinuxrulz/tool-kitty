@@ -1,3 +1,6 @@
+import { glsl } from "@bigmistqke/view.gl/tag";
+import type { GLSL } from "@bigmistqke/view.gl";
+
 export type PinValue = {
   type: "Atom",
   value: string,
@@ -11,28 +14,28 @@ export type PinValue = {
 
 export class CodeGenCtx {
   private nextId: number = 0;
-  private globalCode: string[] = [];
-  private mainBody: string[] = [];
-  private colourBody: string[] = [];
+  private globalCode: GLSL[] = [];
+  private mainBody: GLSL[] = [];
+  private colourBody: GLSL[] = [];
 
   allocVar() {
     return `x${this.nextId++}`;
   }
 
-  insertGlobalCode(code: string[]) {
-    this.globalCode.push(...code);
+  insertGlobalCode(code: GLSL) {
+    this.globalCode.push(code);
   }
 
-  insertCode(code: string[]) {
-    this.mainBody.push(...code);
+  insertCode(code: GLSL) {
+    this.mainBody.push(code);
   }
 
-  insertColourCode(code: string[]) {
-    this.colourBody.push(...code);
+  insertColourCode(code: GLSL) {
+    this.colourBody.push(code);
   }
 
-  genCode(): string {
-    let result = `precision highp float;
+  genCode() {
+    return glsl`precision highp float;
 uniform vec2 resolution;
 uniform float uFocalLength;
 
@@ -40,17 +43,17 @@ void defaultColour(vec3 p, out vec4 c) {
   c = vec4(1.0, 1.0, 1.0, 1.0);
 }
 
-${this.globalCode.join("\r\n")}
+${this.globalCode}
 
 float map(vec3 p) {
   float d = 10000.0;
-  ${this.mainBody.join("\r\n  ")}
+  ${this.mainBody}
   return d;
 }
 
 void colourMap(vec3 p, out vec4 c) {
   float d = 10000.0;
-  ${this.colourBody.join("\r\n  ")}
+  ${this.colourBody}
 }
 
 bool march(vec3 ro, vec3 rd, out float t) {
@@ -103,7 +106,6 @@ void main(void) {
   colourMap(p, c);
   gl_FragColor = vec4(c.r * s, c.g * s, c.b * s, c.a);
 }`;
-    return result;
   }
 }
 

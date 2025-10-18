@@ -12,6 +12,7 @@
     "vite-plugin-dts": "^4.5.3"
   },
   "dependencies": {
+    "@bigmistqke/view.gl": "^0.1.8",
     "tool-kitty-components": "workspace: *",
     "tool-kitty-ecs": "workspace:*",
     "tool-kitty-math": "workspace:*",

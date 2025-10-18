@@ -3,6 +3,7 @@ import { NodeExt, NodeTypeExt } from "../NodeExt";
 import { Accessor, createMemo } from "solid-js";
 import { PinValue } from "../CodeGenCtx";
 import { rotateComponentType, RotateState } from "../components/RotateComponent";
+import { glsl } from "@bigmistqke/view.gl/tag";
 
 export class RotateNodeType implements NodeType<NodeTypeExt,NodeExt,RotateState> {
   componentType = rotateComponentType;
@@ -67,25 +68,25 @@ class RotateNode implements Node<NodeTypeExt,NodeExt,RotateState> {
       }
       let angle = angle_.value;
       let sdfFn = ctx.allocVar();
-      ctx.insertGlobalCode([
-        `float ${sdfFn}(vec3 p) {`,
-        `  float a = 0.5 * ${angle} * ${Math.PI / 180.0};`,
-        `  vec3 tmp = sin(a) * normalize(${axis});`,
-        `  vec4 q = vec4(tmp.x, tmp.y, tmp.z, cos(a));`,
-        "  p = p + 2.0 * cross(-q.xyz, cross(-q.xyz, p) + q.w * p);",
-        `  return ${model.sdfFuncName}(p);`,
-        "}",
-      ]);
+      ctx.insertGlobalCode(glsl`
+        float ${sdfFn}(vec3 p) {
+          float a = 0.5 * ${angle} * ${Math.PI / 180.0};
+          vec3 tmp = sin(a) * normalize(${axis});
+          vec4 q = vec4(tmp.x, tmp.y, tmp.z, cos(a));
+          p = p + 2.0 * cross(-q.xyz, cross(-q.xyz, p) + q.w * p);
+          return ${model.sdfFuncName}(p);
+        }
+      `);
       let colourFn = ctx.allocVar();
-      ctx.insertGlobalCode([
-        `void ${colourFn}(vec3 p, out vec4 c) {`,
-        `  float a = 0.5 * ${angle} * ${Math.PI / 180.0};`,
-        `  vec3 tmp = sin(a) * normalize(${axis});`,
-        `  vec4 q = vec4(tmp.x, tmp.y, tmp.z, cos(a));`,
-        "  p = p + 2.0 * cross(-q.xyz, cross(-q.xyz, p) + q.w * p);",
-        `  ${model.colourFuncName}(p, c);`,
-        "}",
-      ]);
+      ctx.insertGlobalCode(glsl`
+        void ${colourFn}(vec3 p, out vec4 c) {
+          float a = 0.5 * ${angle} * ${Math.PI / 180.0};
+          vec3 tmp = sin(a) * normalize(${axis});
+          vec4 q = vec4(tmp.x, tmp.y, tmp.z, cos(a));
+          p = p + 2.0 * cross(-q.xyz, cross(-q.xyz, p) + q.w * p);
+          ${model.colourFuncName}(p, c);
+        }
+      `);
       return new Map<string,PinValue>([
         [
           "out",

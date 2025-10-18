@@ -3,6 +3,7 @@ import { boxComponentType, BoxState } from "../components/BoxComponent";
 import { NodeExt, NodeTypeExt } from "../NodeExt";
 import { Accessor, createMemo } from "solid-js";
 import { PinValue } from "../CodeGenCtx";
+import { glsl } from "@bigmistqke/view.gl/tag";
 
 export class BoxNodeType implements NodeType<NodeTypeExt,NodeExt,BoxState> {
   componentType = boxComponentType;
@@ -47,18 +48,12 @@ class BoxNode implements Node<NodeTypeExt,NodeExt,BoxState> {
       }
       let size = size_.value;
       let sdfFn = ctx.allocVar();
-      ctx.insertGlobalCode([
-        `float ${sdfFn}(vec3 p) {`,
-        `  vec3 q = abs(p) - 0.5 * ${size};`,
-        `  return length(max(q,0.0)) + min(max(q.x,max(q.y,q.z)),0.0);`,
-        "}",
-      ]);
-      let colourFn = ctx.allocVar();
-      ctx.insertGlobalCode([
-        `void ${colourFn}(vec3 p, out vec4 c) {`,
-        `  c = vec4(0.7, 0.7, 0.7, 1.0);`,
-        "}",
-      ]);
+      ctx.insertGlobalCode(glsl`
+        float ${sdfFn}(vec3 p) {
+          vec3 q = abs(p) - 0.5 * ${size};
+          return length(max(q,0.0)) + min(max(q.x,max(q.y,q.z)),0.0);
+        }
+      `);
       return new Map<string,PinValue>([
         [
           "out",
@@ -66,7 +61,7 @@ class BoxNode implements Node<NodeTypeExt,NodeExt,BoxState> {
             type: "Model",
             value: {
               sdfFuncName: sdfFn,
-              colourFuncName: colourFn,
+              colourFuncName: "defaultColour",
             },
           },
         ],

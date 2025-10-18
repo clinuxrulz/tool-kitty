@@ -3,6 +3,7 @@ import { NodeExt, NodeTypeExt } from "../NodeExt";
 import { Accessor, createMemo } from "solid-js";
 import { PinValue } from "../CodeGenCtx";
 import { unionComponentType, UnionState } from "../components/UnionComponent";
+import { glsl } from "@bigmistqke/view.gl/tag";
 
 export class UnionNodeType implements NodeType<NodeTypeExt,NodeExt,UnionState> {
   componentType = unionComponentType;
@@ -68,35 +69,35 @@ class UnionNode implements Node<NodeTypeExt,NodeExt,UnionState> {
       let sdfFn = ctx.allocVar();
       if (k_?.type == "Atom") {
         let k = k_.value;
-        ctx.insertGlobalCode([
-          `float ${sdfFn}(vec3 p) {`,
-          `  float k = ${k} * 4.0;`,
-          `  float d1 = ${model1.sdfFuncName}(p);`,
-          `  float d2 = ${model2.sdfFuncName}(p);`,
-          `  float h = max(k-abs(d1-d2),0.0);`,
-          "  return min(d1, d2) - h*h*0.25/k;",
-          "}",
-        ]);
+        ctx.insertGlobalCode(glsl`
+          float ${sdfFn}(vec3 p) {
+            float k = ${k} * 4.0;
+            float d1 = ${model1.sdfFuncName}(p);
+            float d2 = ${model2.sdfFuncName}(p);
+            float h = max(k-abs(d1-d2),0.0);
+            return min(d1, d2) - h*h*0.25/k;
+          }
+        `);
       } else {
-        ctx.insertGlobalCode([
-          `float ${sdfFn}(vec3 p) {`,
-          `  return min(${model1.sdfFuncName}(p), ${model2.sdfFuncName}(p));`,
-          "}",
-        ]);
+        ctx.insertGlobalCode(glsl`
+          float ${sdfFn}(vec3 p) {
+            return min(${model1.sdfFuncName}(p), ${model2.sdfFuncName}(p));
+          }
+        `);
       }
       let colourFn = ctx.allocVar();
-      ctx.insertGlobalCode([
-        `void ${colourFn}(vec3 p, out vec4 c) {`,
-        `  float d1 = ${model1.sdfFuncName}(p);`,
-        `  float d2 = ${model2.sdfFuncName}(p);`,
-        `  float t = d1 + d2;`,
-        `  vec4 c1;`,
-        `  vec4 c2;`,
-        `  ${model1.colourFuncName}(p, c1);`,
-        `  ${model2.colourFuncName}(p, c2);`,
-        `  c = (c1 * d2 + c2 * d1) / t;`,
-        "}",
-      ]);
+      ctx.insertGlobalCode(glsl`
+        void ${colourFn}(vec3 p, out vec4 c) {
+          float d1 = ${model1.sdfFuncName}(p);
+          float d2 = ${model2.sdfFuncName}(p);
+          float t = d1 + d2;
+          vec4 c1;
+          vec4 c2;
+          ${model1.colourFuncName}(p, c1);
+          ${model2.colourFuncName}(p, c2);
+          c = (c1 * d2 + c2 * d1) / t;
+        }
+      `);
       return new Map<string,PinValue>([
         [
           "out",

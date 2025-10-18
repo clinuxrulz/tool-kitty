@@ -3,6 +3,7 @@ import { NodeExt, NodeTypeExt } from "../NodeExt";
 import { Accessor, createMemo } from "solid-js";
 import { PinValue } from "../CodeGenCtx";
 import { repeatRotationalComponentType, RepeatRotationalState } from "../components/RepeatRotationalComponent";
+import { glsl } from "@bigmistqke/view.gl/tag";
 
 export class RepeatRotationalNodeType implements NodeType<NodeTypeExt,NodeExt,RepeatRotationalState> {
   componentType = repeatRotationalComponentType;
@@ -57,9 +58,9 @@ class RepeatRotationalNode implements Node<NodeTypeExt,NodeExt,RepeatRotationalS
       }
       let count = count_.value;
       let sdfFn = ctx.allocVar();
-      ctx.insertGlobalCode([
-        `float ${sdfFn}(vec3 p) {`,
-        `  float sp = 6.283185/float(${count});
+      ctx.insertGlobalCode(glsl`
+        float ${sdfFn}(vec3 p) {
+          float sp = 6.283185/float(${count});
           float an = atan(p.y,p.x);
           float id = floor(an/sp);
 
@@ -69,11 +70,10 @@ class RepeatRotationalNode implements Node<NodeTypeExt,NodeExt,RepeatRotationalS
           vec2 r2 = mat2(cos(a2),-sin(a2),sin(a2),cos(a2))*p.xy;
 
           return min(${model.sdfFuncName}(vec3(r1.x, r1.y, p.z)), ${model.sdfFuncName}(vec3(r2.x,r2.y,p.z)));
-        `,
-        "}",
-      ]);
+        }
+      `);
       let colourFn = ctx.allocVar();
-      ctx.insertGlobalCode([`
+      ctx.insertGlobalCode(glsl`
         void ${colourFn}(vec3 p, out vec4 c) {
           float sp = 6.283185/float(${count});
           float an = atan(p.y,p.x);
@@ -93,7 +93,7 @@ class RepeatRotationalNode implements Node<NodeTypeExt,NodeExt,RepeatRotationalS
           }
           ${model.colourFuncName}(p, c);
         }
-      `]);
+      `);
       return new Map<string,PinValue>([
         [
           "out",

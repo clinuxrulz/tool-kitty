@@ -3,6 +3,8 @@ import { NodeExt, NodeTypeExt } from "../NodeExt";
 import { unboundKnobComponentType, UnboundKnobState } from "../components/UnboundKnobComponent";
 import { Accessor, Component, createEffect, createMemo, createSignal, on } from "solid-js";
 import { Knob } from "tool-kitty-components";
+import { uniformView } from "@bigmistqke/view.gl";
+import { compile, glsl, uniform } from "@bigmistqke/view.gl/tag";
 
 export class UnboundKnobNodeType implements NodeType<NodeTypeExt, NodeExt, UnboundKnobState> {
   componentType = unboundKnobComponentType;
@@ -120,25 +122,23 @@ export class UnboundKnobNode implements Node<NodeTypeExt,NodeExt,UnboundKnobStat
       );
     });
     this.disablePan = disablePan;
-    let valueIdent: string | undefined = undefined;
-    this.ext.init = ({ gl, program, rerender, }) => {
-      if (valueIdent == undefined) {
-        return;
-      }
-      let valueLocation = gl.getUniformLocation(program, valueIdent);
-      createEffect(on(
-        () => state.value,
-        (value) => {
-          gl.uniform1f(valueLocation, value);
-          rerender();
-        }
-      ));
-    };
-    this.ext.generateCode = ({ ctx, inputs }) => {
-      valueIdent = ctx.allocVar();
-      ctx.insertGlobalCode([
-        `uniform float ${valueIdent};`
-      ]);
+    this.ext.generateCode = ({ ctx, inputs, onInit }) => {
+      let valueIdent = ctx.allocVar();
+      let code = glsl`
+        ${uniform.float(valueIdent)}
+      `;
+      let schema = compile.toSchema(code);
+      ctx.insertGlobalCode(code);
+      onInit(({ gl, program, rerender, }) => {
+        let uniforms = uniformView(gl, program, schema.uniforms);
+        createEffect(on(
+          () => state.value,
+          (value) => {
+            uniforms[valueIdent].set(value);
+            rerender();
+          }
+        ));
+      });
       return new Map([
         [
           "out",

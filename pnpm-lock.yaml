@@ -339,6 +339,9 @@ importers:
 
   packages/tool-kitty-model-editor:
     dependencies:
+      '@bigmistqke/view.gl':
+        specifier: ^0.1.8
+        version: 0.1.8
       tool-kitty-components:
         specifier: 'workspace: *'
         version: link:../tool-kitty-components
@@ -629,6 +632,9 @@ packages:
     engines: {node: '>=18', pnpm: '>=9.0.0'}
     peerDependencies:
       solid-js: ^1.6.0
+
+  '@bigmistqke/view.gl@0.1.8':
+    resolution: {integrity: sha512-6iG/Ok2GhAQpaXyxuIFGvGAKmnRElYDimViBPCVfd+WoTOp9xQYXZlohRQlhLCRcfduuqyx2enCzCOLwy6ZC4A==}
 
   '@cbor-extract/cbor-extract-darwin-arm64@2.2.0':
     resolution: {integrity: sha512-P7swiOAdF7aSi0H+tHtHtr6zrpF3aAq/W9FXx5HektRvLTM2O89xCyXF3pk7pLc7QpaY7AoaE8UowVf9QBdh3w==}
@@ -4062,6 +4068,8 @@ snapshots:
       '@solid-primitives/range': 0.2.0(solid-js@1.9.3)
       clsx: 2.1.1
       solid-js: 1.9.3
+
+  '@bigmistqke/view.gl@0.1.8': {}
 
   '@cbor-extract/cbor-extract-darwin-arm64@2.2.0':
     optional: true

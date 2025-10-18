@@ -3,6 +3,7 @@ import { cylinderComponentType, CylinderState } from "../components/CylinderComp
 import { NodeExt, NodeTypeExt } from "../NodeExt";
 import { Accessor, createMemo } from "solid-js";
 import { PinValue } from "../CodeGenCtx";
+import { glsl } from "@bigmistqke/view.gl/tag";
 
 export class CylinderNodeType implements NodeType<NodeTypeExt,NodeExt,CylinderState> {
   componentType = cylinderComponentType;
@@ -57,12 +58,12 @@ class CylinderNode implements Node<NodeTypeExt,NodeExt,CylinderState> {
       }
       let height = height_.value;
       let sdfFn = ctx.allocVar();
-      ctx.insertGlobalCode([
-        `float ${sdfFn}(vec3 p) {`,
-          `vec2 d = abs(vec2(length(p.xz),p.y)) - vec2(${radius},${height});`,
-          `return min(max(d.x,d.y),0.0) + length(max(d,0.0));`,
-        "}",
-      ]);
+      ctx.insertGlobalCode(glsl`
+        float ${sdfFn}(vec3 p) {
+          vec2 d = abs(vec2(length(p.xz),p.y)) - vec2(${radius},${height});
+          return min(max(d.x,d.y),0.0) + length(max(d,0.0));
+        }
+      `);
       return new Map<string,PinValue>([
         [
           "out",

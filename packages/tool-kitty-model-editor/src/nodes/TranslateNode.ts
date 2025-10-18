@@ -3,6 +3,7 @@ import { NodeExt, NodeTypeExt } from "../NodeExt";
 import { Accessor, createMemo } from "solid-js";
 import { PinValue } from "../CodeGenCtx";
 import { translateComponentType, TranslateState } from "../components/TranslateComponent";
+import { glsl } from "@bigmistqke/view.gl/tag";
 
 export class TranslateNodeType implements NodeType<NodeTypeExt,NodeExt,TranslateState> {
   componentType = translateComponentType;
@@ -57,17 +58,17 @@ class TranslateNode implements Node<NodeTypeExt,NodeExt,TranslateState> {
       }
       let offset = offset_.value;
       let sdfFn = ctx.allocVar();
-      ctx.insertGlobalCode([
-        `float ${sdfFn}(vec3 p) {`,
-        `  return ${model.sdfFuncName}(p - ${offset});`,
-        "}",
-      ]);
+      ctx.insertGlobalCode(glsl`
+        float ${sdfFn}(vec3 p) {
+          return ${model.sdfFuncName}(p - ${offset});
+        }
+      `);
       let colourFn = ctx.allocVar();
-      ctx.insertGlobalCode([
-        `void ${colourFn}(vec3 p, out vec4 c) {`,
-        `  ${model.colourFuncName}(p - ${offset}, c);`,
-        "}",
-      ]);
+      ctx.insertGlobalCode(glsl`
+        void ${colourFn}(vec3 p, out vec4 c) {
+          ${model.colourFuncName}(p - ${offset}, c);
+        }
+      `);
       return new Map<string,PinValue>([
         [
           "out",

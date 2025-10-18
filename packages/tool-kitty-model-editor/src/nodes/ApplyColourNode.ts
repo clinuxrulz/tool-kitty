@@ -3,6 +3,7 @@ import { applyColourComponentType, ApplyColourState } from "../components/ApplyC
 import { NodeExt, NodeTypeExt } from "../NodeExt";
 import { Accessor, batch, Component, createMemo } from "solid-js";
 import { PinValue } from "../CodeGenCtx";
+import { glsl } from "@bigmistqke/view.gl/tag";
 
 export class ApplyColourNodeType implements NodeType<NodeTypeExt,NodeExt,ApplyColourState> {
   componentType = applyColourComponentType;
@@ -57,11 +58,11 @@ class ApplyColourNode implements Node<NodeTypeExt,NodeExt,ApplyColourState> {
       }
       let colour = colour_.value;
       let applyColourFn = ctx.allocVar();
-      ctx.insertGlobalCode([
-        `void ${applyColourFn}(vec3 p, out vec4 c) {`,
-        `  c = vec4(${colour});`,
-        "}",
-      ]);
+      ctx.insertGlobalCode(glsl`
+        void ${applyColourFn}(vec3 p, out vec4 c) {
+          c = vec4(${colour});
+        }
+      `);
       return new Map<string,PinValue>([
         [
           "out",

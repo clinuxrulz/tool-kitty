@@ -7,6 +7,7 @@ import { nodeRegistry } from "./nodes/node_registery";
 import { createStore } from "solid-js/store";
 import { generateCode } from "./code-gen";
 import { registry } from "./components/registry";
+import { attribute, compile, glsl, uniform } from "@bigmistqke/view.gl/tag";
 
 type GLState = {
   width: number,
@@ -115,7 +116,7 @@ const ModelEditor: Component<
       if (code == undefined) {
         return;
       }
-      let newFramementShader = loadShader(gl, gl.FRAGMENT_SHADER, code);
+      let newFramementShader = loadShader(gl, gl.FRAGMENT_SHADER, compile.toString(code.code));
       if (newFramementShader == undefined) {
         return;
       }
@@ -160,9 +161,7 @@ const ModelEditor: Component<
           });
         };
       }
-      for (let node of nodesSystem2.nodes()) {
-        node.node.ext.init?.({ gl, program: shaderProgram, rerender, });
-      }
+      code.onInit({ gl, program: shaderProgram, rerender, });
       const vertices = glState.vertices;
       vertices[0] = 0.0;
       vertices[1] = 0.0;
@@ -266,7 +265,7 @@ const ModelEditor: Component<
                   "width": "50%",
                 }}
               >
-                <pre innerText={code()}/>
+                <pre innerText={compile.toString(code().code)}/>
               </div>
             }
           </Show>
@@ -340,7 +339,7 @@ function initShaderProgram(gl: WebGLRenderingContext, vsSource: string, fsSource
   }
 }
 
-function initGL(gl: WebGLRenderingContext, canvas: HTMLCanvasElement, fragmentShaderCode: string): GLState | undefined {
+function initGL(gl: WebGLRenderingContext, canvas: HTMLCanvasElement, fragmentShaderCode: ReturnType<typeof generateCode>): GLState | undefined {
   let width = canvas.width;
   let height = canvas.height;
   const focalLength = 0.5 * height / Math.tan(0.5 * FOV_Y * Math.PI / 180.0);
@@ -358,7 +357,7 @@ function initGL(gl: WebGLRenderingContext, canvas: HTMLCanvasElement, fragmentSh
     gl_Position = uModelViewMatrix * aVertexPosition;
   }
   `,
-      fragmentShaderCode,
+      compile.toString(fragmentShaderCode.code),
     );
     if (program == undefined) {
       return undefined;

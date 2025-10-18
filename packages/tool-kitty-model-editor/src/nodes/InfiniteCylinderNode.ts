@@ -3,6 +3,7 @@ import { infiniteCylinderComponentType, InfiniteCylinderState } from "../compone
 import { NodeExt, NodeTypeExt } from "../NodeExt";
 import { Accessor, createMemo } from "solid-js";
 import { PinValue } from "../CodeGenCtx";
+import { glsl } from "@bigmistqke/view.gl/tag";
 
 export class InfiniteCylinderNodeType implements NodeType<NodeTypeExt,NodeExt,InfiniteCylinderState> {
   componentType = infiniteCylinderComponentType;
@@ -47,17 +48,17 @@ class InfiniteCylinderNode implements Node<NodeTypeExt,NodeExt,InfiniteCylinderS
       }
       let radius = radius_.value;
       let sdfFn = ctx.allocVar();
-      ctx.insertGlobalCode([
-        `float ${sdfFn}(vec3 p) {`,
-        `  return length(p.xy) - ${radius};`,
-        "}",
-      ]);
+      ctx.insertGlobalCode(glsl`
+        float ${sdfFn}(vec3 p) {
+          return length(p.xy) - ${radius};
+        }
+      `);
       let colourFn = ctx.allocVar();
-      ctx.insertGlobalCode([
-        `void ${colourFn}(vec3 p, out vec4 c) {`,
-        `  c = vec4(0.7, 0.7, 0.7, 1.0);`,
-        "}",
-      ]);
+      ctx.insertGlobalCode(glsl`
+        void ${colourFn}(vec3 p, out vec4 c) {
+          c = vec4(0.7, 0.7, 0.7, 1.0);
+        }
+      `);
       return new Map<string,PinValue>([
         [
           "out",

@@ -63,7 +63,7 @@ export function cloneSubGraph(node: CodeGenNode, recordNewNode: (x: CodeGenNode)
   return clonedNodesMap.get(node)!;
 }
 
-export function generateCode(params: { nodesSystem: NodesSystem<NodeTypeExt,NodeExt>, }): string {
+export function generateCode(params: { nodesSystem: NodesSystem<NodeTypeExt,NodeExt>, }) {
   let nodesSystem = params.nodesSystem;
   // Duplicate the graph before applying macros
   let codeGenNodes: CodeGenNode[] = [];
@@ -186,6 +186,7 @@ export function generateCode(params: { nodesSystem: NodesSystem<NodeTypeExt,Node
     }
   }
   let nodeOutputAtomsMap = new Map<CodeGenNode,Map<string,PinValue>>();
+  let onInits: ((params: { gl: WebGLRenderingContext, program: WebGLProgram, rerender: () => void, }) => void)[] = [];
   for (let i = 0; i < queue.length; ++i) {
     let nodes = queue[i] ?? [];
     for (let node of nodes) {
@@ -201,6 +202,7 @@ export function generateCode(params: { nodesSystem: NodesSystem<NodeTypeExt,Node
         let outputAtoms = node2.ext.generateCode({
           ctx: codeGenCtx,
           inputs: inputAtomsMap,
+          onInit: (cb) => onInits.push(cb),
         });
         if (outputAtoms != undefined) {
           nodeOutputAtomsMap.set(node, outputAtoms);
@@ -208,7 +210,15 @@ export function generateCode(params: { nodesSystem: NodesSystem<NodeTypeExt,Node
       }
     }
   }
-  return codeGenCtx.genCode();
+  let onInit = (params: { gl: WebGLRenderingContext, program: WebGLProgram, rerender: () => void, }) => {
+    for (let onInit2 of onInits) {
+      onInit2(params);
+    }
+  };
+  return {
+    code: codeGenCtx.genCode(),
+    onInit,
+  };
 }
 
 function updateHeights(nodes: CodeGenNode[]) {

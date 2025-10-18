@@ -3,6 +3,7 @@ import { sinXYZFieldComponentType, SinXYZFieldState } from "../components/SinXYZ
 import { NodeExt, NodeTypeExt } from "../NodeExt";
 import { Accessor, createMemo } from "solid-js";
 import { PinValue } from "../CodeGenCtx";
+import { glsl } from "@bigmistqke/view.gl/tag";
 
 export class SinXYZFieldNodeType implements NodeType<NodeTypeExt,NodeExt,SinXYZFieldState> {
   componentType = sinXYZFieldComponentType;
@@ -57,11 +58,11 @@ class SinXYZFieldNode implements Node<NodeTypeExt,NodeExt,SinXYZFieldState> {
       }
       let magnitude = magnitude_.value;
       let sdfFn = ctx.allocVar();
-      ctx.insertGlobalCode([
-        `float ${sdfFn}(vec3 p) {`,
-        `  return ${magnitude} * sin(p.x*${frequency}) * sin(p.y*${frequency}) * sin(p.z*${frequency});`,
-        "}",
-      ]);
+      ctx.insertGlobalCode(glsl`
+        float ${sdfFn}(vec3 p) {
+          return ${magnitude} * sin(p.x*${frequency}) * sin(p.y*${frequency}) * sin(p.z*${frequency});
+        }
+      `);
       return new Map<string,PinValue>([
         [
           "out",

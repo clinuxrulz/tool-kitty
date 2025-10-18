@@ -3,6 +3,7 @@ import { displayComponentType, DisplayState } from "../components/DisplayCompone
 import { Node, NodeParams, NodeType, Pin } from "tool-kitty-node-editor";
 import { NodeExt, NodeTypeExt } from "../NodeExt";
 import { PinValue } from "../CodeGenCtx";
+import { glsl } from "@bigmistqke/view.gl/tag";
 
 export class DisplayNodeType implements NodeType<NodeTypeExt,NodeExt,DisplayState> {
   componentType = displayComponentType;
@@ -49,17 +50,17 @@ class DisplayNode implements Node<NodeTypeExt,NodeExt,DisplayState> {
       }
       let in2 = in_.value;
       let { sdfFuncName, colourFuncName, } = in2;
-      ctx.insertCode([
-        `d = min(d, ${sdfFuncName}(p));`
-      ]);
+      ctx.insertCode(glsl`
+        d = min(d, ${sdfFuncName}(p));
+      `);
       let d = ctx.allocVar();
-      ctx.insertColourCode([
-        `float ${d} = ${sdfFuncName}(p);`,
-        `if (${d} < d) {`,
-        `  d = ${d};`,
-        `  ${colourFuncName}(p, c);`,
-        "}",
-      ]);
+      ctx.insertColourCode(glsl`
+        float ${d} = ${sdfFuncName}(p);
+        if (${d} < d) {
+          d = ${d};
+          ${colourFuncName}(p, c);
+        }
+      `);
       return new Map<string,PinValue>();
     };
   }

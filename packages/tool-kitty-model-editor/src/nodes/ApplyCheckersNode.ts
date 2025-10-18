@@ -3,6 +3,7 @@ import { applyCheckersComponentType, ApplyCheckersState } from "../components/Ap
 import { NodeExt, NodeTypeExt } from "../NodeExt";
 import { Accessor, batch, Component, createMemo } from "solid-js";
 import { PinValue } from "../CodeGenCtx";
+import { glsl } from "@bigmistqke/view.gl/tag";
 
 export class ApplyCheckersNodeType implements NodeType<NodeTypeExt,NodeExt,ApplyCheckersState> {
   componentType = applyCheckersComponentType;
@@ -77,17 +78,17 @@ class ApplyCheckersNode implements Node<NodeTypeExt,NodeExt,ApplyCheckersState> 
       }
       let size = size_.value;
       let applyCheckersFn = ctx.allocVar();
-      ctx.insertGlobalCode([
-        `void ${applyCheckersFn}(vec3 p, out vec4 c) {`,
-        `  p = floor(p / ${size});`,
-        `  float a = mod(p.x + p.y + p.z, 2.0);`,
-        "  if (a < 0.5) {",
-        `    c = vec4(${colour1});`,
-        "  } else {",
-        `    c = vec4(${colour2});`,
-        "  }",
-        "}",
-      ]);
+      ctx.insertGlobalCode(glsl`
+        void ${applyCheckersFn}(vec3 p, out vec4 c) {
+          p = floor(p / ${size});
+          float a = mod(p.x + p.y + p.z, 2.0);
+          if (a < 0.5) {
+            c = vec4(${colour1});
+          } else {
+            c = vec4(${colour2});
+          }
+        }
+      `);
       return new Map<string,PinValue>([
         [
           "out",

@@ -3,6 +3,7 @@ import { NodeExt, NodeTypeExt } from "../NodeExt";
 import { Accessor, createMemo } from "solid-js";
 import { PinValue } from "../CodeGenCtx";
 import { scaleComponentType, ScaleState } from "../components/ScaleComponent";
+import { glsl } from "@bigmistqke/view.gl/tag";
 
 export class ScaleNodeType implements NodeType<NodeTypeExt,NodeExt,ScaleState> {
   componentType = scaleComponentType;
@@ -57,17 +58,17 @@ class ScaleNode implements Node<NodeTypeExt,NodeExt,ScaleState> {
       }
       let scale = scale_.value;
       let sdfFn = ctx.allocVar();
-      ctx.insertGlobalCode([
-        `float ${sdfFn}(vec3 p) {`,
-        `  return ${model.sdfFuncName}(p / ${scale}) * ${scale};`,
-        "}",
-      ]);
+      ctx.insertGlobalCode(glsl`
+        float ${sdfFn}(vec3 p) {
+          return ${model.sdfFuncName}(p / ${scale}) * ${scale};
+        }
+      `);
       let colourFn = ctx.allocVar();
-      ctx.insertGlobalCode([
-        `void ${colourFn}(vec3 p, out vec4 c) {`,
-        `  ${model.colourFuncName}(p / ${scale}, c);`,
-        "}",
-      ]);
+      ctx.insertGlobalCode(glsl`
+        void ${colourFn}(vec3 p, out vec4 c) {
+          ${model.colourFuncName}(p / ${scale}, c);
+        }
+      `);
       return new Map<string,PinValue>([
         [
           "out",

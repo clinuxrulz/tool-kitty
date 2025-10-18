@@ -3,6 +3,7 @@ import { NodeExt, NodeTypeExt } from "../NodeExt";
 import { Accessor, createMemo } from "solid-js";
 import { PinValue } from "../CodeGenCtx";
 import { repeatComponentType, RepeatState } from "../components/RepeatComponent";
+import { glsl } from "@bigmistqke/view.gl/tag";
 
 export class RepeatNodeType implements NodeType<NodeTypeExt,NodeExt,RepeatState> {
   componentType = repeatComponentType;
@@ -57,32 +58,32 @@ class RepeatNode implements Node<NodeTypeExt,NodeExt,RepeatState> {
       }
       let step = step_.value;
       let sdfFn = ctx.allocVar();
-      ctx.insertGlobalCode([
-        `float ${sdfFn}(vec3 p) {`,
-        `  vec3 s = ${step};`,
-        "  vec3 id = vec3(floor(p.x/s.x + 0.5),floor(p.y/s.y + 0.5),floor(p.z/s.z + 0.5));",
-        "  vec3  o = sign(p-s*id);",
-        "  float d = 1e20;",
-        "  for( int k=0; k<2; k++ )",
-        "  for( int j=0; j<2; j++ )",
-        "  for( int i=0; i<2; i++ )",
-        "  {",
-        "    vec3 rid = id + vec3(i,j,k)*o;",
-        "    vec3 r = p - s*rid;",
-        `    d = min( d, ${model.sdfFuncName}(r));`,
-        "  }",
-        "  return d;",
-        "}",
-      ]);
+      ctx.insertGlobalCode(glsl`
+        float ${sdfFn}(vec3 p) {
+          vec3 s = ${step};
+          vec3 id = vec3(floor(p.x/s.x + 0.5),floor(p.y/s.y + 0.5),floor(p.z/s.z + 0.5));
+          vec3  o = sign(p-s*id);
+          float d = 1e20;
+          for( int k=0; k<2; k++ )
+          for( int j=0; j<2; j++ )
+          for( int i=0; i<2; i++ )
+          {
+            vec3 rid = id + vec3(i,j,k)*o;
+            vec3 r = p - s*rid;
+            d = min( d, ${model.sdfFuncName}(r));
+          }
+          return d;
+        }
+      `);
       let colourFn = ctx.allocVar();
-      ctx.insertGlobalCode([
-        `void ${colourFn}(vec3 p, out vec4 c) {`,
-        `  vec3 s = ${step};`,
-        "  vec3 id = vec3(floor(p.x/s.x + 0.5),floor(p.y/s.y + 0.5),floor(p.z/s.z + 0.5));",
-        "  p = p-s*id;",
-        `  ${model.colourFuncName}(p, c);`,
-        "}",
-      ]);
+      ctx.insertGlobalCode(glsl`
+        void ${colourFn}(vec3 p, out vec4 c) {
+          vec3 s = ${step};
+          vec3 id = vec3(floor(p.x/s.x + 0.5),floor(p.y/s.y + 0.5),floor(p.z/s.z + 0.5));
+          p = p-s*id;
+          ${model.colourFuncName}(p, c);
+        }
+      `);
       return new Map<string,PinValue>([
         [
           "out",
