@@ -38,6 +38,8 @@ export class CodeGenCtx {
     return glsl`precision highp float;
 uniform vec2 resolution;
 uniform float uFocalLength;
+uniform bool uUseOrthogonalProjection;
+uniform float uOrthogonalScale;
 
 void defaultColour(vec3 p, out vec4 c) {
   c = vec4(1.0, 1.0, 1.0, 1.0);
@@ -85,14 +87,23 @@ void main(void) {
   float mx = max(resolution.x, resolution.y);
   vec2 uv = gl_FragCoord.xy / mx;
   vec3 w = normalize(vec3(0.0, 0.0, 1.0));
-  vec3 ro = w * d;
   vec3 u = normalize(cross(vec3(0,1,0),w));
   vec3 v = cross(w,u);
-  vec3 rd = normalize(
-    (gl_FragCoord.x - 0.5 * resolution.x) * u +
-    (gl_FragCoord.y - 0.5 * resolution.y) * v +
-    -fl * w
-  );
+  vec3 ro;
+  vec3 rd;
+  if (uUseOrthogonalProjection) {
+    ro = w * d
+       + (gl_FragCoord.x - 0.5 * resolution.x) * u / uOrthogonalScale
+       + (gl_FragCoord.y - 0.5 * resolution.y) * v / uOrthogonalScale;
+    rd = vec3(0.0, 0.0, -1.0);
+  } else {
+    ro = w * d;
+    rd = normalize(
+      (gl_FragCoord.x - 0.5 * resolution.x) * u +
+      (gl_FragCoord.y - 0.5 * resolution.y) * v +
+      -fl * w
+    );
+  }
   float t = 0.0;
   bool hit = march(ro, rd, t);
   if (!hit) {

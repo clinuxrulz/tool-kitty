@@ -1,4 +1,4 @@
-import { batch, Component, ComponentProps, createEffect, createMemo, createSignal, on, Show, splitProps } from "solid-js";
+import { batch, Component, ComponentProps, createEffect, createMemo, createSignal, For, on, Show, splitProps, untrack } from "solid-js";
 import { EcsWorld } from "tool-kitty-ecs";
 import { NodeEditorUI, NodesSystem } from "tool-kitty-node-editor";
 import { Overwrite } from "tool-kitty-util";
@@ -18,6 +18,8 @@ type GLState = {
   vertexShader: WebGLShader,
   fragmentShader: WebGLShader,
   shaderProgram: WebGLProgram,
+  useOrthogonalProjectionLocation: WebGLUniformLocation | null,
+  orthogonalProjectionScaleLocation: WebGLUniformLocation | null,
 };
 
 const FOV_Y = 50.0;
@@ -33,14 +35,30 @@ const ModelEditor: Component<
   let [ props, rest, ] = splitProps(props_, [
     "world",
   ]);
+  const projections = [
+    "Orthogonal" as const,
+    "Perspective" as const,
+  ];
+  type Projection = (typeof projections)[number];
   let [ state, setState, ] = createStore<{
     windowWidth: number,
     windowHeight: number,
     showCode: boolean,
+    projection: Projection,
+    orthoScaleText: string,
   }>({
     windowWidth: window.innerWidth,
     windowHeight: window.innerHeight,
     showCode: false,
+    projection: "Perspective",
+    orthoScaleText: "0.1",
+  });
+  let orthoScale = createMemo(() => {
+    let x = Number.parseFloat(state.orthoScaleText);
+    if (Number.isNaN(x)) {
+      return 0.1;
+    }
+    return x;
   });
   window.addEventListener("resize", () => {
     batch(() => {
@@ -80,6 +98,32 @@ const ModelEditor: Component<
     },
   ));
   let glState: GLState | undefined = undefined;
+  let rerender: () => void;
+  {
+    let aboutToRender = false;
+    rerender = () => {
+      let gl2 = gl();
+      if (gl2 == undefined) {
+        return;
+      }
+      if (glState == undefined) {
+        return;
+      }
+      let glState2 = glState;
+      if (aboutToRender) {
+        return;
+      }
+      aboutToRender = true;
+      requestAnimationFrame(() => {
+        aboutToRender = false;
+        gl2.bindBuffer(gl2.ARRAY_BUFFER, glState2.verticesGLBuffer);
+        gl2.enableVertexAttribArray(glState2.positionLocation);
+        gl2.drawArrays(gl2.TRIANGLES, 0, 6);
+        gl2.disableVertexAttribArray(glState2.positionLocation);
+      });
+    };
+  }
+
   createEffect(on(
     [ gl, canvas, ],
     ([ gl, canvas, ]) => {
@@ -92,7 +136,7 @@ const ModelEditor: Component<
       }
       glState = initGL(gl, canvas, code2);
     },
-  ))
+  ));
   createEffect(on(
     [ gl, code, ],
     ([ gl, code, ]) => {
@@ -135,6 +179,18 @@ const ModelEditor: Component<
       const focalLengthLocation = gl.getUniformLocation(shaderProgram, "uFocalLength");
       const modelViewMatrixLocation = gl.getUniformLocation(shaderProgram, "uModelViewMatrix");
       const resolutionLocation = gl.getUniformLocation(shaderProgram, "resolution");
+      const useOrthogonalProjectionLocation = gl.getUniformLocation(shaderProgram, "uUseOrthogonalProjection");
+      const orthogonalProjectionScaleLocation = gl.getUniformLocation(shaderProgram, "uOrthogonalScale");
+      glState.useOrthogonalProjectionLocation = useOrthogonalProjectionLocation;
+      glState.orthogonalProjectionScaleLocation = orthogonalProjectionScaleLocation;
+      gl.uniform1i(
+        useOrthogonalProjectionLocation,
+        state.projection == "Orthogonal" ? 1 : 0,
+      );
+      gl.uniform1f(
+        orthogonalProjectionScaleLocation,
+        orthoScale(),
+      );
       gl.uniform1f(
         focalLengthLocation,
         focalLength,
@@ -144,23 +200,6 @@ const ModelEditor: Component<
         width,
         height,
       );
-      let rerender: () => void;
-      {
-        let aboutToRender = false;
-        rerender = () => {
-          if (aboutToRender) {
-            return;
-          }
-          aboutToRender = true;
-          requestAnimationFrame(() => {
-            aboutToRender = false;
-            gl.bindBuffer(gl.ARRAY_BUFFER, verticesGLBuffer);
-            gl.enableVertexAttribArray(positionLocation);
-            gl.drawArrays(gl.TRIANGLES, 0, 6);
-            gl.disableVertexAttribArray(positionLocation);
-          });
-        };
-      }
       code.onInit({ gl, program: shaderProgram, rerender, });
       const vertices = glState.vertices;
       vertices[0] = 0.0;
@@ -213,6 +252,52 @@ const ModelEditor: Component<
     },
     { defer: true, },
   ));
+  createEffect(on(
+    () => state.projection,
+    (projection) => {
+      let gl2 = gl();
+      if (gl2 == undefined) {
+        return undefined;
+      }
+      if (glState == undefined) {
+        return undefined;
+      }
+      switch (projection) {
+        case "Orthogonal":
+          gl2.uniform1i(
+            glState.useOrthogonalProjectionLocation,
+            1,
+          );
+          break;
+        case "Perspective":
+          gl2.uniform1i(
+            glState.useOrthogonalProjectionLocation,
+            0,
+          );
+          break;
+      }
+      rerender();
+    },
+    { defer: true, },
+  ));
+  createEffect(on(
+    orthoScale,
+    (orthoScale) => {
+      let gl2 = gl();
+      if (gl2 == undefined) {
+        return undefined;
+      }
+      if (glState == undefined) {
+        return undefined;
+      }
+      gl2.uniform1f(
+        glState.orthogonalProjectionScaleLocation,
+        orthoScale,
+      );
+      rerender();
+    },
+    { defer: true },
+  ));
   return (
     <div
       {...rest}
@@ -251,6 +336,28 @@ const ModelEditor: Component<
                 />
                 Show Code
               </label>
+              <select
+                class="select select-sm"
+                style="width: fit-content;"
+                onChange={(e) => {
+                  if (e.currentTarget.selectedOptions.length != 1) {
+                    return;
+                  }
+                  let value = e.currentTarget.selectedOptions[0].value;
+                  setState("projection", value as Projection);
+                }}
+              >
+                <For each={projections}>
+                  {(projection) => (
+                    <option
+                      value={projection}
+                      selected={state.projection == projection}
+                    >
+                      {projection}
+                    </option>
+                  )}
+                </For>
+              </select>
             </>}
           />
           <Show when={state.showCode ? code() : undefined}>
@@ -276,6 +383,7 @@ const ModelEditor: Component<
             "flex": "1",
             "display": "flex",
             "overflow": "hidden",
+            "position": "relative",
           }}
         >
           <canvas
@@ -284,6 +392,26 @@ const ModelEditor: Component<
               "flex-grow": "1",
             }}
           />
+          <Show when={state.projection == "Orthogonal"}>
+            <label
+              class="input input-sm"
+              style={{
+                "position": "absolute",
+                "left": "0",
+                "top": "0",
+                "width": "200px",
+              }}
+            >
+              Scale:
+              <input
+                type="text"
+                value={state.orthoScaleText}
+                onInput={(e) => {
+                  setState("orthoScaleText", e.currentTarget.value);
+                }}
+              />
+            </label>
+          </Show>
         </div>
       </div>
     </div>
@@ -371,6 +499,16 @@ function initGL(gl: WebGLRenderingContext, canvas: HTMLCanvasElement, fragmentSh
   const focalLengthLocation = gl.getUniformLocation(shaderProgram, "uFocalLength");
   const modelViewMatrixLocation = gl.getUniformLocation(shaderProgram, "uModelViewMatrix");
   const resolutionLocation = gl.getUniformLocation(shaderProgram, "resolution");
+  const useOrthogonalProjectionLocation = gl.getUniformLocation(shaderProgram, "uUseOrthogonalProjection");
+  const orthogonalProjectionScaleLocation = gl.getUniformLocation(shaderProgram, "uOrthogonalScale");
+  gl.uniform1i(
+    useOrthogonalProjectionLocation,
+    0,
+  );
+  gl.uniform1f(
+    orthogonalProjectionScaleLocation,
+    0.1,
+  );
   gl.uniform1f(
     focalLengthLocation,
     focalLength,
@@ -437,6 +575,8 @@ function initGL(gl: WebGLRenderingContext, canvas: HTMLCanvasElement, fragmentSh
     vertexShader,
     fragmentShader,
     shaderProgram,
+    useOrthogonalProjectionLocation,
+    orthogonalProjectionScaleLocation,
   };
   return state;
 }
