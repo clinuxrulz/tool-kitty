@@ -1,9 +1,10 @@
-import { Accessor, Component, createMemo } from "solid-js";
+import { Accessor, Component, createEffect, createMemo, on } from "solid-js";
 import { displayComponentType, DisplayState } from "../components/DisplayComponent";
 import { Node, NodeParams, NodeType, Pin } from "tool-kitty-node-editor";
 import { NodeExt, NodeTypeExt } from "../NodeExt";
 import { PinValue } from "../CodeGenCtx";
-import { glsl } from "@bigmistqke/view.gl/tag";
+import { compile, glsl, uniform } from "@bigmistqke/view.gl/tag";
+import { uniformView } from "@bigmistqke/view.gl";
 
 export class DisplayNodeType implements NodeType<NodeTypeExt,NodeExt,DisplayState> {
   componentType = displayComponentType;
@@ -34,33 +35,67 @@ class DisplayNode implements Node<NodeTypeExt,NodeExt,DisplayState> {
         setSource: (x) => setState("in", x),
       },
     ]);
-    this.ui = createMemo(() => () =>
-      <i
-        class="fa-solid fa-desktop"
-        style={{
-          "font-size": "24px",
-          "color": "green",
-        }}
-      />
-    );
-    this.ext.generateCode = ({ ctx, inputs }) => {
+    this.ui = createMemo(() => () => (
+      <>
+        <div class="bg-base-200 mt-2 mb-2">
+          <label class="label">
+            <input
+              class="checkbox checkbox-sm pl-2"
+              type="checkbox"
+              checked={state.visible}
+              onChange={(e) => {
+                setState("visible", e.currentTarget.checked);
+              }}
+            />
+            Visible
+          </label>
+        </div>
+        <i
+          class="fa-solid fa-desktop"
+          style={{
+            "font-size": "24px",
+            "color": "green",
+          }}
+        />
+      </>
+    ));
+    this.ext.generateCode = ({ ctx, inputs, onInit, }) => {
       let in_ = inputs.get("in");
       if (in_?.type != "Model") {
         return undefined;
       }
       let in2 = in_.value;
       let { sdfFuncName, colourFuncName, } = in2;
+      let visibleIdent = ctx.allocVar();
+      let globalCode = glsl`
+        ${uniform.bool(visibleIdent)}
+      `;
+      ctx.insertGlobalCode(globalCode);
       ctx.insertCode(glsl`
-        d = min(d, ${sdfFuncName}(p));
+        if (${visibleIdent}) {
+          d = min(d, ${sdfFuncName}(p));
+        }
       `);
       let d = ctx.allocVar();
       ctx.insertColourCode(glsl`
-        float ${d} = ${sdfFuncName}(p);
-        if (${d} < d) {
-          d = ${d};
-          ${colourFuncName}(p, c);
+        if (${visibleIdent}) {
+          float ${d} = ${sdfFuncName}(p);
+          if (${d} < d) {
+            d = ${d};
+            ${colourFuncName}(p, c);
+          }
         }
       `);
+      onInit(({ gl, program, rerender }) => {
+        let uniforms = uniformView(gl, program, compile.toSchema(globalCode).uniforms);
+        createEffect(on(
+          () => state.visible,
+          (visible) => {
+            uniforms[visibleIdent].set(visible ? 1 : 0);
+            rerender();
+          },
+        ));
+      });
       return new Map<string,PinValue>();
     };
   }
