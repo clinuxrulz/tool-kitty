@@ -5,6 +5,10 @@ import { tsArray, tsMaybeUndefined, tsObject, TypeSchemaType } from "tool-kitty-
 const typeSchema = tsObject({
   model: tsMaybeUndefined(pinTypeSchema),
   texture: tsMaybeUndefined(pinTypeSchema),
+  scaleX: tsMaybeUndefined(pinTypeSchema),
+  scaleY: tsMaybeUndefined(pinTypeSchema),
+  offsetX: tsMaybeUndefined(pinTypeSchema),
+  offsetY: tsMaybeUndefined(pinTypeSchema),
   out: tsArray(pinTypeSchema),
 });
 

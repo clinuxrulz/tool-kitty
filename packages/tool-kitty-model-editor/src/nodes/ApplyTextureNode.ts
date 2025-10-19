@@ -38,6 +38,26 @@ class ApplyTextureNode implements Node<NodeTypeExt,NodeExt,ApplyTextureState> {
         source: () => state.texture,
         setSource: (x) => setState("texture", x),
       },
+      {
+        name: "scaleX",
+        source: () => state.scaleX,
+        setSource: (x) => setState("scaleX", x),
+      },
+      {
+        name: "scaleY",
+        source: () => state.scaleY,
+        setSource: (x) => setState("scaleY", x),
+      },
+      {
+        name: "offsetX",
+        source: () => state.offsetX,
+        setSource: (x) => setState("offsetX", x),
+      },
+      {
+        name: "offsetY",
+        source: () => state.offsetY,
+        setSource: (x) => setState("offsetY", x),
+      },
     ]);
     this.outputPins = createMemo(() => [
       {
@@ -57,10 +77,38 @@ class ApplyTextureNode implements Node<NodeTypeExt,NodeExt,ApplyTextureState> {
         return undefined;
       }
       let texture = texture_.value;
+      let scaleX_ = inputs.get("scaleX");
+      let scaleX: string;
+      if (scaleX_?.type == "Atom") {
+        scaleX = scaleX_.value;
+      } else {
+        scaleX = "1.0";
+      }
+      let scaleY_ = inputs.get("scaleY");
+      let scaleY: string;
+      if (scaleY_?.type == "Atom") {
+        scaleY = scaleY_.value;
+      } else {
+        scaleY = "1.0";
+      }
+      let offsetX_ = inputs.get("offsetX");
+      let offsetX: string;
+      if (offsetX_?.type == "Atom") {
+        offsetX = offsetX_.value;
+      } else {
+        offsetX = "0.0";
+      }
+      let offsetY_ = inputs.get("offsetY");
+      let offsetY: string;
+      if (offsetY_?.type == "Atom") {
+        offsetY = offsetY_.value;
+      } else {
+        offsetY = "0.0";
+      }
       let colourFuncName = ctx.allocVar();
       ctx.insertGlobalCode(glsl`
         void ${colourFuncName}(vec3 p, out vec4 c) {
-          c = texture2D(${texture}, p.xy);
+          c = texture2D(${texture}, (p.xy + vec2(${offsetX}, ${offsetY})) / vec2(${scaleX}, ${scaleY}));
         }
       `);
       return new Map<string,PinValue>([
