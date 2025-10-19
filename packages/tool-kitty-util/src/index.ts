@@ -66,7 +66,7 @@ export function uint8ArrayToBase64(bytes: Uint8Array): string {
   return window.btoa(binary);
 }
 
-export function base64ToUint8Array(base64: string): Uint8Array {
+export function base64ToUint8Array(base64: string): Uint8Array<ArrayBuffer> {
   var binary = atob(base64);
   var bytes = new Uint8Array(binary.length);
   for (var i = 0; i < binary.length; i++) {

@@ -22,11 +22,14 @@ import { sinXYZFieldComponentType } from "./SinXYZFieldComponent";
 import { displaceComponentType } from "./DisplaceComponent";
 import { repeatRotationalComponentType } from "./RepeatRotationalComponent";
 import { bendComponentType } from "./BendComponent";
+import { textureComponentType } from "./TextureComponent";
+import { applyTextureComponentType } from "./ApplyTextureComponent";
 
 export const registry = new EcsRegistry([
   ...defaultRegistry.componentTypes,
   applyCheckersComponentType,
   applyColourComponentType,
+  applyTextureComponentType,
   bendComponentType,
   boxComponentType,
   colourComponentType,
@@ -43,6 +46,7 @@ export const registry = new EcsRegistry([
   scaleComponentType,
   sinXYZFieldComponentType,
   sphereComponentType,
+  textureComponentType,
   transform2DComponentType,
   translateComponentType,
   unboundKnobComponentType,

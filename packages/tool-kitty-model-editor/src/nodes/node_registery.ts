@@ -21,12 +21,15 @@ import { sinXYZFieldNodeType } from "./SinXYZFieldNode";
 import { displaceNodeType } from "./DisplaceNode";
 import { repeatRotationalNodeType } from "./RepeatRotationalNode";
 import { bendNodeType } from "./BendNode";
+import { textureNodeType } from "./TextureNode";
+import { applyTextureNodeType } from "./ApplyTextureNode";
 
 export const nodeRegistry = new NodeRegistry<NodeTypeExt,NodeExt>();
 
 nodeRegistry.registerNodeTypes([
   applyCheckersNodeType,
   applyColourNodeType,
+  applyTextureNodeType,
   bendNodeType,
   boxNodeType,
   colourNodeType,
@@ -43,6 +46,7 @@ nodeRegistry.registerNodeTypes([
   scaleNodeType,
   sinXYZFieldNodeType,
   sphereNodeType,
+  textureNodeType,
   translateNodeType,
   unionNodeType,
   vec3NodeType,
