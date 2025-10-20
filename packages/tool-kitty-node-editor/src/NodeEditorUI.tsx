@@ -46,6 +46,7 @@ function NodeEditorUI<TYPE_EXT,INST_EXT>(props_:
     showCode: boolean,
     makeSound: boolean,
     freezePanZoom: boolean,
+    filename: string,
   }>({
     pan: Vec2.zero,
     scale: 1.0,
@@ -54,6 +55,7 @@ function NodeEditorUI<TYPE_EXT,INST_EXT>(props_:
     showCode: false,
     makeSound: false,
     freezePanZoom: false,
+    filename: "node-graph",
   });
   let undoManager = new UndoManager();
   let svgElement!: SVGSVGElement;
@@ -242,11 +244,16 @@ function NodeEditorUI<TYPE_EXT,INST_EXT>(props_:
         world.createEntityWithId(entity, components);
       }
     });
+    let filename = file.name;
+    if (filename.endsWith(".json")) {
+      filename = filename.slice(0, filename.length - 5);
+    }
+    setState("filename", filename);
   };
   const save = () => {
     let data = JSON.stringify(props.world.toJson(), undefined, 2);
     let blob = new Blob([ data ], { type: "application/json" });
-    FileSaver.saveAs(blob, "node-graph.json");
+    FileSaver.saveAs(blob, `${state.filename}.json`);
   };
   return (
     <div
@@ -261,6 +268,23 @@ function NodeEditorUI<TYPE_EXT,INST_EXT>(props_:
         }}
       >
         <div>
+          <button
+            class="btn btn-primary"
+            style="margin-left: 5px;"
+            onClick={() => {
+              let newName = window.prompt("Enter new filename:", state.filename);
+              if (newName == null) {
+                return;
+              }
+              newName = newName.trim();
+              if (newName == "") {
+                return;
+              }
+              setState("filename", newName);
+            }}
+          >
+            <i class="fa-solid fa-t"></i>
+          </button>
           <button
             class="btn btn-primary"
             style="margin-left: 5px;"
