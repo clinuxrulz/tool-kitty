@@ -23,6 +23,7 @@ import { repeatRotationalNodeType } from "./RepeatRotationalNode";
 import { bendNodeType } from "./BendNode";
 import { textureNodeType } from "./TextureNode";
 import { applyTextureNodeType } from "./ApplyTextureNode";
+import { coneNodeType } from "./ConeNode";
 
 export const nodeRegistry = new NodeRegistry<NodeTypeExt,NodeExt>();
 
@@ -33,6 +34,7 @@ nodeRegistry.registerNodeTypes([
   bendNodeType,
   boxNodeType,
   colourNodeType,
+  coneNodeType,
   cylinderNodeType,
   differenceNodeType,
   displaceNodeType,

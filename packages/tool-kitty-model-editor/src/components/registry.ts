@@ -24,6 +24,7 @@ import { repeatRotationalComponentType } from "./RepeatRotationalComponent";
 import { bendComponentType } from "./BendComponent";
 import { textureComponentType } from "./TextureComponent";
 import { applyTextureComponentType } from "./ApplyTextureComponent";
+import { coneComponentType } from "./ConeComponent";
 
 export const registry = new EcsRegistry([
   ...defaultRegistry.componentTypes,
@@ -33,6 +34,7 @@ export const registry = new EcsRegistry([
   bendComponentType,
   boxComponentType,
   colourComponentType,
+  coneComponentType,
   cylinderComponentType,
   differenceComponentType,
   displaceComponentType,
