@@ -24,6 +24,7 @@ import { bendNodeType } from "./BendNode";
 import { textureNodeType } from "./TextureNode";
 import { applyTextureNodeType } from "./ApplyTextureNode";
 import { coneNodeType } from "./ConeNode";
+import { torusNodeType } from "./TorusNode";
 
 export const nodeRegistry = new NodeRegistry<NodeTypeExt,NodeExt>();
 
@@ -49,6 +50,7 @@ nodeRegistry.registerNodeTypes([
   sinXYZFieldNodeType,
   sphereNodeType,
   textureNodeType,
+  torusNodeType,
   translateNodeType,
   unionNodeType,
   vec3NodeType,

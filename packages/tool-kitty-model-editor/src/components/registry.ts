@@ -25,6 +25,7 @@ import { bendComponentType } from "./BendComponent";
 import { textureComponentType } from "./TextureComponent";
 import { applyTextureComponentType } from "./ApplyTextureComponent";
 import { coneComponentType } from "./ConeComponent";
+import { torusComponentType } from "./TorusComponent";
 
 export const registry = new EcsRegistry([
   ...defaultRegistry.componentTypes,
@@ -49,6 +50,7 @@ export const registry = new EcsRegistry([
   sinXYZFieldComponentType,
   sphereComponentType,
   textureComponentType,
+  torusComponentType,
   transform2DComponentType,
   translateComponentType,
   unboundKnobComponentType,
