@@ -38,6 +38,7 @@ export class CodeGenCtx {
     return glsl`precision highp float;
 uniform vec2 resolution;
 uniform float uFocalLength;
+uniform mat4 uInverseViewMatrix;
 uniform bool uUseOrthogonalProjection;
 uniform float uOrthogonalScale;
 
@@ -92,18 +93,21 @@ void main(void) {
   vec3 ro;
   vec3 rd;
   if (uUseOrthogonalProjection) {
-    ro = w * d
-       + (gl_FragCoord.x - 0.5 * resolution.x) * u / uOrthogonalScale
+    ro = (gl_FragCoord.x - 0.5 * resolution.x) * u / uOrthogonalScale
        + (gl_FragCoord.y - 0.5 * resolution.y) * v / uOrthogonalScale;
     rd = vec3(0.0, 0.0, -1.0);
   } else {
-    ro = w * d;
+    ro = vec3(0.0);
     rd = normalize(
       (gl_FragCoord.x - 0.5 * resolution.x) * u +
       (gl_FragCoord.y - 0.5 * resolution.y) * v +
       -fl * w
     );
   }
+  vec3 rp = ro + rd;
+  ro = (uInverseViewMatrix * vec4(ro, 1.0)).xyz;
+  rp = (uInverseViewMatrix * vec4(rp, 1.0)).xyz;
+  rd = rp - ro;
   float t = 0.0;
   bool hit = march(ro, rd, t);
   if (!hit) {

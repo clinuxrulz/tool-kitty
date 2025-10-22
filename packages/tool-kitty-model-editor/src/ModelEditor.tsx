@@ -8,6 +8,8 @@ import { createStore } from "solid-js/store";
 import { generateCode } from "./code-gen";
 import { registry } from "./components/registry";
 import { attribute, compile, glsl, uniform } from "@bigmistqke/view.gl/tag";
+import { OrbitalCamera } from "./OrbitalCamera";
+import { Quaternion, Transform3D, Vec3 } from "tool-kitty-math";
 
 type GLState = {
   width: number,
@@ -18,6 +20,8 @@ type GLState = {
   vertexShader: WebGLShader,
   fragmentShader: WebGLShader,
   shaderProgram: WebGLProgram,
+  inverseViewMatrix: Float32Array,
+  inverseViewMatrixLocation: WebGLUniformLocation | null,
   useOrthogonalProjectionLocation: WebGLUniformLocation | null,
   orthogonalProjectionScaleLocation: WebGLUniformLocation | null,
 };
@@ -53,6 +57,11 @@ const ModelEditor: Component<
     projection: "Perspective",
     orthoScaleText: "0.1",
   });
+  let orbitalCamera = new OrbitalCamera({
+    initSpace: Transform3D.create(Vec3.create(0.0, 0.0, 10_000.0), Quaternion.identity),
+    initOrbitTarget: Vec3.zero,
+  });
+  
   let orthoScale = createMemo(() => {
     let x = Number.parseFloat(state.orthoScaleText);
     if (Number.isNaN(x)) {
@@ -134,7 +143,7 @@ const ModelEditor: Component<
       if (code2 == undefined) {
         return;
       }
-      glState = initGL(gl, canvas, code2);
+      glState = initGL(gl, canvas, orbitalCamera, code2);
     },
   ));
   createEffect(on(
@@ -181,8 +190,15 @@ const ModelEditor: Component<
       const resolutionLocation = gl.getUniformLocation(shaderProgram, "resolution");
       const useOrthogonalProjectionLocation = gl.getUniformLocation(shaderProgram, "uUseOrthogonalProjection");
       const orthogonalProjectionScaleLocation = gl.getUniformLocation(shaderProgram, "uOrthogonalScale");
+      glState.inverseViewMatrixLocation = gl.getUniformLocation(shaderProgram, "uInverseViewMatrix");
       glState.useOrthogonalProjectionLocation = useOrthogonalProjectionLocation;
       glState.orthogonalProjectionScaleLocation = orthogonalProjectionScaleLocation;
+      orbitalCamera.writeGLInverseViewMatrix(glState.inverseViewMatrix);
+      gl.uniformMatrix4fv(
+        glState.inverseViewMatrixLocation,
+        false,
+        glState.inverseViewMatrix,
+      );
       gl.uniform1i(
         useOrthogonalProjectionLocation,
         state.projection == "Orthogonal" ? 1 : 0,
@@ -298,6 +314,26 @@ const ModelEditor: Component<
     },
     { defer: true },
   ));
+  createEffect(on(
+    () => orbitalCamera.space(),
+    () => {
+      let gl2 = gl();
+      if (gl2 == undefined) {
+        return undefined;
+      }
+      if (glState == undefined) {
+        return undefined;
+      }
+      orbitalCamera.writeGLInverseViewMatrix(glState.inverseViewMatrix);
+      gl2.uniformMatrix4fv(
+        glState.inverseViewMatrixLocation,
+        false,
+        glState.inverseViewMatrix,
+      );
+      rerender();
+    },
+    { defer: true, },
+  ));
   return (
     <div
       {...rest}
@@ -390,6 +426,16 @@ const ModelEditor: Component<
             ref={setCanvas}
             style={{
               "flex-grow": "1",
+              "touch-action": "none",
+            }}
+            onPointerDown={(e) => {
+              orbitalCamera.pointerDown(e);
+            }}
+            onPointerUp={(e) => {
+              orbitalCamera.pointerUp(e);
+            }}
+            onPointerMove={(e) => {
+              orbitalCamera.pointerMove(e);
             }}
           />
           <Show when={state.projection == "Orthogonal"}>
@@ -467,7 +513,7 @@ function initShaderProgram(gl: WebGLRenderingContext, vsSource: string, fsSource
   }
 }
 
-function initGL(gl: WebGLRenderingContext, canvas: HTMLCanvasElement, fragmentShaderCode: ReturnType<typeof generateCode>): GLState | undefined {
+function initGL(gl: WebGLRenderingContext, canvas: HTMLCanvasElement, orbitalCamera: OrbitalCamera, fragmentShaderCode: ReturnType<typeof generateCode>): GLState | undefined {
   let width = canvas.width;
   let height = canvas.height;
   const focalLength = 0.5 * height / Math.tan(0.5 * FOV_Y * Math.PI / 180.0);
@@ -499,8 +545,16 @@ function initGL(gl: WebGLRenderingContext, canvas: HTMLCanvasElement, fragmentSh
   const focalLengthLocation = gl.getUniformLocation(shaderProgram, "uFocalLength");
   const modelViewMatrixLocation = gl.getUniformLocation(shaderProgram, "uModelViewMatrix");
   const resolutionLocation = gl.getUniformLocation(shaderProgram, "resolution");
+  const inverseViewMatrixLocation = gl.getUniformLocation(shaderProgram, "uInverseViewMatrix");
   const useOrthogonalProjectionLocation = gl.getUniformLocation(shaderProgram, "uUseOrthogonalProjection");
   const orthogonalProjectionScaleLocation = gl.getUniformLocation(shaderProgram, "uOrthogonalScale");
+  let inverseViewMatrix = new Float32Array(16);
+  untrack(() => orbitalCamera.writeGLInverseViewMatrix(inverseViewMatrix));
+  gl.uniformMatrix4fv(
+    inverseViewMatrixLocation,
+    false,
+    inverseViewMatrix,
+  );
   gl.uniform1i(
     useOrthogonalProjectionLocation,
     0,
@@ -575,6 +629,8 @@ function initGL(gl: WebGLRenderingContext, canvas: HTMLCanvasElement, fragmentSh
     vertexShader,
     fragmentShader,
     shaderProgram,
+    inverseViewMatrix,
+    inverseViewMatrixLocation,
     useOrthogonalProjectionLocation,
     orthogonalProjectionScaleLocation,
   };
