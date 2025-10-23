@@ -25,6 +25,7 @@ import { textureNodeType } from "./TextureNode";
 import { applyTextureNodeType } from "./ApplyTextureNode";
 import { coneNodeType } from "./ConeNode";
 import { torusNodeType } from "./TorusNode";
+import { mirrorNodeType } from "./MirrorNode";
 
 export const nodeRegistry = new NodeRegistry<NodeTypeExt,NodeExt>();
 
@@ -41,6 +42,7 @@ nodeRegistry.registerNodeTypes([
   displaceNodeType,
   displayNodeType,
   infiniteCylinderNodeType,
+  mirrorNodeType,
   unboundKnobNodeType,
   numberNodeType,
   repeatNodeType,
