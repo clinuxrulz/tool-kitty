@@ -1,6 +1,7 @@
 import { CodeGenCtx, PinValue } from "./CodeGenCtx";
 import { NodesSystem, NodesSystemNode } from "tool-kitty-node-editor";
 import { NodeExt, NodeTypeExt } from "./NodeExt";
+import { Accessor, createMemo } from "solid-js";
 
 export type CodeGenNode = {
   id: number,
@@ -63,7 +64,7 @@ export function cloneSubGraph(node: CodeGenNode, recordNewNode: (x: CodeGenNode)
   return clonedNodesMap.get(node)!;
 }
 
-export function generateCode(params: { nodesSystem: NodesSystem<NodeTypeExt,NodeExt>, }) {
+export function generateCode(params: { nodesSystem: NodesSystem<NodeTypeExt,NodeExt>, maxIterations: number, }) {
   let nodesSystem = params.nodesSystem;
   // Duplicate the graph before applying macros
   let codeGenNodes: CodeGenNode[] = [];
@@ -216,7 +217,7 @@ export function generateCode(params: { nodesSystem: NodesSystem<NodeTypeExt,Node
     }
   };
   return {
-    code: codeGenCtx.genCode(),
+    code: codeGenCtx.genCode({ maxIterations: params.maxIterations, }),
     onInit,
   };
 }

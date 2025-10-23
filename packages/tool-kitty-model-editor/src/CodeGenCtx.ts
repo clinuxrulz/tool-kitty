@@ -34,9 +34,11 @@ export class CodeGenCtx {
     this.colourBody.push(code);
   }
 
-  genCode() {
+  genCode(params: { maxIterations?: number, }) {
+    let maxIterations = params.maxIterations ?? 100;
     return glsl`precision highp float;
 uniform vec2 resolution;
+uniform float uTollerance;
 uniform float uFocalLength;
 uniform mat4 uInverseViewMatrix;
 uniform bool uUseOrthogonalProjection;
@@ -62,10 +64,10 @@ void colourMap(vec3 p, out vec4 c) {
 bool march(vec3 ro, vec3 rd, out float t) {
   vec3 p = ro;
   t = 0.0;
-  for (int i = 0; i < 100; ++i) {
+  for (int i = 0; i < ${maxIterations}; ++i) {
     vec3 p = ro + rd*t;
     float d = map(p);
-    if (abs(d) <= 0.01) {
+    if (abs(d) <= uTollerance) {
       return true;
     }
     t += d;

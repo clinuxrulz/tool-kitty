@@ -20,6 +20,7 @@ type GLState = {
   vertexShader: WebGLShader,
   fragmentShader: WebGLShader,
   shaderProgram: WebGLProgram,
+  tolleranceLocation: WebGLUniformLocation | null,
   inverseViewMatrix: Float32Array,
   inverseViewMatrixLocation: WebGLUniformLocation | null,
   useOrthogonalProjectionLocation: WebGLUniformLocation | null,
@@ -50,12 +51,16 @@ const ModelEditor: Component<
     showCode: boolean,
     projection: Projection,
     orthoScaleText: string,
+    maxIterationsText: string,
+    tolleranceText: string,
   }>({
     windowWidth: window.innerWidth,
     windowHeight: window.innerHeight,
     showCode: false,
     projection: "Perspective",
     orthoScaleText: "0.1",
+    maxIterationsText: "100",
+    tolleranceText: "0.01",
   });
   let orbitalCamera = new OrbitalCamera({
     initSpace: Transform3D.create(Vec3.create(0.0, 0.0, 10_000.0), Quaternion.identity),
@@ -66,6 +71,20 @@ const ModelEditor: Component<
     let x = Number.parseFloat(state.orthoScaleText);
     if (Number.isNaN(x)) {
       return 0.1;
+    }
+    return x;
+  });
+  let maxIterations = createMemo(() => {
+    let x = Number.parseInt(state.maxIterationsText);
+    if (Number.isNaN(x)) {
+      return 100;
+    }
+    return x;
+  });
+  let tollerance = createMemo(() => {
+    let x = Number.parseFloat(state.tolleranceText);
+    if (Number.isNaN(x)) {
+      return 0.01;
     }
     return x;
   });
@@ -84,6 +103,7 @@ const ModelEditor: Component<
     }
     return generateCode({
       nodesSystem: nodesSystem2,
+      maxIterations: maxIterations(),
     });
   });
   let [ canvasDiv, setCanvasDiv, ] = createSignal<HTMLDivElement>();
@@ -185,11 +205,13 @@ const ModelEditor: Component<
       let shaderProgram = glState.shaderProgram;
       gl.useProgram(shaderProgram);
       const positionLocation = gl.getAttribLocation(shaderProgram, "aVertexPosition");
+      const tolleranceLocation = gl.getUniformLocation(shaderProgram, "uTollerance");
       const focalLengthLocation = gl.getUniformLocation(shaderProgram, "uFocalLength");
       const modelViewMatrixLocation = gl.getUniformLocation(shaderProgram, "uModelViewMatrix");
       const resolutionLocation = gl.getUniformLocation(shaderProgram, "resolution");
       const useOrthogonalProjectionLocation = gl.getUniformLocation(shaderProgram, "uUseOrthogonalProjection");
       const orthogonalProjectionScaleLocation = gl.getUniformLocation(shaderProgram, "uOrthogonalScale");
+      glState.tolleranceLocation = tolleranceLocation;
       glState.inverseViewMatrixLocation = gl.getUniformLocation(shaderProgram, "uInverseViewMatrix");
       glState.useOrthogonalProjectionLocation = useOrthogonalProjectionLocation;
       glState.orthogonalProjectionScaleLocation = orthogonalProjectionScaleLocation;
@@ -202,6 +224,10 @@ const ModelEditor: Component<
       gl.uniform1i(
         useOrthogonalProjectionLocation,
         state.projection == "Orthogonal" ? 1 : 0,
+      );
+      gl.uniform1f(
+        tolleranceLocation,
+        tollerance(),
       );
       gl.uniform1f(
         orthogonalProjectionScaleLocation,
@@ -292,6 +318,24 @@ const ModelEditor: Component<
           );
           break;
       }
+      rerender();
+    },
+    { defer: true, },
+  ));
+  createEffect(on(
+    tollerance,
+    (tollerance) => {
+      let gl2 = gl();
+      if (gl2 == undefined) {
+        return undefined;
+      }
+      if (glState == undefined) {
+        return undefined;
+      }
+      gl2.uniform1f(
+        glState.tolleranceLocation,
+        tollerance,
+      );
       rerender();
     },
     { defer: true, },
@@ -438,26 +482,61 @@ const ModelEditor: Component<
               orbitalCamera.pointerMove(e);
             }}
           />
-          <Show when={state.projection == "Orthogonal"}>
+          <div
+            style={{
+              "position": "absolute",
+              "left": "0",
+              "top": "0",
+            }}
+          >
+            <Show when={state.projection == "Orthogonal"}>
+              <label
+                class="input input-sm"
+                style={{
+                  "width": "100px",
+                }}
+              >
+                Scale:
+                <input
+                  type="text"
+                  value={state.orthoScaleText}
+                  onInput={(e) => {
+                    setState("orthoScaleText", e.currentTarget.value);
+                  }}
+                />
+              </label>
+            </Show>
             <label
               class="input input-sm"
               style={{
-                "position": "absolute",
-                "left": "0",
-                "top": "0",
-                "width": "200px",
+                "width": "100px",
               }}
             >
-              Scale:
+              Max Iter:
               <input
                 type="text"
-                value={state.orthoScaleText}
+                value={state.maxIterationsText}
                 onInput={(e) => {
-                  setState("orthoScaleText", e.currentTarget.value);
+                  setState("maxIterationsText", e.currentTarget.value);
                 }}
               />
             </label>
-          </Show>
+            <label
+              class="input input-sm"
+              style={{
+                "width": "100px",
+              }}
+            >
+              Tol:
+              <input
+                type="text"
+                value={state.tolleranceText}
+                onInput={(e) => {
+                  setState("tolleranceText", e.currentTarget.value);
+                }}
+              />
+            </label>
+          </div>
         </div>
       </div>
     </div>
@@ -542,6 +621,7 @@ function initGL(gl: WebGLRenderingContext, canvas: HTMLCanvasElement, orbitalCam
   }
   gl.useProgram(shaderProgram);
   const positionLocation = gl.getAttribLocation(shaderProgram, "aVertexPosition");
+  const tolleranceLocation = gl.getUniformLocation(shaderProgram, "uTollerance");
   const focalLengthLocation = gl.getUniformLocation(shaderProgram, "uFocalLength");
   const modelViewMatrixLocation = gl.getUniformLocation(shaderProgram, "uModelViewMatrix");
   const resolutionLocation = gl.getUniformLocation(shaderProgram, "resolution");
@@ -629,6 +709,7 @@ function initGL(gl: WebGLRenderingContext, canvas: HTMLCanvasElement, orbitalCam
     vertexShader,
     fragmentShader,
     shaderProgram,
+    tolleranceLocation,
     inverseViewMatrix,
     inverseViewMatrixLocation,
     useOrthogonalProjectionLocation,
