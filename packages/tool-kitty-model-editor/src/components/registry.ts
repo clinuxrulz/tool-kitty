@@ -27,6 +27,7 @@ import { applyTextureComponentType } from "./ApplyTextureComponent";
 import { coneComponentType } from "./ConeComponent";
 import { torusComponentType } from "./TorusComponent";
 import { mirrorComponentType } from "./MirrorComponent";
+import { intersectionComponentType } from "./IntersectionComponent";
 
 export const registry = new EcsRegistry([
   ...defaultRegistry.componentTypes,
@@ -42,6 +43,7 @@ export const registry = new EcsRegistry([
   displaceComponentType,
   displayComponentType,
   infiniteCylinderComponentType,
+  intersectionComponentType,
   mirrorComponentType,
   knobComponentType,
   numberComponentType,
