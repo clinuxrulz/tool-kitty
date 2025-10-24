@@ -39,6 +39,7 @@ export class CodeGenCtx {
     return glsl`precision highp float;
 uniform vec2 resolution;
 uniform float uTollerance;
+uniform float uMaxStep;
 uniform float uFocalLength;
 uniform mat4 uInverseViewMatrix;
 uniform bool uUseOrthogonalProjection;
@@ -69,6 +70,9 @@ bool march(vec3 ro, vec3 rd, out float t) {
     float d = map(p);
     if (abs(d) <= uTollerance) {
       return true;
+    }
+    if (d > uMaxStep) {
+      return false;
     }
     t += d;
   }
