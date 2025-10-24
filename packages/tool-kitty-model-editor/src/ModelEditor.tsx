@@ -1,15 +1,17 @@
 import { batch, Component, ComponentProps, createEffect, createMemo, createSignal, For, on, Show, splitProps, untrack } from "solid-js";
 import { EcsWorld } from "tool-kitty-ecs";
 import { NodeEditorUI, NodesSystem } from "tool-kitty-node-editor";
-import { Overwrite } from "tool-kitty-util";
+import { base64ToUint8Array, Overwrite, uint8ArrayToBase64 } from "tool-kitty-util";
 import { NodeExt, NodeTypeExt } from "./NodeExt";
 import { nodeRegistry } from "./nodes/node_registery";
 import { createStore } from "solid-js/store";
 import { generateCode } from "./code-gen";
 import { registry } from "./components/registry";
-import { attribute, compile, glsl, uniform } from "@bigmistqke/view.gl/tag";
+import { compile } from "@bigmistqke/view.gl/tag";
 import { OrbitalCamera } from "./OrbitalCamera";
 import { Quaternion, Transform3D, Vec3 } from "tool-kitty-math";
+import { gzip, ungzip } from "pako";
+import { NodeEditorController } from "tool-kitty-node-editor/src/NodeEditorUI";
 
 type GLState = {
   width: number,
@@ -69,7 +71,7 @@ const ModelEditor: Component<
     initSpace: Transform3D.create(Vec3.create(0.0, 0.0, 10_000.0), Quaternion.identity),
     initOrbitTarget: Vec3.zero,
   });
-  
+  let [ nodeEditorController, setNodeEditorController, ] = createSignal<NodeEditorController<NodeTypeExt,NodeExt>>();
   let orthoScale = createMemo(() => {
     let x = Number.parseFloat(state.orthoScaleText);
     if (Number.isNaN(x)) {
@@ -412,6 +414,51 @@ const ModelEditor: Component<
     },
     { defer: true, },
   ));
+  let exportToClipboard = async () => {
+    let isUUIDRegEx = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+    let shortIdMap = new Map<string,string>();
+    let nextId = 0;
+    for (let entity of props.world.entities()) {
+      if (isUUIDRegEx.test(entity)) {
+        shortIdMap.set(entity, `${nextId++}`);
+      }
+    }
+    let data1 = JSON.stringify(props.world.toJson());
+    for (let [ entityId, shortId ] of shortIdMap.entries()) {
+      data1 = data1.replaceAll(entityId, shortId);
+    }
+    let data2 = gzip(data1);
+    let data3 = uint8ArrayToBase64(data2);
+    await window.navigator.clipboard.writeText(data3);
+  };
+  let importFromClipboard = async () => {
+    try {
+      let data1 = await window.navigator.clipboard.readText();
+      let data2 = base64ToUint8Array(data1);
+      let data3 = ungzip(data2);
+      let decoder = new TextDecoder("utf-8");
+      let data4 = decoder.decode(data3);
+      let data5 = JSON.parse(data4);
+      let newWorld = EcsWorld.fromJson(registry, data5);
+      if (newWorld.type == "Err") {
+        throw new Error(newWorld.message);
+      }
+      let newWorld2 = newWorld.value;
+      batch(() => {
+        let world = props.world;
+        for (let entity of [...world.entities()]) {
+          world.destroyEntity(entity);
+        }
+        for (let entity of newWorld2.entities()) {
+          let components = newWorld2.getComponents(entity);
+          world.createEntityWithId(entity, components);
+        }
+      });
+    } catch (err) {
+      console.log(err);
+      alert("Failed to read clipboard.");
+    }
+  };
   return (
     <div
       {...rest}
@@ -436,10 +483,35 @@ const ModelEditor: Component<
             }}
             onInit={(controller) => {
               setNodesSystem(controller.nodesSystem);
+              setNodeEditorController(controller);
             }}
             componentRegistry={registry}
             nodeRegistry={nodeRegistry}
             world={props.world}
+            menu={
+              <ul class="menu dropdown-content bg-base-100  rounded-box z-1 w-52 p-2 shadow-sm">
+                <li>
+                  <a
+                    onClick={() => {
+                      exportToClipboard();
+                      nodeEditorController()?.closeMenu();
+                    }}
+                  >
+                    Export To Clipboard
+                  </a>
+                </li>
+                <li>
+                  <a
+                    onClick={() => {
+                      importFromClipboard()
+                      nodeEditorController()?.closeMenu();
+                    }}
+                  >
+                    Import From Clipboard
+                  </a>
+                </li>
+              </ul>
+            }
             toolbar={<>
               <label class="label" style="margin-left: 5px;">
                 <input
@@ -474,22 +546,6 @@ const ModelEditor: Component<
               </select>
             </>}
           />
-          <Show when={state.showCode ? code() : undefined}>
-            {(code) =>
-              <div
-                style={{
-                  "position": "absolute",
-                  "right": "0",
-                  "top": "0",
-                  "bottom": "0",
-                  "overflow": "auto",
-                  "width": "50%",
-                }}
-              >
-                <pre innerText={compile.toString(code().code)}/>
-              </div>
-            }
-          </Show>
         </div>
         <div
           ref={setCanvasDiv}
@@ -516,6 +572,22 @@ const ModelEditor: Component<
               orbitalCamera.pointerMove(e);
             }}
           />
+          <Show when={state.showCode ? code() : undefined}>
+            {(code) =>
+              <div
+                style={{
+                  "position": "absolute",
+                  "right": "0",
+                  "top": "0",
+                  "bottom": "0",
+                  "overflow": "auto",
+                  "width": "50%",
+                }}
+              >
+                <pre innerText={compile.toString(code().code)}/>
+              </div>
+            }
+          </Show>
           <div
             style={{
               "position": "absolute",

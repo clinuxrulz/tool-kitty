@@ -16,6 +16,7 @@ import FileSaver from "file-saver";
 
 export type NodeEditorController<TYPE_EXT,INST_EXT> = {
   nodesSystem: NodesSystem<TYPE_EXT,INST_EXT>,
+  closeMenu: () => void,
 };
 
 function NodeEditorUI<TYPE_EXT,INST_EXT>(props_:
@@ -26,6 +27,7 @@ function NodeEditorUI<TYPE_EXT,INST_EXT>(props_:
       componentRegistry: EcsRegistry,
       nodeRegistry: NodeRegistry<TYPE_EXT,INST_EXT>,
       world: EcsWorld,
+      menu?: JSX.Element,
       toolbar: JSX.Element,
     }
   >
@@ -35,6 +37,7 @@ function NodeEditorUI<TYPE_EXT,INST_EXT>(props_:
     "componentRegistry",
     "nodeRegistry",
     "world",
+    "menu",
     "toolbar",
   ]);
   let nodeRegistry = props.nodeRegistry;
@@ -221,8 +224,16 @@ function NodeEditorUI<TYPE_EXT,INST_EXT>(props_:
     selectedEntitySet.clear();
   };
   //
+  let [ menuDetailsElement, setMenuDetailsElement, ] = createSignal<HTMLDetailsElement>();
   props.onInit({
     nodesSystem,
+    closeMenu: () => {
+      let menuDetailsElement2 = menuDetailsElement();
+      if (menuDetailsElement2 == undefined) {
+        return;
+      }
+      menuDetailsElement2.open = false;
+    },
   });
   //
   let [ fileInputElement, setFileInputElement, ] = createSignal<HTMLInputElement>();
@@ -268,8 +279,51 @@ function NodeEditorUI<TYPE_EXT,INST_EXT>(props_:
         }}
       >
         <div>
+          <Show when={props.menu} keyed>
+            {(menu) => {
+              let detailsElement!: HTMLDetailsElement;
+              let menuDiv!: HTMLDivElement;
+              let mouseIsOverDetails = false;
+              onMount(() => {
+                setMenuDetailsElement(detailsElement);
+              });
+              return (
+                <details
+                  ref={detailsElement}
+                  class="dropdown"
+                  onToggle={(e) => {
+                    if (e.currentTarget.open) {
+                      menuDiv.focus();
+                    }
+                  }}
+                  onMouseOver={() => {
+                    mouseIsOverDetails = true;
+                  }}
+                  onMouseOut={() => {
+                    mouseIsOverDetails = false;
+                  }}
+                >
+                  <summary class="btn btn-primary">
+                    <i class="fa-solid fa-bars"/>
+                  </summary>
+                  <div
+                    ref={menuDiv}
+                    tabIndex={-1}
+                    onFocusOut={() => {
+                      if (mouseIsOverDetails) {
+                        return;
+                      }
+                      detailsElement.open = false;
+                    }}
+                  >
+                    {menu}
+                  </div>
+                </details>
+              );
+            }}
+          </Show>
           <button
-            class="btn btn-primary"
+            class="btn btn btn-primary"
             style="margin-left: 5px;"
             onClick={() => {
               let newName = window.prompt("Enter new filename:", state.filename);
