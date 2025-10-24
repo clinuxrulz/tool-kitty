@@ -28,6 +28,7 @@ import { torusNodeType } from "./TorusNode";
 import { mirrorNodeType } from "./MirrorNode";
 import { intersectionNodeType } from "./IntersectionNode";
 import { xorNodeType } from "./XorNode";
+import { octahedronNodeType } from "./OctahedronNode";
 
 export const nodeRegistry = new NodeRegistry<NodeTypeExt,NodeExt>();
 
@@ -48,6 +49,7 @@ nodeRegistry.registerNodeTypes([
   mirrorNodeType,
   unboundKnobNodeType,
   numberNodeType,
+  octahedronNodeType,
   repeatNodeType,
   repeatRotationalNodeType,
   rotateNodeType,

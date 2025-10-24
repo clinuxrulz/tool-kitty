@@ -29,6 +29,7 @@ import { torusComponentType } from "./TorusComponent";
 import { mirrorComponentType } from "./MirrorComponent";
 import { intersectionComponentType } from "./IntersectionComponent";
 import { xorComponentType } from "./XorComponent";
+import { octahedronComponentType } from "./OctahedronComponent";
 
 export const registry = new EcsRegistry([
   ...defaultRegistry.componentTypes,
@@ -48,6 +49,7 @@ export const registry = new EcsRegistry([
   mirrorComponentType,
   knobComponentType,
   numberComponentType,
+  octahedronComponentType,
   repeatComponentType,
   repeatRotationalComponentType,
   rotateComponentType,
