@@ -28,6 +28,7 @@ import { coneComponentType } from "./ConeComponent";
 import { torusComponentType } from "./TorusComponent";
 import { mirrorComponentType } from "./MirrorComponent";
 import { intersectionComponentType } from "./IntersectionComponent";
+import { xorComponentType } from "./XorComponent";
 
 export const registry = new EcsRegistry([
   ...defaultRegistry.componentTypes,
@@ -60,4 +61,5 @@ export const registry = new EcsRegistry([
   unboundKnobComponentType,
   unionComponentType,
   vec3ComponentType,
+  xorComponentType,
 ]);

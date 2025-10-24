@@ -27,6 +27,7 @@ import { coneNodeType } from "./ConeNode";
 import { torusNodeType } from "./TorusNode";
 import { mirrorNodeType } from "./MirrorNode";
 import { intersectionNodeType } from "./IntersectionNode";
+import { xorNodeType } from "./XorNode";
 
 export const nodeRegistry = new NodeRegistry<NodeTypeExt,NodeExt>();
 
@@ -58,4 +59,5 @@ nodeRegistry.registerNodeTypes([
   translateNodeType,
   unionNodeType,
   vec3NodeType,
+  xorNodeType,
 ]);
