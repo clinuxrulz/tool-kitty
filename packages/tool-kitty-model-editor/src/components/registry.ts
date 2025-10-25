@@ -32,6 +32,7 @@ import { xorComponentType } from "./XorComponent";
 import { octahedronComponentType } from "./OctahedronComponent";
 import { roundComponentType } from "./RoundComponent";
 import { heart2DComponentType } from "./Heart2DComponent";
+import { extrusionComponentType } from "./ExtrusionComponent";
 
 export const registry = new EcsRegistry([
   ...defaultRegistry.componentTypes,
@@ -46,6 +47,7 @@ export const registry = new EcsRegistry([
   differenceComponentType,
   displaceComponentType,
   displayComponentType,
+  extrusionComponentType,
   heart2DComponentType,
   infiniteCylinderComponentType,
   intersectionComponentType,
