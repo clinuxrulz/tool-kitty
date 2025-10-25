@@ -66,13 +66,16 @@ void colourMap(vec3 p, out vec4 c) {
   ${this.colourBody}
 }
 
-bool march(vec3 ro, vec3 rd, out float t) {
+bool march(vec3 ro, vec3 rd, bool negateDist, out float t) {
   vec3 p = ro;
   t = 0.0;
   for (int i = 0; i < ${maxIterations}; ++i) {
     vec3 p = ro + rd*t;
     float d = map(p);
-    if (abs(d) <= uTollerance) {
+    if (negateDist) {
+      d = -d;
+    }
+    if (d <= uTollerance) {
       return true;
     }
     if (d > uMaxStep) {
@@ -119,7 +122,7 @@ void main(void) {
   rp = (uInverseViewMatrix * vec4(rp, 1.0)).xyz;
   rd = rp - ro;
   float t = 0.0;
-  bool hit = march(ro, rd, t);
+  bool hit = march(ro, rd, false, t);
   if (!hit) {
     gl_FragColor = vec4(0.2, 0.2, 0.2, 1.0);
     return;
@@ -129,7 +132,29 @@ void main(void) {
   float s = dot(n,normalize(vec3(1,1,1))) + 0.2;
   vec4 c = vec4(1.0, 1.0, 1.0, 1.0);
   colourMap(p, c);
-  gl_FragColor = vec4(c.r * s, c.g * s, c.b * s, c.a);
+  c = vec4(c.rgb * s, c.a);
+  if (c.a < 1.0) {
+    vec3 ro2 = p + rd*100.0;
+    vec3 rd2 = refract(rd, n, 1.0/1.5);
+    march(ro2, rd2, true, t);
+    p = ro2 + rd2*t;
+    n = normal(p);
+    ro2 = p + rd2*100.0;
+    rd2 = refract(rd2, -n, 1.5);
+    hit = march(ro2, rd2, false, t);
+    vec4 c2;
+    if (!hit) {
+      c2 = vec4(0.2,0.2,0.2,1.0);
+    } else {
+      p = ro2 + rd2*t;
+      n = normal(p);
+      colourMap(p, c2);
+      s = dot(n,normalize(vec3(1,1,1))) + 0.2;
+      c2 = vec4(c2.rgb * s, 1.0);
+    }
+    c = vec4(c.rgb * c.a + c2.rgb * (1.0 - c.a), 1.0);
+  }
+  gl_FragColor = c;
 }`;
   }
 }
