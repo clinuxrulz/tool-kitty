@@ -30,6 +30,7 @@ import { intersectionNodeType } from "./IntersectionNode";
 import { xorNodeType } from "./XorNode";
 import { octahedronNodeType } from "./OctahedronNode";
 import { roundNodeType } from "./RoundNode";
+import { heart2DNodeType } from "./Heart2DNode";
 
 export const nodeRegistry = new NodeRegistry<NodeTypeExt,NodeExt>();
 
@@ -45,6 +46,7 @@ nodeRegistry.registerNodeTypes([
   differenceNodeType,
   displaceNodeType,
   displayNodeType,
+  heart2DNodeType,
   infiniteCylinderNodeType,
   intersectionNodeType,
   mirrorNodeType,
