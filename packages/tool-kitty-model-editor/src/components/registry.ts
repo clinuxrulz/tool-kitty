@@ -33,6 +33,7 @@ import { octahedronComponentType } from "./OctahedronComponent";
 import { roundComponentType } from "./RoundComponent";
 import { heart2DComponentType } from "./Heart2DComponent";
 import { extrusionComponentType } from "./ExtrusionComponent";
+import { revolutionComponentType } from "./RevolutionComponent";
 
 export const registry = new EcsRegistry([
   ...defaultRegistry.componentTypes,
@@ -57,6 +58,7 @@ export const registry = new EcsRegistry([
   octahedronComponentType,
   repeatComponentType,
   repeatRotationalComponentType,
+  revolutionComponentType,
   rotateComponentType,
   roundComponentType,
   scaleComponentType,
