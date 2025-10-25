@@ -33,6 +33,7 @@ import { roundNodeType } from "./RoundNode";
 import { heart2DNodeType } from "./Heart2DNode";
 import { extrusionNodeType } from "./ExtrusionNode";
 import { revolutionNodeType } from "./RevolutionNode";
+import { scaleXNodeType } from "./ScaleXNode";
 
 export const nodeRegistry = new NodeRegistry<NodeTypeExt,NodeExt>();
 
@@ -62,6 +63,7 @@ nodeRegistry.registerNodeTypes([
   rotateNodeType,
   roundNodeType,
   scaleNodeType,
+  scaleXNodeType,
   sinXYZFieldNodeType,
   sphereNodeType,
   textureNodeType,

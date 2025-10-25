@@ -34,6 +34,7 @@ import { roundComponentType } from "./RoundComponent";
 import { heart2DComponentType } from "./Heart2DComponent";
 import { extrusionComponentType } from "./ExtrusionComponent";
 import { revolutionComponentType } from "./RevolutionComponent";
+import { scaleXComponentType } from "./ScaleXComponent";
 
 export const registry = new EcsRegistry([
   ...defaultRegistry.componentTypes,
@@ -62,6 +63,7 @@ export const registry = new EcsRegistry([
   rotateComponentType,
   roundComponentType,
   scaleComponentType,
+  scaleXComponentType,
   sinXYZFieldComponentType,
   sphereComponentType,
   textureComponentType,
