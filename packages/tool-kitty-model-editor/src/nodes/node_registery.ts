@@ -34,6 +34,7 @@ import { heart2DNodeType } from "./Heart2DNode";
 import { extrusionNodeType } from "./ExtrusionNode";
 import { revolutionNodeType } from "./RevolutionNode";
 import { scaleXNodeType } from "./ScaleXNode";
+import { capsuleNodeType } from "./CapsuleNode";
 
 export const nodeRegistry = new NodeRegistry<NodeTypeExt,NodeExt>();
 
@@ -43,6 +44,7 @@ nodeRegistry.registerNodeTypes([
   applyTextureNodeType,
   bendNodeType,
   boxNodeType,
+  capsuleNodeType,
   colourNodeType,
   coneNodeType,
   cylinderNodeType,

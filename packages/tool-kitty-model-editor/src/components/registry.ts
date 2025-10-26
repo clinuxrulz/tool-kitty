@@ -35,6 +35,7 @@ import { heart2DComponentType } from "./Heart2DComponent";
 import { extrusionComponentType } from "./ExtrusionComponent";
 import { revolutionComponentType } from "./RevolutionComponent";
 import { scaleXComponentType } from "./ScaleXComponent";
+import { capsuleComponentType } from "./CapsuleComponent";
 
 export const registry = new EcsRegistry([
   ...defaultRegistry.componentTypes,
@@ -43,6 +44,7 @@ export const registry = new EcsRegistry([
   applyTextureComponentType,
   bendComponentType,
   boxComponentType,
+  capsuleComponentType,
   colourComponentType,
   coneComponentType,
   cylinderComponentType,
