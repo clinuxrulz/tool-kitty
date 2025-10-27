@@ -269,7 +269,9 @@ function NodeEditorUI<TYPE_EXT,INST_EXT>(props_:
   };
   const format = () => {
     let graph = new dagre.graphlib.Graph();
-    graph.setGraph({});
+    graph.setGraph({
+      rankdir: "LR",
+    });
     graph.setDefaultEdgeLabel(() => ({}));
     for (let node of nodesSystem.nodes()) {
       graph.setNode(
@@ -289,12 +291,7 @@ function NodeEditorUI<TYPE_EXT,INST_EXT>(props_:
         }
       }
     }
-    dagre.layout(
-      graph,
-      {
-        rankdir: "LR",
-      },
-    );
+    dagre.layout(graph);
     for (let nodeId of graph.nodes()) {
       let node = graph.node(nodeId);
       let node2 = nodesSystem.lookupNodeById(nodeId);
@@ -303,7 +300,7 @@ function NodeEditorUI<TYPE_EXT,INST_EXT>(props_:
       }
       node2.setSpace(
         Transform2D.create(
-          Vec2.create(node.x, node.y),
+          Vec2.create(node.x, -node.y),
           Complex.rot0,
         )
       );
@@ -362,7 +359,10 @@ function NodeEditorUI<TYPE_EXT,INST_EXT>(props_:
                     {props.menu}
                     <li>
                       <a
-                        onClick={() => format()}
+                        onClick={() => {
+                          format();
+                          detailsElement.open = false;
+                        }}
                       >
                         Format
                       </a>
