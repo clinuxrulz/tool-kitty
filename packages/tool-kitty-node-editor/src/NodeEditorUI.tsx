@@ -1,5 +1,5 @@
 import { batch, ComponentProps, createComputed, createMemo, createSignal, JSX, mapArray, on, onCleanup, onMount, Show, splitProps, untrack } from "solid-js";
-import { Vec2 } from "tool-kitty-math";
+import { Complex, Transform2D, Vec2 } from "tool-kitty-math";
 import { EcsRegistry, EcsWorld } from "tool-kitty-ecs";
 import { createStore } from "solid-js/store";
 import { createPanZoomManager, Overwrite, UndoManager } from "tool-kitty-util";
@@ -13,6 +13,7 @@ import { PickingSystem } from "./systems/PickingSystem";
 import { ReactiveSet } from "@solid-primitives/set";
 import { NodeRegistry } from "./NodeRegistry";
 import FileSaver from "file-saver";
+import dagre from "@dagrejs/dagre";
 
 export type NodeEditorController<TYPE_EXT,INST_EXT> = {
   nodesSystem: NodesSystem<TYPE_EXT,INST_EXT>,
@@ -266,6 +267,48 @@ function NodeEditorUI<TYPE_EXT,INST_EXT>(props_:
     let blob = new Blob([ data ], { type: "application/json" });
     FileSaver.saveAs(blob, `${state.filename}.json`);
   };
+  const format = () => {
+    let graph = new dagre.graphlib.Graph();
+    graph.setGraph({});
+    graph.setDefaultEdgeLabel(() => ({}));
+    for (let node of nodesSystem.nodes()) {
+      graph.setNode(
+        node.node.nodeParams.entity,
+        {
+          label: node.node.nodeParams.entity,
+          width: node.renderSize()?.x ?? 100.0,
+          height: node.renderSize()?.y ?? 100.0,
+        }
+      );
+    }
+    for (let node of nodesSystem.nodes()) {
+      for (let input of node.node.inputPins?.() ?? []) {
+        let source = input.source();
+        if (source != undefined) {
+          graph.setEdge(source.target, node.node.nodeParams.entity);
+        }
+      }
+    }
+    dagre.layout(
+      graph,
+      {
+        rankdir: "LR",
+      },
+    );
+    for (let nodeId of graph.nodes()) {
+      let node = graph.node(nodeId);
+      let node2 = nodesSystem.lookupNodeById(nodeId);
+      if (node2 == undefined) {
+        continue;
+      }
+      node2.setSpace(
+        Transform2D.create(
+          Vec2.create(node.x, node.y),
+          Complex.rot0,
+        )
+      );
+    }
+  };
   return (
     <div
       {...rest}
@@ -279,49 +322,56 @@ function NodeEditorUI<TYPE_EXT,INST_EXT>(props_:
         }}
       >
         <div>
-          <Show when={props.menu} keyed>
-            {(menu) => {
-              let detailsElement!: HTMLDetailsElement;
-              let menuDiv!: HTMLDivElement;
-              let mouseIsOverDetails = false;
-              onMount(() => {
-                setMenuDetailsElement(detailsElement);
-              });
-              return (
-                <details
-                  ref={detailsElement}
-                  class="dropdown"
-                  onToggle={(e) => {
-                    if (e.currentTarget.open) {
-                      menuDiv.focus();
+          {untrack(() => {
+            let detailsElement!: HTMLDetailsElement;
+            let menuDiv!: HTMLDivElement;
+            let mouseIsOverDetails = false;
+            onMount(() => {
+              setMenuDetailsElement(detailsElement);
+            });
+            return (
+              <details
+                ref={detailsElement}
+                class="dropdown"
+                onToggle={(e) => {
+                  if (e.currentTarget.open) {
+                    menuDiv.focus();
+                  }
+                }}
+                onMouseOver={() => {
+                  mouseIsOverDetails = true;
+                }}
+                onMouseOut={() => {
+                  mouseIsOverDetails = false;
+                }}
+              >
+                <summary class="btn btn-primary">
+                  <i class="fa-solid fa-bars"/>
+                </summary>
+                <div
+                  ref={menuDiv}
+                  tabIndex={-1}
+                  onFocusOut={() => {
+                    if (mouseIsOverDetails) {
+                      return;
                     }
-                  }}
-                  onMouseOver={() => {
-                    mouseIsOverDetails = true;
-                  }}
-                  onMouseOut={() => {
-                    mouseIsOverDetails = false;
+                    detailsElement.open = false;
                   }}
                 >
-                  <summary class="btn btn-primary">
-                    <i class="fa-solid fa-bars"/>
-                  </summary>
-                  <div
-                    ref={menuDiv}
-                    tabIndex={-1}
-                    onFocusOut={() => {
-                      if (mouseIsOverDetails) {
-                        return;
-                      }
-                      detailsElement.open = false;
-                    }}
-                  >
-                    {menu}
-                  </div>
-                </details>
-              );
-            }}
-          </Show>
+                  <ul class="menu dropdown-content bg-base-100  rounded-box z-1 w-52 p-2 shadow-sm">
+                    {props.menu}
+                    <li>
+                      <a
+                        onClick={() => format()}
+                      >
+                        Format
+                      </a>
+                    </li>
+                  </ul>
+                </div>
+              </details>
+            );
+          })}
           <button
             class="btn btn btn-primary"
             style="margin-left: 5px;"

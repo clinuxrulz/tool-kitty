@@ -489,7 +489,7 @@ const ModelEditor: Component<
             nodeRegistry={nodeRegistry}
             world={props.world}
             menu={
-              <ul class="menu dropdown-content bg-base-100  rounded-box z-1 w-52 p-2 shadow-sm">
+              <>
                 <li>
                   <a
                     onClick={() => {
@@ -510,7 +510,7 @@ const ModelEditor: Component<
                     Import From Clipboard
                   </a>
                 </li>
-              </ul>
+              </>
             }
             toolbar={<>
               <label class="label" style="margin-left: 5px;">
