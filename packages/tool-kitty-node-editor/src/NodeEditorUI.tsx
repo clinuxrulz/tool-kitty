@@ -14,6 +14,7 @@ import { ReactiveSet } from "@solid-primitives/set";
 import { NodeRegistry } from "./NodeRegistry";
 import FileSaver from "file-saver";
 import dagre from "@dagrejs/dagre";
+import { convertToTs } from "./convert-to-ts";
 
 export type NodeEditorController<TYPE_EXT,INST_EXT> = {
   nodesSystem: NodesSystem<TYPE_EXT,INST_EXT>,
@@ -355,19 +356,35 @@ function NodeEditorUI<TYPE_EXT,INST_EXT>(props_:
                     detailsElement.open = false;
                   }}
                 >
-                  <ul class="menu dropdown-content bg-base-100  rounded-box z-1 w-52 p-2 shadow-sm">
-                    {props.menu}
-                    <li>
-                      <a
-                        onClick={() => {
-                          format();
-                          detailsElement.open = false;
-                        }}
-                      >
-                        Format
-                      </a>
-                    </li>
-                  </ul>
+                  <div class="dropdown-content bg-base-100 rounded-box z-1 w-52 p-2 shadow-sm">
+                    <ul class="menu w-full">
+                      {props.menu}
+                      <li>
+                        <a
+                          onClick={() => {
+                            format();
+                            detailsElement.open = false;
+                          }}
+                        >
+                          <div>
+                            Format
+                          </div>
+                        </a>
+                      </li>
+                    </ul>
+                    <hr/>
+                    <ul class="menu w-full">
+                      <li>
+                        <a
+                          onClick={() => {
+                            console.log(convertToTs({ nodesSystem, }));
+                          }}
+                        >
+                          Convert To TypeScript
+                        </a>
+                      </li>
+                    </ul>
+                  </div>
                 </div>
               </details>
             );
