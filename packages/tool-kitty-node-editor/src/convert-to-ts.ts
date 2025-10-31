@@ -1,5 +1,21 @@
 import { saveToJsonViaTypeSchema, TypeSchema } from "tool-kitty-type-schema";
 import { NodesSystem, NodesSystemNode } from "./systems/NodesSystem";
+import { NodeRegistry } from "./NodeRegistry";
+
+export function generatePreludeForTs<TYPE_EXT,INST_EXT>(params: {
+  nodeRegistry: NodeRegistry<TYPE_EXT,INST_EXT>,
+}) {
+  for (let nodeType of params.nodeRegistry.nodeTypes) {
+    let typeSchema = nodeType.componentType.typeSchema;
+    if (typeSchema.type != "Object") {
+      continue;
+    }
+    let internalStateInputs: string[] = [];
+    let inputPins: string[] = [];
+    let outputPins: string[] = [];
+    // TODO
+  }
+}
 
 export function convertToTs<TYPE_EXT,INST_EXT>(params: {
   nodesSystem: NodesSystem<TYPE_EXT,INST_EXT>,
@@ -21,7 +37,10 @@ export function convertToTs<TYPE_EXT,INST_EXT>(params: {
   };
   let stack: NodesSystemNode<TYPE_EXT,INST_EXT>[] = [ ...nodesSystem.nodes(), ];
   let stack2: NodesSystemNode<TYPE_EXT,INST_EXT>[] = [];
-  let code: string[] = [];
+  let code: string[] = [
+    "import * as $ from \"prelude\";",
+    "",
+  ];
   while (true) {
     let node = stack.pop();
     if (node == undefined) {
@@ -122,7 +141,7 @@ export function convertToTs<TYPE_EXT,INST_EXT>(params: {
         }${outputVars != undefined ? outputVars : ""}${
           outputPins.length > 1 ? " }" : ""
         } = `
-    }${firstLetterToLowerCase(node.node.type.componentType.typeName)}(${
+    }$.${firstLetterToLowerCase(node.node.type.componentType.typeName)}(${
       assignedInputCount == 0 ?
         "{}" :
         `{ ${

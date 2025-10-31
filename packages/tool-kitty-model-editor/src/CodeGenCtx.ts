@@ -56,13 +56,13 @@ void defaultColour(vec3 p, out vec4 c) {
 ${this.globalCode}
 
 float map(vec3 p) {
-  float d = 10000.0;
+  float d = 100000000.0;
   ${this.mainBody}
   return d;
 }
 
 void colourMap(vec3 p, out vec4 c) {
-  float d = 10000.0;
+  float d = 100000000.0;
   ${this.colourBody}
 }
 
