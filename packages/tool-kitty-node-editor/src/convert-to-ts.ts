@@ -1,3 +1,4 @@
+import { saveToJsonViaTypeSchema, TypeSchema } from "tool-kitty-type-schema";
 import { NodesSystem, NodesSystemNode } from "./systems/NodesSystem";
 
 export function convertToTs<TYPE_EXT,INST_EXT>(params: {
@@ -53,8 +54,9 @@ export function convertToTs<TYPE_EXT,INST_EXT>(params: {
       continue;
     }
     let inputs: Record<string,string> = {};
-    let assignedInputCount = 0;
+    let allInputKeySet = new Set<string>();
     for (let input of node.node.inputPins?.() ?? []) {
+      allInputKeySet.add(input.name);
       let source = input.source();
       if (source == undefined) {
         continue;
@@ -64,15 +66,45 @@ export function convertToTs<TYPE_EXT,INST_EXT>(params: {
         outPinName: source.pin,
       })!;
       inputs[input.name] = inputVarName;
-      ++assignedInputCount;
     }
     let outputs: Record<string,string> = {};
     let outputPins = node.node.outputPins?.() ?? [];
+    let allOutputKeySet = new Set<string>();
     for (let output of outputPins) {
+      allOutputKeySet.add(output.name);
       let varName = allocVar();
       outputs[output.name] = varName;
       setNodeOutPinVar({ nodeId: node.node.nodeParams.entity, outPinName: output.name, varName, });
     }
+    let internalState: Record<string, string> = {};
+    {
+      let typeSchema = node.node.type.componentType.typeSchema;
+      if (typeSchema.type == "Object") {
+        for (let key of Object.keys(typeSchema.properties)) {
+          if (allInputKeySet.has(key) || allOutputKeySet.has(key)) {
+            continue;
+          }
+          let fieldValueTypeSchema = typeSchema.properties[key];
+          let fieldValue = saveToJsonViaTypeSchema(fieldValueTypeSchema, node.node.nodeParams.state[key]);
+          internalState[key] = JSON.stringify(fieldValue);
+        }
+      }
+    }
+    // put the internal state parameters before the pin input parameters
+    let assignedInputCount = 0;
+    {
+      let inputs2: Record<string, string> = {};
+      for (let [ key, value, ] of Object.entries(internalState)) {
+        inputs2[key] = value;
+        ++assignedInputCount;
+      }
+      for (let [ key, value, ] of Object.entries(inputs)) {
+        inputs2[key] = value;
+        ++assignedInputCount;
+      }
+      inputs = inputs2;
+    }
+    //
     let outputVars: string | undefined;
     if (outputPins.length == 0) {
       outputVars = undefined;
