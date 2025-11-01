@@ -7,6 +7,7 @@ import {
   createEffect,
   createMemo,
   createSignal,
+  JSX,
   mapArray,
   on,
   onCleanup,
@@ -35,7 +36,8 @@ import { indentLess, indentMore } from "@codemirror/commands";
 import { indentUnit } from "@codemirror/language";
 import { createFileSystem, isUrl, parseHtml, resolvePath, Transform, transformModulePaths } from "@bigmistqke/repl";
 import ts, { ModuleKind } from "typescript";
-import { EcsWorld } from "tool-kitty-ecs";
+import { EcsRegistry, EcsWorld } from "tool-kitty-ecs";
+import { NodeRegistry } from "./NodeRegistry";
 
 const innerWorker = new Worker(new URL("./worker.ts", import.meta.url), {
   type: "module",
@@ -115,6 +117,7 @@ function createRepl() {
 }
 
 const TypeScriptUI: Component<{
+  registry: EcsRegistry,
   preludeSource: string,
 }> = (props) => {
   createComputed(() => {
@@ -134,7 +137,11 @@ const TypeScriptUI: Component<{
   const path = "index.ts";
   repl.writeFile(path, "");
   let preludeModule: Accessor<{
-      withWorld: <A>(world: EcsWorld, k: () => Promise<A>) => Promise<A>,
+      withWorld: <A>(
+        registry: EcsRegistry,
+        world: EcsWorld,
+        k: () => Promise<A>,
+      ) => Promise<A>,
   } | undefined>;
   {
     let preludeModule_ = createMemo(() => {
@@ -143,7 +150,11 @@ const TypeScriptUI: Component<{
         return undefined;
       }
       let [ result, setResult, ] = createSignal<{
-        withWorld: <A>(world: EcsWorld, k: () => A) => A,
+        withWorld: <A>(
+          registry: EcsRegistry,
+          world: EcsWorld,
+          k: () => A,
+        ) => A,
       }>();
       (async () => {
         let module = await import(/* @vite-ignore */preludeUrl);
@@ -166,7 +177,7 @@ const TypeScriptUI: Component<{
         return;
       }
       let world = new EcsWorld();
-      preludeModule.withWorld(world, async () => {
+      preludeModule.withWorld(props.registry, world, async () => {
         await import(/* @vite-ignore */userCodeUrl);
       });
     },

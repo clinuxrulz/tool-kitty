@@ -9,15 +9,19 @@ export function generatePreludeForTs<TYPE_EXT,INST_EXT>(params: {
   let inputPinType = tsMaybeUndefined(pinTypeSchema);
   let outputPinType = tsArray(pinTypeSchema);
   let code: string[] = [
+    "let registry: EcsRegistry | undefined;",
     "let world: EcsWorld | undefined;",
     "",
-    "export async function withWorld<A>(world_: EcsWorld, k: () => Promise<A>): Promise<A> {",
+    "export async function withWorld<A>(registry_: EcsRegistry, world_: EcsWorld, k: () => Promise<A>): Promise<A> {",
+    "  let oldRegistry = registry;",
     "  let oldWorld = world;",
     "  let result: A;",
     "  try {",
+    "    registry = registry_;",
     "    world = world_;",
     "    result = await k();",
     "  } finally {",
+    "    registry = oldRegistry;",
     "    world = oldWorld;",
     "  }",
     "  return result;",
@@ -57,11 +61,9 @@ export function generatePreludeForTs<TYPE_EXT,INST_EXT>(params: {
       "    throw new Error(\"must use with_world(...)\");",
       "  }",
       "  let entity = world.createEntity([",
-      `    ${
-             firstLetterToLowerCase(
-               nodeType.componentType.typeName
-             )
-           }ComponentType.create({`,
+      `    registry.componentTypeMap.get("${
+            nodeType.componentType.typeName
+           }")!.create({`,
              [
                ...internalStateInputs.map((key) =>
                  `      ${key}: params.${key}`
