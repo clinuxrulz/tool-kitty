@@ -523,6 +523,7 @@ function NodeEditorUI<TYPE_EXT,INST_EXT>(props_:
                 }}
               >
                 <TypeScriptUI
+                  registry={props.componentRegistry}
                   preludeSource={tsPrelude}
                 />
               </div>

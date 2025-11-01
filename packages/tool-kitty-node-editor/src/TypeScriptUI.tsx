@@ -1,10 +1,13 @@
 import { type WorkerShape } from "@valtown/codemirror-ts/worker";
 import * as Comlink from "comlink";
 import {
+  Accessor,
   Component,
   createComputed,
+  createEffect,
   createMemo,
   createSignal,
+  JSX,
   mapArray,
   on,
   onCleanup,
@@ -31,6 +34,10 @@ import { keymap, EditorView as EditorView2 } from "@codemirror/view";
 import { oneDark } from "@codemirror/theme-one-dark";
 import { indentLess, indentMore } from "@codemirror/commands";
 import { indentUnit } from "@codemirror/language";
+import { createFileSystem, isUrl, parseHtml, resolvePath, Transform, transformModulePaths } from "@bigmistqke/repl";
+import ts, { ModuleKind } from "typescript";
+import { EcsRegistry, EcsWorld } from "tool-kitty-ecs";
+import { NodeRegistry } from "./NodeRegistry";
 
 const innerWorker = new Worker(new URL("./worker.ts", import.meta.url), {
   type: "module",
@@ -40,7 +47,77 @@ const worker = Comlink.wrap<
 >(innerWorker);
 await worker.initialize();
 
+function createRepl() {
+  const transformJs: Transform = ({ path, source, executables }) => {
+    return transformModulePaths(source, (modulePath) => {
+      /*
+      if (modulePath == "prelude") {
+        let tmp = libJsUrl;
+        if (tmp.startsWith("http:") || tmp.startsWith("https:")) {
+          return tmp;
+        }
+        if (tmp.startsWith("/")) {
+          tmp = tmp.slice(1);
+        }
+        return hostnameWithPath + tmp;
+      }
+      */
+      if (modulePath == "prelude" || modulePath.startsWith(".")) {
+        if (modulePath == "prelude") {
+          modulePath = "node_modules/prelude/index.ts";
+        }
+        // Swap relative module-path out with their respective module-url
+        const url = executables.get(resolvePath(path, modulePath));
+        if (!url) throw "url is undefined";
+        return url;
+      } else if (isUrl(modulePath)) {
+        // Return url directly
+        return modulePath;
+      } else {
+        // Wrap external modules with esm.sh
+        return `https://esm.sh/${modulePath}`;
+      }
+    })!;
+  };
+
+  return createFileSystem({
+    css: { type: "css" },
+    js: {
+      type: "javascript",
+      transform: transformJs,
+    },
+    ts: {
+      type: "javascript",
+      transform({ path, source, executables }) {
+        return transformJs({
+          path,
+          source: ts.transpile(source, {
+            module: ModuleKind.ES2022,
+          }),
+          executables,
+        });
+      },
+    },
+    html: {
+      type: "html",
+      transform(config) {
+        return (
+          parseHtml(config)
+            // Transform content of all `<script type="module" />` elements
+            .transformModuleScriptContent(transformJs)
+            // Bind relative `src`-attribute of all `<script />` elements
+            .bindScriptSrc()
+            // Bind relative `href`-attribute of all `<link />` elements
+            .bindLinkHref()
+            .toString()
+        );
+      },
+    },
+  });
+}
+
 const TypeScriptUI: Component<{
+  registry: EcsRegistry,
   preludeSource: string,
 }> = (props) => {
   createComputed(() => {
@@ -49,14 +126,72 @@ const TypeScriptUI: Component<{
       code: props.preludeSource
     });
   });
+  let repl = createRepl();
+  repl.mkdir("node_modules/prelude", {
+    recursive: true,
+  });
+  repl.writeFile(
+    "node_modules/prelude/index.ts",
+    props.preludeSource
+  );
   const path = "index.ts";
+  repl.writeFile(path, "");
+  let preludeModule: Accessor<{
+      withWorld: <A>(
+        registry: EcsRegistry,
+        world: EcsWorld,
+        k: () => Promise<A>,
+      ) => Promise<A>,
+  } | undefined>;
+  {
+    let preludeModule_ = createMemo(() => {
+      let preludeUrl = repl.getExecutable("node_modules/prelude/index.ts");
+      if (preludeUrl == undefined) {
+        return undefined;
+      }
+      let [ result, setResult, ] = createSignal<{
+        withWorld: <A>(
+          registry: EcsRegistry,
+          world: EcsWorld,
+          k: () => A,
+        ) => A,
+      }>();
+      (async () => {
+        let module = await import(/* @vite-ignore */preludeUrl);
+        setResult(module);
+      })();
+      return result;
+    });
+    preludeModule = createMemo(() => preludeModule_()?.());
+  }
+  createEffect(on(
+    [
+      preludeModule,
+      createMemo(() => repl.getExecutable(path)),
+    ],
+    ([ preludeModule, userCodeUrl ]) => {
+      if (preludeModule == undefined) {
+        return;
+      }
+      if (userCodeUrl == undefined) {
+        return;
+      }
+      let world = new EcsWorld();
+      preludeModule.withWorld(props.registry, world, async () => {
+        await import(/* @vite-ignore */userCodeUrl);
+      });
+    },
+  ));
   let [ divElement, setDivElement, ] = createSignal<HTMLDivElement>();
   onMount(() => {
     let divElement2 = divElement();
     if (divElement2 == undefined) {
       return;
     }
-    let changeHandler = () => {};
+    let changeHandler = () => {
+      let source = editor.state.doc.toString();
+      repl.writeFile(path, source);
+    };
     let editor = new EditorView({
       extensions: [
         basicSetup,
