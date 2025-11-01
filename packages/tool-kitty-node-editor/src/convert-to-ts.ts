@@ -1,10 +1,29 @@
-import { saveToJsonViaTypeSchema, TypeSchema } from "tool-kitty-type-schema";
+import { saveToJsonViaTypeSchema, tsArray, tsMaybeUndefined } from "tool-kitty-type-schema";
 import { NodesSystem, NodesSystemNode } from "./systems/NodesSystem";
 import { NodeRegistry } from "./NodeRegistry";
+import { pinTypeSchema } from "./Pin";
 
 export function generatePreludeForTs<TYPE_EXT,INST_EXT>(params: {
   nodeRegistry: NodeRegistry<TYPE_EXT,INST_EXT>,
 }) {
+  let inputPinType = tsMaybeUndefined(pinTypeSchema);
+  let outputPinType = tsArray(pinTypeSchema);
+  let code: string[] = [
+    "let world: EcsWorld | undefined;",
+    "",
+    "export function withWorld<A>(world_: EcsWorld, k: () => A): A {",
+    "  let oldWorld = world;",
+    "  let result: A;",
+    "  try {",
+    "    world = world_;",
+    "    result = k();",
+    "  } finally {",
+    "    world = old_world;",
+    "  }",
+    "  return result;",
+    "}",
+    "",
+  ];
   for (let nodeType of params.nodeRegistry.nodeTypes) {
     let typeSchema = nodeType.componentType.typeSchema;
     if (typeSchema.type != "Object") {
@@ -13,8 +32,74 @@ export function generatePreludeForTs<TYPE_EXT,INST_EXT>(params: {
     let internalStateInputs: string[] = [];
     let inputPins: string[] = [];
     let outputPins: string[] = [];
-    // TODO
+    for (let key of Object.keys(typeSchema.properties)) {
+      let pinType = typeSchema.properties[key];
+      if (deepEqual(pinType, inputPinType)) {
+        inputPins.push(key);
+      } else if (deepEqual(pinType, outputPinType)) {
+        outputPins.push(key);
+      } else {
+        internalStateInputs.push(key);
+      }
+    }
+    code.push(
+      `export function ${
+        firstLetterToLowerCase(
+          nodeType.componentType.typeName
+        )
+      }(params: { ${
+        [
+          ...internalStateInputs.map((varName) => `${varName}: any`),
+          ...inputPins.map((varName) => `${varName}?: any`),
+        ].join(", ")
+      } }) {`,
+      "  if (world == undefined) {",
+      "    throw new Error(\"must use with_world(...)\");",
+      "  }",
+      "  let entity = world.createEntity([",
+      `    ${
+             firstLetterToLowerCase(
+               nodeType.componentType.typeName
+             )
+           }ComponentType.create({`,
+             [
+               ...internalStateInputs.map((key) =>
+                 `      ${key}: params.${key}`
+               ),
+               ...inputPins.map((key) =>
+                 `      ${key}: params.${key} == undefined ? undefined : { target: params.${key}.target, pin: params.${key}.pin, }`
+               ),
+             ].join(",\r\n"),
+      "    }),",
+      "    transform2DComponentType.create({",
+      "      transform: Transform2D.create(",
+      "        Vec2.zero,",
+      "        Complex.rot0,",
+      "      )",
+      "    }),",
+      "  ]);",
+      `${
+        outputPins.length == 0 ?
+          "}" :
+          [
+            "  return {",
+            ...(outputPins.length == 1 ?
+              [
+                "    target: entity,",
+                `    pin: "${outputPins[0]}",`,
+              ] :
+              outputPins.map((pin) =>
+                `    { target: entity, pin: "${pin}", },`
+              )
+            ),
+            "  };",
+            "}",
+          ].join("\r\n")
+      }`,
+      "",
+    );
   }
+  return code.join("\r\n");
 }
 
 export function convertToTs<TYPE_EXT,INST_EXT>(params: {
@@ -157,3 +242,24 @@ export function convertToTs<TYPE_EXT,INST_EXT>(params: {
 function firstLetterToLowerCase(x: string): string {
   return x.slice(0, 1).toLowerCase() + x.slice(1);
 }
+
+function deepEqual(obj1: any, obj2: any): boolean {
+  if (obj1 === obj2) {
+    return true;
+  }
+  if (typeof obj1 !== 'object' || obj1 === null || typeof obj2 !== 'object' || obj2 === null) {
+    return false;
+  }
+  const keys1 = Object.keys(obj1);
+  const keys2 = Object.keys(obj2);
+  if (keys1.length !== keys2.length) {
+    return false;
+  }
+  for (const key of keys1) {
+    if (!keys2.includes(key) || !deepEqual(obj1[key], obj2[key])) {
+      return false;
+    }
+  }
+  return true;
+}
+

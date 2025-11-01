@@ -1,4 +1,4 @@
-import { batch, ComponentProps, createComputed, createMemo, createSignal, JSX, mapArray, on, onCleanup, onMount, Show, splitProps, untrack } from "solid-js";
+import { batch, ComponentProps, createComputed, createMemo, createSignal, JSX, lazy, mapArray, Match, on, onCleanup, onMount, Show, splitProps, Switch, untrack } from "solid-js";
 import { Complex, Transform2D, Vec2 } from "tool-kitty-math";
 import { EcsRegistry, EcsWorld } from "tool-kitty-ecs";
 import { createStore } from "solid-js/store";
@@ -14,7 +14,8 @@ import { ReactiveSet } from "@solid-primitives/set";
 import { NodeRegistry } from "./NodeRegistry";
 import FileSaver from "file-saver";
 import dagre from "@dagrejs/dagre";
-import { convertToTs } from "./convert-to-ts";
+import { convertToTs, generatePreludeForTs } from "./convert-to-ts";
+const TypeScriptUI = lazy(() => import("./TypeScriptUI"));
 
 export type NodeEditorController<TYPE_EXT,INST_EXT> = {
   nodesSystem: NodesSystem<TYPE_EXT,INST_EXT>,
@@ -52,6 +53,7 @@ function NodeEditorUI<TYPE_EXT,INST_EXT>(props_:
     makeSound: boolean,
     freezePanZoom: boolean,
     filename: string,
+    inTypeScriptView: boolean,
   }>({
     pan: Vec2.zero,
     scale: 1.0,
@@ -61,8 +63,12 @@ function NodeEditorUI<TYPE_EXT,INST_EXT>(props_:
     makeSound: false,
     freezePanZoom: false,
     filename: "node-graph",
+    inTypeScriptView: false,
   });
   let undoManager = new UndoManager();
+  let tsPrelude = generatePreludeForTs({
+    nodeRegistry: props.nodeRegistry,
+  });
   let svgElement!: SVGSVGElement;
   let [ svgSize, setSvgSize, ] = createSignal<Vec2>(Vec2.zero);
   onMount(() => {
@@ -377,7 +383,14 @@ function NodeEditorUI<TYPE_EXT,INST_EXT>(props_:
                       <li>
                         <a
                           onClick={() => {
+                            console.log("----");
+                            console.log("Prelude:");
+                            console.log(generatePreludeForTs({ nodeRegistry: props.nodeRegistry, }));
+                            console.log("----");
+                            console.log("Code:");
                             console.log(convertToTs({ nodesSystem, }));
+                            setState("inTypeScriptView", true);
+                            detailsElement.open = false;
                           }}
                         >
                           Convert To TypeScript
@@ -468,33 +481,53 @@ function NodeEditorUI<TYPE_EXT,INST_EXT>(props_:
             position: "relative",
           }}
         >
-          <svg
-            ref={svgElement}
-            style={{
-              position: "absolute",
-              left: "0",
-              top: "0",
-              width: "100%",
-              height: "100%",
-              "touch-action": "none",
-              "user-select": "none",
-            }}
-            onPointerDown={onPointerDown}
-            onPointerUp={onPointerUp}
-            onPointerCancel={onPointerCancel}
-            onPointerMove={onPointerMove}
-            onWheel={onWheel}
-            onPointerOut={onPointerOut}
-          >
-            <g transform={transform()}>
-              <renderSystem.Render/>
-              <Show when={mode().overlaySvg} keyed>
-                {(OverlaySvg) =>
-                  <OverlaySvg/>
-                }
-              </Show>
-            </g>
-          </svg>
+          <Switch>
+            <Match when={!state.inTypeScriptView}>
+              <svg
+                ref={svgElement}
+                style={{
+                  position: "absolute",
+                  left: "0",
+                  top: "0",
+                  width: "100%",
+                  height: "100%",
+                  "touch-action": "none",
+                  "user-select": "none",
+                }}
+                onPointerDown={onPointerDown}
+                onPointerUp={onPointerUp}
+                onPointerCancel={onPointerCancel}
+                onPointerMove={onPointerMove}
+                onWheel={onWheel}
+                onPointerOut={onPointerOut}
+              >
+                <g transform={transform()}>
+                  <renderSystem.Render/>
+                  <Show when={mode().overlaySvg} keyed>
+                    {(OverlaySvg) =>
+                      <OverlaySvg/>
+                    }
+                  </Show>
+                </g>
+              </svg>
+            </Match>
+            <Match when={state.inTypeScriptView}>
+              <div
+                style={{
+                  "position": "absolute",
+                  "left": "0",
+                  "top": "0",
+                  "width": "100%",
+                  "height": "100%",
+                  "overflow": "auto",
+                }}
+              >
+                <TypeScriptUI
+                  preludeSource={tsPrelude}
+                />
+              </div>
+            </Match>
+          </Switch>
           <Show when={mode().sideForm?.() == undefined}>
             <Show when={mode().instructions} keyed>
               {(Instructions) => (
