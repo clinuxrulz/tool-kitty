@@ -134,7 +134,7 @@ const TypeScriptUI: Component<{
   const path = "index.ts";
   repl.writeFile(path, "");
   let preludeModule: Accessor<{
-      withWorld: <A>(world: EcsWorld, k: () => A) => A,
+      withWorld: <A>(world: EcsWorld, k: () => Promise<A>) => Promise<A>,
   } | undefined>;
   {
     let preludeModule_ = createMemo(() => {
@@ -153,10 +153,24 @@ const TypeScriptUI: Component<{
     });
     preludeModule = createMemo(() => preludeModule_()?.());
   }
-  /*
   createEffect(on(
-    repl.getE
-  ));*/
+    [
+      preludeModule,
+      createMemo(() => repl.getExecutable(path)),
+    ],
+    ([ preludeModule, userCodeUrl ]) => {
+      if (preludeModule == undefined) {
+        return;
+      }
+      if (userCodeUrl == undefined) {
+        return;
+      }
+      let world = new EcsWorld();
+      preludeModule.withWorld(world, async () => {
+        await import(/* @vite-ignore */userCodeUrl);
+      });
+    },
+  ));
   let [ divElement, setDivElement, ] = createSignal<HTMLDivElement>();
   onMount(() => {
     let divElement2 = divElement();
