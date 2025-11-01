@@ -73,12 +73,6 @@ export function generatePreludeForTs<TYPE_EXT,INST_EXT>(params: {
                ),
              ].join(",\r\n"),
       "    }),",
-      "    transform2DComponentType.create({",
-      "      transform: Transform2D.create(",
-      "        Vec2.zero,",
-      "        Complex.rot0,",
-      "      )",
-      "    }),",
       "  ]);",
       `${
         outputPins.length == 0 ?
