@@ -146,7 +146,7 @@ const TypeScriptUI: Component<{
         withWorld: <A>(world: EcsWorld, k: () => A) => A,
       }>();
       (async () => {
-        let module = await import(/*vite-ignore*/preludeUrl);
+        let module = await import(/* @vite-ignore */preludeUrl);
         setResult(module);
       })();
       return result;
