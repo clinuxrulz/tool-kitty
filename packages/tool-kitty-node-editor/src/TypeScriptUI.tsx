@@ -1,8 +1,10 @@
 import { type WorkerShape } from "@valtown/codemirror-ts/worker";
 import * as Comlink from "comlink";
 import {
+  Accessor,
   Component,
   createComputed,
+  createEffect,
   createMemo,
   createSignal,
   mapArray,
@@ -33,6 +35,7 @@ import { indentLess, indentMore } from "@codemirror/commands";
 import { indentUnit } from "@codemirror/language";
 import { createFileSystem, isUrl, parseHtml, resolvePath, Transform, transformModulePaths } from "@bigmistqke/repl";
 import ts, { ModuleKind } from "typescript";
+import { EcsWorld } from "tool-kitty-ecs";
 
 const innerWorker = new Worker(new URL("./worker.ts", import.meta.url), {
   type: "module",
@@ -130,6 +133,30 @@ const TypeScriptUI: Component<{
   );
   const path = "index.ts";
   repl.writeFile(path, "");
+  let preludeModule: Accessor<{
+      withWorld: <A>(world: EcsWorld, k: () => A) => A,
+  } | undefined>;
+  {
+    let preludeModule_ = createMemo(() => {
+      let preludeUrl = repl.getExecutable("node_modules/prelude/index.ts");
+      if (preludeUrl == undefined) {
+        return undefined;
+      }
+      let [ result, setResult, ] = createSignal<{
+        withWorld: <A>(world: EcsWorld, k: () => A) => A,
+      }>();
+      (async () => {
+        let module = await import(/*vite-ignore*/preludeUrl);
+        setResult(module);
+      })();
+      return result;
+    });
+    preludeModule = createMemo(() => preludeModule_()?.());
+  }
+  /*
+  createEffect(on(
+    repl.getE
+  ));*/
   let [ divElement, setDivElement, ] = createSignal<HTMLDivElement>();
   onMount(() => {
     let divElement2 = divElement();
