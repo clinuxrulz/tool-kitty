@@ -15,6 +15,7 @@ import { NodeRegistry } from "./NodeRegistry";
 import FileSaver from "file-saver";
 import dagre from "@dagrejs/dagre";
 import { convertToTs, generatePreludeForTs } from "./convert-to-ts";
+import { transform2DComponentType } from "tool-kitty-math-ecs";
 const TypeScriptUI = lazy(() => import("./TypeScriptUI"));
 
 export type NodeEditorController<TYPE_EXT,INST_EXT> = {
@@ -388,20 +389,19 @@ function NodeEditorUI<TYPE_EXT,INST_EXT>(props_:
                       <li>
                         <a
                           onClick={() => {
-                            console.log("----");
-                            console.log("Prelude:");
-                            console.log(generatePreludeForTs({ nodeRegistry: props.nodeRegistry, }));
-                            console.log("----");
-                            console.log("Code:");
-                            console.log(convertToTs({ nodesSystem, }));
-                            batch(() => {
-                              setState("inTypeScriptView", true);
-                              setState("typeScriptSource", convertToTs({ nodesSystem, }));
-                            });
-                            detailsElement.open = false;
+                            if (!state.inTypeScriptView) {
+                              batch(() => {
+                                setState("inTypeScriptView", true);
+                                setState("typeScriptSource", convertToTs({ nodesSystem, }));
+                              });
+                              detailsElement.open = false;
+                            } else {
+                              setState("inTypeScriptView", false);
+                              detailsElement.open = false;
+                            }
                           }}
                         >
-                          Convert To TypeScript
+                          Convert To {state.inTypeScriptView ? "Node Graph" : "TypeScript"}
                         </a>
                       </li>
                     </ul>
@@ -560,7 +560,15 @@ function NodeEditorUI<TYPE_EXT,INST_EXT>(props_:
                       }
                       for (let entity of newWorld.entities()) {
                         let components = newWorld.getComponents(entity);
-                        world.createEntityWithId(entity, components);
+                        world.createEntityWithId(
+                          entity,
+                          [
+                            ...components,
+                            transform2DComponentType.create({
+                              transform: Transform2D.identity,
+                            }),
+                          ],
+                        );
                       }
                       for (let node of nodesSystem.nodes()) {
                         for (let input of node.node.inputPins?.() ?? []) {

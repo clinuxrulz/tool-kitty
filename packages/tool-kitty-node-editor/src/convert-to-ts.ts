@@ -142,6 +142,9 @@ export function convertToTs<TYPE_EXT,INST_EXT>(params: {
       if (source == undefined) {
         continue;
       }
+      if (nodesSystem.lookupNodeById(source.target) == undefined) {
+        continue;
+      }
       if (
         lookupNodeOutPinVar({
           nodeId: source.target,
