@@ -119,6 +119,8 @@ function createRepl() {
 const TypeScriptUI: Component<{
   registry: EcsRegistry,
   preludeSource: string,
+  initSource: string,
+  onWorldUpdate: (newWorld: EcsWorld) => void,
 }> = (props) => {
   createComputed(() => {
     worker.updateFile({
@@ -135,7 +137,7 @@ const TypeScriptUI: Component<{
     props.preludeSource
   );
   const path = "index.ts";
-  repl.writeFile(path, "");
+  repl.writeFile(path, props.initSource);
   let preludeModule: Accessor<{
       withWorld: <A>(
         registry: EcsRegistry,
@@ -179,6 +181,7 @@ const TypeScriptUI: Component<{
       let world = new EcsWorld();
       preludeModule.withWorld(props.registry, world, async () => {
         await import(/* @vite-ignore */userCodeUrl);
+        props.onWorldUpdate(world);
       });
     },
   ));
@@ -229,6 +232,13 @@ const TypeScriptUI: Component<{
         }),
       ],
       parent: divElement2,
+    });
+    editor.dispatch({
+      changes: {
+        from: 0,
+        to: editor.state.doc.length,
+        insert: props.initSource,
+      },
     });
   });
   return (

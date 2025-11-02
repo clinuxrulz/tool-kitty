@@ -54,6 +54,7 @@ function NodeEditorUI<TYPE_EXT,INST_EXT>(props_:
     freezePanZoom: boolean,
     filename: string,
     inTypeScriptView: boolean,
+    typeScriptSource: string,
   }>({
     pan: Vec2.zero,
     scale: 1.0,
@@ -64,6 +65,7 @@ function NodeEditorUI<TYPE_EXT,INST_EXT>(props_:
     freezePanZoom: false,
     filename: "node-graph",
     inTypeScriptView: false,
+    typeScriptSource: "",
   });
   let undoManager = new UndoManager();
   let tsPrelude = generatePreludeForTs({
@@ -389,7 +391,10 @@ function NodeEditorUI<TYPE_EXT,INST_EXT>(props_:
                             console.log("----");
                             console.log("Code:");
                             console.log(convertToTs({ nodesSystem, }));
-                            setState("inTypeScriptView", true);
+                            batch(() => {
+                              setState("inTypeScriptView", true);
+                              setState("typeScriptSource", convertToTs({ nodesSystem, }));
+                            });
                             detailsElement.open = false;
                           }}
                         >
@@ -525,6 +530,19 @@ function NodeEditorUI<TYPE_EXT,INST_EXT>(props_:
                 <TypeScriptUI
                   registry={props.componentRegistry}
                   preludeSource={tsPrelude}
+                  initSource={state.typeScriptSource}
+                  onWorldUpdate={(newWorld) => {
+                    batch(() => {
+                      let world = props.world;
+                      for (let entity of [...world.entities()]) {
+                        world.destroyEntity(entity);
+                      }
+                      for (let entity of newWorld.entities()) {
+                        let components = newWorld.getComponents(entity);
+                        world.createEntityWithId(entity, components);
+                      }
+                    });
+                  }}
                 />
               </div>
             </Match>

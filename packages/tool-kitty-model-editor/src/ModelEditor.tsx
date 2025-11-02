@@ -469,7 +469,7 @@ const ModelEditor: Component<
           "height": "100%",
           "position": "relative",
           "display": "flex",
-          "flex-direction": isLandscape() ? "row" : "column-reverse",
+          "flex-direction": isLandscape() ? "row" : "column",
         }}
       >
         <div style={{
