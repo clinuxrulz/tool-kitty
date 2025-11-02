@@ -315,6 +315,9 @@ function NodeEditorUI<TYPE_EXT,INST_EXT>(props_:
       );
     }
   };
+  let [ typeScriptController, setTypeScriptController, ] = createSignal<{
+    refresh: () => void,
+  }>()
   return (
     <div
       {...rest}
@@ -469,6 +472,21 @@ function NodeEditorUI<TYPE_EXT,INST_EXT>(props_:
           >
             Delete
           </button>
+          <Show when={state.inTypeScriptView}>
+            <button
+              class="btn btn-primary"
+              style="margin-left: 5px;"
+              onClick={() => {
+                let controller = typeScriptController();
+                if (controller == undefined) {
+                  return;
+                }
+                controller.refresh();
+              }}
+            >
+              <i class="fa-solid fa-rotate"></i>
+            </button>
+          </Show>
           {props.toolbar}
           <label class="label" style="margin-left: 5px;">
             <input
@@ -531,6 +549,9 @@ function NodeEditorUI<TYPE_EXT,INST_EXT>(props_:
                   registry={props.componentRegistry}
                   preludeSource={tsPrelude}
                   initSource={state.typeScriptSource}
+                  onInit={(controller) => {
+                    setTypeScriptController(controller);
+                  }}
                   onWorldUpdate={(newWorld) => {
                     batch(() => {
                       let world = props.world;
@@ -540,6 +561,32 @@ function NodeEditorUI<TYPE_EXT,INST_EXT>(props_:
                       for (let entity of newWorld.entities()) {
                         let components = newWorld.getComponents(entity);
                         world.createEntityWithId(entity, components);
+                      }
+                      for (let node of nodesSystem.nodes()) {
+                        for (let input of node.node.inputPins?.() ?? []) {
+                          let source = input.source();
+                          if (source == undefined) {
+                            continue;
+                          }
+                          let target = nodesSystem.lookupNodeById(source.target);
+                          if (target == undefined) {
+                            continue;
+                          }
+                          let outputs = target.node.outputPins?.() ?? [];
+                          for (let output of outputs) {
+                            if (output.name != source.pin) {
+                              continue;
+                            }
+                            output.setSinks([
+                              ...output.sinks(),
+                              {
+                                target: node.node.nodeParams.entity,
+                                pin: input.name,
+                              },
+                            ]);
+                            break;
+                          }
+                        }
                       }
                     });
                   }}

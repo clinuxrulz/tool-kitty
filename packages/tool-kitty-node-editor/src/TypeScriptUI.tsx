@@ -121,6 +121,9 @@ const TypeScriptUI: Component<{
   preludeSource: string,
   initSource: string,
   onWorldUpdate: (newWorld: EcsWorld) => void,
+  onInit: (controller: {
+    refresh: () => void,
+  }) => void,
 }> = (props) => {
   createComputed(() => {
     worker.updateFile({
@@ -151,6 +154,7 @@ const TypeScriptUI: Component<{
       if (preludeUrl == undefined) {
         return undefined;
       }
+      onCleanup(() => URL.revokeObjectURL(preludeUrl));
       let [ result, setResult, ] = createSignal<{
         withWorld: <A>(
           registry: EcsRegistry,
@@ -166,25 +170,34 @@ const TypeScriptUI: Component<{
     });
     preludeModule = createMemo(() => preludeModule_()?.());
   }
-  createEffect(on(
-    [
-      preludeModule,
-      createMemo(() => repl.getExecutable(path)),
-    ],
-    ([ preludeModule, userCodeUrl ]) => {
-      if (preludeModule == undefined) {
+  let loadingUserCodeCounter = 0;
+  let lastUserCodeUrl: string | undefined = undefined;
+  props.onInit({
+    refresh: () => {
+      let preludeModule2 = preludeModule();
+      let userCodeUrl = repl.getExecutable(path);
+      if (preludeModule2 == undefined) {
         return;
       }
       if (userCodeUrl == undefined) {
         return;
       }
+      if (userCodeUrl == lastUserCodeUrl) {
+        return;
+      }
+      lastUserCodeUrl = userCodeUrl;
+      let forUserCode = ++loadingUserCodeCounter;
       let world = new EcsWorld();
-      preludeModule.withWorld(props.registry, world, async () => {
+      preludeModule2.withWorld(props.registry, world, async () => {
         await import(/* @vite-ignore */userCodeUrl);
+        URL.revokeObjectURL(userCodeUrl);
+        if (forUserCode != loadingUserCodeCounter) {
+          return;
+        }
         props.onWorldUpdate(world);
       });
     },
-  ));
+  });
   let [ divElement, setDivElement, ] = createSignal<HTMLDivElement>();
   onMount(() => {
     let divElement2 = divElement();

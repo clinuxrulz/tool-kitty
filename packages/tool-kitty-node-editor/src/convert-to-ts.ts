@@ -71,6 +71,9 @@ export function generatePreludeForTs<TYPE_EXT,INST_EXT>(params: {
                ...inputPins.map((key) =>
                  `      ${key}: params.${key} == undefined ? undefined : { target: params.${key}.target, pin: params.${key}.pin, }`
                ),
+               ...outputPins.map((key) =>
+                 `      ${key}: []`,
+              ),
              ].join(",\r\n"),
       "    }),",
       "  ]);",
