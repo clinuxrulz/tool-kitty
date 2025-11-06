@@ -36,6 +36,7 @@ import { extrusionComponentType } from "./ExtrusionComponent";
 import { revolutionComponentType } from "./RevolutionComponent";
 import { scaleXComponentType } from "./ScaleXComponent";
 import { capsuleComponentType } from "./CapsuleComponent";
+import { boundingBoxComponentType } from "./BoundingBoxComponent";
 
 export const registry = new EcsRegistry([
   ...defaultRegistry.componentTypes,
@@ -43,6 +44,7 @@ export const registry = new EcsRegistry([
   applyColourComponentType,
   applyTextureComponentType,
   bendComponentType,
+  boundingBoxComponentType,
   boxComponentType,
   capsuleComponentType,
   colourComponentType,

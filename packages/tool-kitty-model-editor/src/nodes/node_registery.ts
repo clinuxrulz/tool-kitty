@@ -35,6 +35,7 @@ import { extrusionNodeType } from "./ExtrusionNode";
 import { revolutionNodeType } from "./RevolutionNode";
 import { scaleXNodeType } from "./ScaleXNode";
 import { capsuleNodeType } from "./CapsuleNode";
+import { boundingBoxNodeType } from "./BoundingBoxNode";
 
 export const nodeRegistry = new NodeRegistry<NodeTypeExt,NodeExt>();
 
@@ -43,6 +44,7 @@ nodeRegistry.registerNodeTypes([
   applyColourNodeType,
   applyTextureNodeType,
   bendNodeType,
+  boundingBoxNodeType,
   boxNodeType,
   capsuleNodeType,
   colourNodeType,
