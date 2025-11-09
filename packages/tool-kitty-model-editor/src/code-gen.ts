@@ -219,6 +219,7 @@ export function generateCode(params: { nodesSystem: NodesSystem<NodeTypeExt,Node
   return {
     code: codeGenCtx.genCode({ maxIterations: params.maxIterations, }),
     onInit,
+    mkEvalSdfCode: () => codeGenCtx.sdfEvaluatorCodeGen(),
   };
 }
 

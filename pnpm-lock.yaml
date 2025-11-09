@@ -315,6 +315,12 @@ importers:
         specifier: ^4.5.3
         version: 4.5.3(@types/node@22.14.1)(rollup@4.27.4)(typescript@5.8.2)(vite@6.0.0(@types/node@22.14.1)(jiti@2.4.2)(lightningcss@1.29.2))
 
+  packages/tool-kitty-marching-cubes:
+    devDependencies:
+      vite-plugin-dts:
+        specifier: ^4.5.3
+        version: 4.5.3(@types/node@22.14.1)(rollup@4.27.4)(typescript@5.8.2)(vite@6.0.0(@types/node@22.14.1)(jiti@2.4.2)(lightningcss@1.29.2))
+
   packages/tool-kitty-math:
     devDependencies:
       vite-plugin-dts:
@@ -348,6 +354,9 @@ importers:
       tool-kitty-ecs:
         specifier: workspace:*
         version: link:../tool-kitty-ecs
+      tool-kitty-marching-cubes:
+        specifier: workspace:*
+        version: link:../tool-kitty-marching-cubes
       tool-kitty-math:
         specifier: workspace:*
         version: link:../tool-kitty-math

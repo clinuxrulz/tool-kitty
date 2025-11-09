@@ -15,6 +15,7 @@
     "@bigmistqke/view.gl": "^0.1.8",
     "tool-kitty-components": "workspace: *",
     "tool-kitty-ecs": "workspace:*",
+    "tool-kitty-marching-cubes": "workspace:*",
     "tool-kitty-math": "workspace:*",
     "tool-kitty-math-ecs": "workspace:*",
     "tool-kitty-node-editor": "workspace:*",

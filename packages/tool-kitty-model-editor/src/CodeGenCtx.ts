@@ -1,5 +1,5 @@
-import { glsl } from "@bigmistqke/view.gl/tag";
-import type { GLSL } from "@bigmistqke/view.gl";
+import { glsl, uniform } from "@bigmistqke/view.gl/tag";
+import type { GLSL, GLSLSlot } from "@bigmistqke/view.gl";
 
 export type PinValue = {
   type: "Atom",
@@ -156,6 +156,101 @@ void main(void) {
   }
   gl_FragColor = c;
 }`;
+  }
+
+  sdfEvaluatorCodeGen(): GLSL<[{
+    type: "uniform";
+    kind: "ivec3";
+    key: "uNumCubes";
+}, {
+    type: "uniform";
+    kind: "ivec2";
+    key: "uResolution";
+}, {
+    type: "uniform";
+    kind: "vec3";
+    key: "uEvalMin";
+}, {
+    type: "uniform";
+    kind: "float";
+    key: "uCubeSize";
+}, any, any]> {
+    return glsl`precision highp float;
+${uniform.ivec3("uNumCubes")}
+${uniform.ivec2("uResolution")}
+${uniform.vec3("uEvalMin")}
+${uniform.float("uCubeSize")}
+
+float dot2( in vec2 v ) { return dot(v,v); }
+float dot2( in vec3 v ) { return dot(v,v); }
+float ndot( in vec2 a, in vec2 b ) { return a.x*b.x - a.y*b.y; }
+
+void defaultColour(vec3 p, out vec4 c) {
+  c = vec4(1.0, 1.0, 1.0, 1.0);
+}
+
+${this.globalCode}
+
+float map(vec3 p) {
+  float d = 100000000.0;
+  ${this.mainBody}
+  return d;
+}
+
+// https://github.com/mikolalysenko/glsl-read-float/blob/master/index.glsl
+#define FLOAT_MAX  1.70141184e38
+#define FLOAT_MIN  1.17549435e-38
+
+lowp vec4 encode_float(highp float v) {
+  highp float av = abs(v);
+
+  //Handle special cases
+  if(av < FLOAT_MIN) {
+    return vec4(0.0, 0.0, 0.0, 0.0);
+  } else if(v > FLOAT_MAX) {
+    return vec4(127.0, 128.0, 0.0, 0.0) / 255.0;
+  } else if(v < -FLOAT_MAX) {
+    return vec4(255.0, 128.0, 0.0, 0.0) / 255.0;
+  }
+
+  highp vec4 c = vec4(0,0,0,0);
+
+  //Compute exponent and mantissa
+  highp float e = floor(log2(av));
+  highp float m = av * pow(2.0, -e) - 1.0;
+  
+  //Unpack mantissa
+  c[1] = floor(128.0 * m);
+  m -= c[1] / 128.0;
+  c[2] = floor(32768.0 * m);
+  m -= c[2] / 32768.0;
+  c[3] = floor(8388608.0 * m);
+  
+  //Unpack exponent
+  highp float ebias = e + 127.0;
+  c[0] = floor(ebias / 2.0);
+  ebias -= c[0] * 2.0;
+  c[1] += floor(ebias) * 128.0; 
+
+  //Unpack sign bit
+  c[0] += 128.0 * step(0.0, -v);
+
+  //Scale back to range
+  return c / 255.0;
+}
+
+void main(void) {
+  int idx = gl_FragCoord.y * uResolution.x + gl_FragCoord.x;
+  int cubeZIdx = floor(idx / (uNumCubes.x * uNumCubes.y));
+  idx = idx - cubeZIdx * uNumCubes.x * uNumCubes.y;
+  int cubeYIdx = floor(idx / uNumCubesX);
+  idx = idx - cubeYIdx * uNumCubesX;
+  int cubeXIdx = idx;
+  vec3 p = uEvalMin + vec3(cubeXIdx, cubeYIdx, cubeZIdx) * uCubeSize;
+  float r = map(p);
+  gl_FragColor = encode_float(r);
+}
+`;
   }
 }
 
