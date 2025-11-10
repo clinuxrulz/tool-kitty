@@ -3,6 +3,7 @@ import { compile, glsl } from "@bigmistqke/view.gl/tag";
 import { Accessor, Component, ComponentProps, createComputed, createMemo, on, splitProps } from "solid-js";
 import { createStore } from "solid-js/store";
 import { Overwrite } from "tool-kitty-util";
+import { march } from "tool-kitty-marching-cubes";
 
 const MarchingCubes: Component<
   Overwrite<
@@ -188,7 +189,7 @@ void main(void) {
         let slice: number[][] = [];
         for (let j = 0; j < numCubesY; ++j) {
           let row: number[] = [];
-          for (let k = 0; j < numCubesX; ++k) {
+          for (let k = 0; k < numCubesX; ++k) {
             row.push(0.0);
           }
           slice.push(row);
@@ -216,18 +217,18 @@ void main(void) {
       ) {
         return;
       }
-      program.view.uniforms["uNumCubes"].set(new Float32Array([
+      program.view.uniforms["uNumCubes"].set(
         chunkNumCubesX,
         chunkNumCubesY,
         chunkNumCubesZ,
-      ]));
-      program.view.uniforms["uResolution"].set(new Float32Array([
+      );
+      program.view.uniforms["uResolution"].set(
         width,
         height,
-      ]));
-      program.view.uniforms["cubeSize"].set(new Float32Array([
+      );
+      program.view.uniforms["uCubeSize"].set(
         cubeSize,
-      ]));
+      );
       let useMinX = (minX + maxX - numCubesX * cubeSize) * 0.5;
       let useMinY = (minY + maxY - numCubesY * cubeSize) * 0.5;
       let useMinZ = (minZ + maxZ - numCubesZ * cubeSize) * 0.5;
@@ -240,11 +241,11 @@ void main(void) {
           let soy = iy * chunkNumCubesY;
           for (let ix = 0, atMinX = useMinX; ix < numStepsX; ++ix, atMinX += cubeSize * chunkNumCubesX) {
             let sox = ix * chunkNumCubesX;
-            program.view.uniforms["uEvalMin"].set(new Float32Array([
+            program.view.uniforms["uEvalMin"].set(
               minX,
               minY,
               minZ,
-            ]));
+            );
             gl.drawArrays(gl.TRIANGLES, 0, 6);
             gl.flush();
             gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixelBuffer);
@@ -275,6 +276,20 @@ void main(void) {
           }
         }
       }
+      let {
+        points,
+        triangles,
+      } = march({
+        sdf: (x, y, z) => gridStorage[z][y][x],
+        minX: 0,
+        minY: 0,
+        minZ: 0,
+        maxX: gridStorage[0][0].length-1,
+        maxY: gridStorage[0].length-1,
+        maxZ: gridStorage.length-1,
+        cubeSize: 1,
+        interpolate: true,
+      });
     },
   ));
   return (

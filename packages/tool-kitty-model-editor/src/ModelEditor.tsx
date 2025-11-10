@@ -7,11 +7,12 @@ import { nodeRegistry } from "./nodes/node_registery";
 import { createStore } from "solid-js/store";
 import { generateCode } from "./code-gen";
 import { registry } from "./components/registry";
-import { compile } from "@bigmistqke/view.gl/tag";
+import { compile, glsl } from "@bigmistqke/view.gl/tag";
 import { OrbitalCamera } from "./OrbitalCamera";
 import { Quaternion, Transform3D, Vec3 } from "tool-kitty-math";
 import { gzip, ungzip } from "pako";
 import { NodeEditorController } from "tool-kitty-node-editor/src/NodeEditorUI";
+import MarchingCubes from "./MarchingCubes";
 
 type GLState = {
   width: number,
@@ -57,6 +58,7 @@ const ModelEditor: Component<
     maxIterationsText: string,
     tolleranceText: string,
     maxStepText: string,
+    showMarchingCubes: boolean,
   }>({
     windowWidth: window.innerWidth,
     windowHeight: window.innerHeight,
@@ -66,6 +68,7 @@ const ModelEditor: Component<
     maxIterationsText: "20",
     tolleranceText: "10.0",
     maxStepText: "20000.0",
+    showMarchingCubes: false,
   });
   let orbitalCamera = new OrbitalCamera({
     initSpace: Transform3D.create(Vec3.create(0.0, 0.0, 10_000.0), Quaternion.identity),
@@ -459,6 +462,9 @@ const ModelEditor: Component<
       alert("Failed to read clipboard.");
     }
   };
+  let doMarchingCubes = () => {
+    setState("showMarchingCubes", true);
+  };
   return (
     <div
       {...rest}
@@ -508,6 +514,15 @@ const ModelEditor: Component<
                     }}
                   >
                     Import From Clipboard
+                  </a>
+                </li>
+                <li>
+                  <a
+                    onClick={() => {
+                      doMarchingCubes();
+                    }}
+                  >
+                    Marching Cubes
                   </a>
                 </li>
               </>
@@ -561,6 +576,7 @@ const ModelEditor: Component<
             style={{
               "flex-grow": "1",
               "touch-action": "none",
+              "display": state.showMarchingCubes ? "none" : "block",
             }}
             onPointerDown={(e) => {
               orbitalCamera.pointerDown(e);
@@ -572,6 +588,16 @@ const ModelEditor: Component<
               orbitalCamera.pointerMove(e);
             }}
           />
+          <Show when={state.showMarchingCubes ? code() : undefined}>
+            {(code) => (
+              <MarchingCubes
+                style={{
+                  "flex-grow": "1",
+                }}
+                sdfEvalCode={code().mkEvalSdfCode()}
+              />
+            )}
+          </Show>
           <Show when={state.showCode ? code() : undefined}>
             {(code) =>
               <div
