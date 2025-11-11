@@ -27,6 +27,7 @@ const MarchingCubes: Component<
         kind: "float";
         key: "uCubeSize";
       }, any, any]>,
+      onInit: (params: { gl: WebGLRenderingContext; program: WebGLProgram; rerender: () => void; }) => void,
     }
   >
 > = (_props) => {
@@ -49,7 +50,7 @@ const MarchingCubes: Component<
     cubeSizeText: "100",
     interpolate: true,
   });
-  let [ props, rest, ] = splitProps(_props, ["sdfEvalCode"]);
+  let [ props, rest, ] = splitProps(_props, ["sdfEvalCode", "onInit"]);
   let createReadNumberMemo = (read: () => string) => createMemo(() => {
     let x = Number.parseFloat(read());
     if (Number.isNaN(x)) {
@@ -103,6 +104,11 @@ void main(void) {
     props.sdfEvalCode,
   );
   gl.useProgram(program.program);
+  props.onInit({
+    gl,
+    program: program.program,
+    rerender: () => {},
+  });
   const positionLocation = gl.getAttribLocation(program.program, "aVertexPosition");
   const modelViewMatrixLocation = gl.getUniformLocation(program.program, "uModelViewMatrix");
   const vertices = new Float32Array(12);
@@ -267,7 +273,7 @@ void main(void) {
                   let pOffset = (
                     ((oz - soz) * chunkNumCubesY + (oy - soy)) * chunkNumCubesX
                     + (ox - sox)
-                  ) << 2;
+                  );
                   let value = resultsBuffer[pOffset];
                   gridStorage[oz][oy][ox] = value;
                 }

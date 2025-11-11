@@ -248,7 +248,8 @@ void main(void) {
   int cubeXIdx = idx;
   vec3 p = uEvalMin + vec3(cubeXIdx, cubeYIdx, cubeZIdx) * uCubeSize;
   float r = map(p);
-  gl_FragColor = encode_float(r);
+  vec4 c = encode_float(r);
+  gl_FragColor = vec4(c.a, c.b, c.g, c.r);
 }
 `;
   }

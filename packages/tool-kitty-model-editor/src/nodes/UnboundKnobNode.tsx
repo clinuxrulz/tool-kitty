@@ -1,7 +1,7 @@
 import { Node, NodeParams, NodeType, Pin } from "tool-kitty-node-editor";
 import { NodeExt, NodeTypeExt } from "../NodeExt";
 import { unboundKnobComponentType, UnboundKnobState } from "../components/UnboundKnobComponent";
-import { Accessor, Component, createEffect, createMemo, createSignal, on } from "solid-js";
+import { Accessor, Component, createComputed, createEffect, createMemo, createSignal, on } from "solid-js";
 import { Knob } from "tool-kitty-components";
 import { uniformView } from "@bigmistqke/view.gl";
 import { compile, glsl, uniform } from "@bigmistqke/view.gl/tag";
@@ -131,7 +131,7 @@ export class UnboundKnobNode implements Node<NodeTypeExt,NodeExt,UnboundKnobStat
       ctx.insertGlobalCode(code);
       onInit(({ gl, program, rerender, }) => {
         let uniforms = uniformView(gl, program, schema.uniforms);
-        createEffect(on(
+        createComputed(on(
           () => state.value,
           (value) => {
             uniforms[valueIdent].set(value);

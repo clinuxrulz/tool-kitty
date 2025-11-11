@@ -1,4 +1,4 @@
-import { Accessor, Component, createEffect, createMemo, on } from "solid-js";
+import { Accessor, Component, createComputed, createMemo, on } from "solid-js";
 import { displayComponentType, DisplayState } from "../components/DisplayComponent";
 import { Node, NodeParams, NodeType, Pin } from "tool-kitty-node-editor";
 import { NodeExt, NodeTypeExt } from "../NodeExt";
@@ -88,7 +88,7 @@ class DisplayNode implements Node<NodeTypeExt,NodeExt,DisplayState> {
       `);
       onInit(({ gl, program, rerender }) => {
         let uniforms = uniformView(gl, program, compile.toSchema(globalCode).uniforms);
-        createEffect(on(
+        createComputed(on(
           () => state.visible,
           (visible) => {
             uniforms[visibleIdent].set(visible ? 1 : 0);

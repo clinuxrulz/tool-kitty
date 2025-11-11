@@ -595,6 +595,7 @@ const ModelEditor: Component<
                   "flex-grow": "1",
                 }}
                 sdfEvalCode={code().mkEvalSdfCode()}
+                onInit={(params) => code().onInit(params)}
               />
             )}
           </Show>
