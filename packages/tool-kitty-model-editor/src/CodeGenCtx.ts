@@ -240,7 +240,7 @@ lowp vec4 encode_float(highp float v) {
 }
 
 void main(void) {
-  int idx = int(gl_FragCoord.y * float(uResolution.x) + gl_FragCoord.x);
+  int idx = int((gl_FragCoord.y - 0.5) * float(uResolution.x) + (gl_FragCoord.x - 0.5));
   int cubeZIdx = idx / (uNumCubes.x * uNumCubes.y);
   idx = idx - cubeZIdx * uNumCubes.x * uNumCubes.y;
   int cubeYIdx = idx / uNumCubes.x;

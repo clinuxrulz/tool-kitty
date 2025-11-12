@@ -9,10 +9,12 @@
   "license": "ISC",
   "packageManager": "pnpm@10.9.0",
   "devDependencies": {
+    "@types/three": "^0.181.0",
     "vite-plugin-dts": "^4.5.3"
   },
   "dependencies": {
     "@bigmistqke/view.gl": "^0.1.8",
+    "three": "^0.181.1",
     "tool-kitty-components": "workspace: *",
     "tool-kitty-ecs": "workspace:*",
     "tool-kitty-marching-cubes": "workspace:*",

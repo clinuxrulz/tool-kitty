@@ -13,6 +13,7 @@ import { Quaternion, Transform3D, Vec3 } from "tool-kitty-math";
 import { gzip, ungzip } from "pako";
 import { NodeEditorController } from "tool-kitty-node-editor/src/NodeEditorUI";
 import MarchingCubes from "./MarchingCubes";
+import { Portal } from "solid-js/web";
 
 type GLState = {
   width: number,
@@ -509,7 +510,7 @@ const ModelEditor: Component<
                 <li>
                   <a
                     onClick={() => {
-                      importFromClipboard()
+                      importFromClipboard();
                       nodeEditorController()?.closeMenu();
                     }}
                   >
@@ -520,6 +521,7 @@ const ModelEditor: Component<
                   <a
                     onClick={() => {
                       doMarchingCubes();
+                      nodeEditorController()?.closeMenu();
                     }}
                   >
                     Marching Cubes
@@ -576,7 +578,6 @@ const ModelEditor: Component<
             style={{
               "flex-grow": "1",
               "touch-action": "none",
-              "display": state.showMarchingCubes ? "none" : "block",
             }}
             onPointerDown={(e) => {
               orbitalCamera.pointerDown(e);
@@ -588,17 +589,6 @@ const ModelEditor: Component<
               orbitalCamera.pointerMove(e);
             }}
           />
-          <Show when={state.showMarchingCubes ? code() : undefined}>
-            {(code) => (
-              <MarchingCubes
-                style={{
-                  "flex-grow": "1",
-                }}
-                sdfEvalCode={code().mkEvalSdfCode()}
-                onInit={(params) => code().onInit(params)}
-              />
-            )}
-          </Show>
           <Show when={state.showCode ? code() : undefined}>
             {(code) =>
               <div
@@ -687,6 +677,24 @@ const ModelEditor: Component<
           </div>
         </div>
       </div>
+      <Show when={state.showMarchingCubes ? code() : undefined}>
+        {(code) => (
+          <Portal>
+            <MarchingCubes
+              style={{
+                "position": "absolute",
+                "left": "0",
+                "top": "0",
+                "right": "0",
+                "bottom": "0",
+                "background-color": "black",
+              }}
+              sdfEvalCode={code().mkEvalSdfCode()}
+              onInit={(params) => code().onInit(params)}
+            />
+          </Portal>
+        )}
+      </Show>
     </div>
   );
 };

@@ -1,6 +1,9 @@
+import * as THREE from "three";
+// @ts-ignore
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { GLSL } from "@bigmistqke/view.gl";
 import { compile, glsl } from "@bigmistqke/view.gl/tag";
-import { Accessor, Component, ComponentProps, createComputed, createMemo, on, splitProps } from "solid-js";
+import { Accessor, Component, ComponentProps, createComputed, createEffect, createMemo, createSignal, on, onCleanup, onMount, splitProps } from "solid-js";
 import { createStore } from "solid-js/store";
 import { Overwrite } from "tool-kitty-util";
 import { march } from "tool-kitty-marching-cubes";
@@ -88,8 +91,8 @@ const MarchingCubes: Component<
   const chunkNumCubesZ = 64;
   let pixelBuffer = new Uint8Array((width * height) << 2);
   let resultsBuffer = new Float32Array(pixelBuffer.buffer);
-  let canvas = new OffscreenCanvas(width, height);
-  let gl = canvas.getContext("webgl");
+  let offscreenCanvas = new OffscreenCanvas(width, height);
+  let gl = offscreenCanvas.getContext("webgl");
   if (gl == null) {
     return undefined;
   }
@@ -205,7 +208,7 @@ void main(void) {
       return storage;
     },
   ));
-  createComputed(on(
+  let model = createMemo(on(
     [ minX, minY, minZ, maxX, maxY, maxZ, numCubesX, numCubesY, numCubesZ, cubeSize, gridStorage, ],
     ([ minX, minY, minZ, maxX, maxY, maxZ, numCubesX, numCubesY, numCubesZ, cubeSize, gridStorage, ]) => {
       if (
@@ -221,7 +224,7 @@ void main(void) {
         cubeSize == undefined ||
         gridStorage == undefined
       ) {
-        return;
+        return undefined;
       }
       program.view.uniforms["uNumCubes"].set(
         chunkNumCubesX,
@@ -248,9 +251,9 @@ void main(void) {
           for (let ix = 0, atMinX = useMinX; ix < numStepsX; ++ix, atMinX += cubeSize * chunkNumCubesX) {
             let sox = ix * chunkNumCubesX;
             program.view.uniforms["uEvalMin"].set(
-              minX,
-              minY,
-              minZ,
+              atMinX,
+              atMinY,
+              atMinZ,
             );
             gl.drawArrays(gl.TRIANGLES, 0, 6);
             gl.flush();
@@ -296,46 +299,158 @@ void main(void) {
         cubeSize: 1,
         interpolate: true,
       });
+      for (let i = 0; i < points.length; ++i) {
+        points[i] *= cubeSize;
+      }
+      for (let i = 0; i < points.length-2; i += 3) {
+        points[i] += useMinX;
+        points[i+1] += useMinY;
+        points[i+2] += useMinZ;
+      }
+      return {
+        points,
+        triangles,
+      };
+    },
+  ));
+  let [ canvasDiv, setCanvasDiv, ] = createSignal<HTMLDivElement>();
+  let [ canvas, setCanvas, ] = createSignal<HTMLCanvasElement>();
+  let rerender = () => {};
+  let scene = new THREE.Scene();
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); // color, intensity
+  scene.add(ambientLight);
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.7);
+  directionalLight.position.set(5, 10, 2); // x, y, z
+  scene.add(directionalLight);
+  let camera = new THREE.PerspectiveCamera(
+    50,
+    1,
+    500.0,
+    100_000.0,
+  );
+  camera.position.set(-5000,-5000,-5000);
+  camera.lookAt(new THREE.Vector3(0.0, 0.0, 0.0));
+  onMount(on(
+    [ canvas, canvasDiv, ],
+    ([ canvas, canvasDiv, ]) => {
+      if (canvas == undefined) {
+        return;
+      }
+      if (canvasDiv == undefined) {
+        return;
+      }
+      let renderer = new THREE.WebGLRenderer({
+        canvas,
+      });
+      rerender = () => {
+        renderer.render(scene, camera);
+      };
+      let resizeObserver = new ResizeObserver(() => {
+        let rect = canvasDiv.getBoundingClientRect();
+        /*
+        canvas.width = rect.width * window.devicePixelRatio;
+        canvas.height = rect.height * window.devicePixelRatio;*/
+        camera.aspect = rect.width / rect.height;
+        camera.updateProjectionMatrix();
+        renderer.setSize(rect.width, rect.height);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        rerender();
+      });
+      resizeObserver.observe(canvasDiv);
+      onCleanup(() => {
+        resizeObserver.unobserve(canvasDiv);
+        resizeObserver.disconnect();
+      });
+      const controls = new OrbitControls( camera, renderer.domElement );
+      controls.addEventListener("change", () => {
+        rerender();
+      });
+    }
+  ));
+  createEffect(on(
+    model,
+    (model) => {
+      if (model == undefined) {
+        return;
+      }
+      let geometry = new THREE.BufferGeometry();
+      const positions = new Float32Array(model.points);
+      const positionAttribute = new THREE.Float32BufferAttribute(positions, 3);
+      geometry.setAttribute("position", positionAttribute);
+      geometry.setIndex(model.triangles);
+      geometry.computeVertexNormals();
+      let material = new THREE.MeshStandardMaterial({
+        color: "#008080",
+      });
+      let mesh = new THREE.Mesh(geometry, material);
+      scene.add(mesh);
+      onCleanup(() => {
+        geometry.dispose();
+        material.dispose();
+        scene.remove(mesh);
+      });
+      rerender();
     },
   ));
   return (
     <div {...rest}>
-      <div>
-        <NumberField
-          name="Min X:"
-          read={state.minXText}
-          write={(x) => setState("minXText", x)}
-        />
-        <NumberField
-          name="Min Y:"
-          read={state.minYText}
-          write={(x) => setState("minYText", x)}
-        />
-        <NumberField
-          name="Min Z:"
-          read={state.minZText}
-          write={(x) => setState("minZText", x)}
-        />
-        <NumberField
-          name="Max X:"
-          read={state.maxXText}
-          write={(x) => setState("maxXText", x)}
-        />
-        <NumberField
-          name="Max Y:"
-          read={state.maxYText}
-          write={(x) => setState("maxYText", x)}
-        />
-        <NumberField
-          name="Max Z:"
-          read={state.maxZText}
-          write={(x) => setState("maxZText", x)}
-        />
-        <NumberField
-          name="Cube Size:"
-          read={state.cubeSizeText}
-          write={(x) => setState("cubeSizeText", x)}
-        />
+      <div style={{
+        "width": "100%",
+        "height": "100%",
+        "display": "flex",
+        "flex-direction": "column",
+      }}>
+        <div>
+          <NumberField
+            name="Min X:"
+            read={state.minXText}
+            write={(x) => setState("minXText", x)}
+          />
+          <NumberField
+            name="Min Y:"
+            read={state.minYText}
+            write={(x) => setState("minYText", x)}
+          />
+          <NumberField
+            name="Min Z:"
+            read={state.minZText}
+            write={(x) => setState("minZText", x)}
+          />
+          <NumberField
+            name="Max X:"
+            read={state.maxXText}
+            write={(x) => setState("maxXText", x)}
+          />
+          <NumberField
+            name="Max Y:"
+            read={state.maxYText}
+            write={(x) => setState("maxYText", x)}
+          />
+          <NumberField
+            name="Max Z:"
+            read={state.maxZText}
+            write={(x) => setState("maxZText", x)}
+          />
+          <NumberField
+            name="Cube Size:"
+            read={state.cubeSizeText}
+            write={(x) => setState("cubeSizeText", x)}
+          />
+        </div>
+        <div
+          ref={setCanvasDiv}
+          style={{
+            "flex-grow": "1",
+          }}
+        >
+          <canvas
+            ref={setCanvas}
+            style={{
+              "width": "100%",
+              "height": "100%",
+            }}
+          />
+        </div>
       </div>
     </div>
   );

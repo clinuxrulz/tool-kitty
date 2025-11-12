@@ -87,7 +87,7 @@ export function march(params: {
           if (params.interpolate) {
             const edgeCorners1 = edgeCorners[cellTriangles[i]];
             const edgeCorners2 = edgeCorners[cellTriangles[i+1]];
-            const edgeCorners3 = edgeCorners[cellTriangles[i+1]];
+            const edgeCorners3 = edgeCorners[cellTriangles[i+2]];
             let edgeInterpolate1 =
               Math.abs(cornerValues[edgeCorners1[0]]) /
               Math.abs(
