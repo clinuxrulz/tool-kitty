@@ -27,6 +27,10 @@ export class Vec2 {
     return Vec2.create(this.x * s, this.y * s);
   }
 
+  dot(other: Vec2): number {
+    return this.x * other.x + this.y * other.y;
+  }
+
   cross(other: Vec2): number {
     return this.x * other.y - this.y * other.x;
   }
