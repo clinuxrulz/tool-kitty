@@ -10,6 +10,24 @@ export function opToArr<A>(x: A | undefined): A[] {
   return [x];
 }
 
+export function createJoin<A>(a: Accessor<Accessor<A>>): Accessor<A> {
+  return createMemo(() => a()());
+}
+
+export function createJoinDefined<A>(a: Accessor<Accessor<A | undefined> | undefined>): Accessor<A | undefined> {
+  return createMemo(() => a()?.());
+}
+
+export function whenDefined<A,B>(a: Accessor<A | undefined>, k: (x: Accessor<A>) => B): Accessor<B | undefined> {
+  let has = createMemo(() => a() != undefined);
+  return createMemo(() => {
+    if (!has()) {
+      return undefined;
+    }
+    return k(a as Accessor<A>);
+  });
+}
+
 export function makeRefCountedMakeReactiveObject<A>(
   fn: () => A,
   cleanup?: () => void,
