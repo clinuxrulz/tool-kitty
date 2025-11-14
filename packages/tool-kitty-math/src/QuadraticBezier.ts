@@ -16,6 +16,33 @@ export class QuadraticBezier {
     this.controlPoint = params.controlPoint;
   }
 
+  sdfWithLimit(pt: Vec2, limit: number): number | undefined {
+    let minX = Math.min(this.start.x, this.end.x, this.controlPoint.x);
+    let minY = Math.min(this.start.y, this.end.y, this.controlPoint.y);
+    let maxX = Math.max(this.start.x, this.end.x, this.controlPoint.x);
+    let maxY = Math.max(this.start.y, this.end.y, this.controlPoint.y);
+    if (pt.x < minX - limit) {
+      return undefined;
+    }
+    if (pt.y < minY - limit) {
+      return undefined;
+    }
+    if (pt.x > maxX + limit) {
+      return undefined;
+    }
+    if (pt.y > maxY + limit) {
+      return undefined;
+    }
+    let dist = this.sdf(pt);
+    if (!Number.isFinite(dist)) {
+      return undefined;
+    }
+    if (dist > limit) {
+      return undefined;
+    }
+    return dist;
+  }
+
   sdf(pt: Vec2): number {
     let A = this.start;
     let B = this.controlPoint;
