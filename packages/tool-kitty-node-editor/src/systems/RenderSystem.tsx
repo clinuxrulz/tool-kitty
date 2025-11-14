@@ -448,6 +448,53 @@ const createMeasurementSvg = (() => {
   };
 })();
 
+export function calcHorizontalSBezierPath(start: Vec2, end: Vec2, strength: number = 0.5): {
+  beziers: {
+    start: Vec2,
+    end: Vec2,
+    controlPoint: Vec2,
+  }[],
+  pathString: string,
+} {
+  let midPt = start.add(end).multScalar(0.5);
+  let bezier1 = {
+    start,
+    end: midPt,
+    controlPoint: Vec2.create(
+      start.x * (1.0 - strength) + midPt.x * strength,
+      start.y,
+    ),
+  };
+  let bezier2 = {
+    start: midPt,
+    end,
+    controlPoint: Vec2.create(
+      end.x * (1.0 - strength) + midPt.x * strength,
+      end.y,
+    ),
+  };
+  return {
+    beziers: [
+      bezier1,
+      bezier2,
+    ],
+    pathString:
+      `M ${
+        start.x
+      } ${
+        start.y
+      } Q ${
+        bezier1.controlPoint.x
+      } ${
+        bezier1.controlPoint.y
+      } ${
+        midPt.x
+      } ${
+        midPt.y
+      } Q`,
+  };
+}
+
 export function createSBezierPath(startX: number, startY: number, endX: number, endY: number, strength: number = 0.5) {
   // Calculate the midpoint
   const midX = (startX + endX) / 2;
