@@ -40,9 +40,10 @@ export class QuadraticBezier {
           Math.sign(x.y)*Math.pow(Math.abs(x.y), 1.0 / 3.0),
         );
         let t = clamp( uv.x+uv.y-kx, 0.0, 1.0 );
-        res = dot2(d + (c + b*t)*t);
+        res = dot2(d.add(c.add(b.multScalar(t)).multScalar(t)));
     } else {
-        float z = sqrt(-p);
+        let z = Math.sqrt(-p);
+        //float z = sqrt(-p);
         float v = acos( q/(p*z*2.0) ) / 3.0;
         float m = cos(v);
         float n = sin(v)*1.732050808;
@@ -94,6 +95,10 @@ float sdBezier( in vec2 pos, in vec2 A, in vec2 B, in vec2 C )
     return sqrt( res );
 }
 */
+
+function dot2(a: Vec2) {
+  return a.dot(a);
+}
 
 function clamp(x: number, a: number, b: number): number {
   return Math.min(Math.max(x, Math.min(a, b)), Math.max(a, b));
