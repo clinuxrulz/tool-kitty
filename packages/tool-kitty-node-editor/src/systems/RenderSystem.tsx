@@ -1,6 +1,6 @@
 import { Accessor, Component, createComputed, createMemo, createRoot, For, JSX, mapArray, onCleanup, onMount, Show } from "solid-js";
 import { NodesSystemNode } from "./NodesSystem";
-import { Vec2 } from "tool-kitty-math";
+import { QuadraticBezier, Vec2 } from "tool-kitty-math";
 import { ReactiveSet } from "@solid-primitives/set";
 import { render } from "solid-js/web";
 
@@ -449,49 +449,30 @@ const createMeasurementSvg = (() => {
 })();
 
 export function calcHorizontalSBezierPath(start: Vec2, end: Vec2, strength: number = 0.5): {
-  beziers: {
-    start: Vec2,
-    end: Vec2,
-    controlPoint: Vec2,
-  }[],
-  pathString: string,
+  beziers: QuadraticBezier[],
 } {
   let midPt = start.add(end).multScalar(0.5);
-  let bezier1 = {
+  let bezier1 = new QuadraticBezier({
     start,
     end: midPt,
     controlPoint: Vec2.create(
       start.x * (1.0 - strength) + midPt.x * strength,
       start.y,
     ),
-  };
-  let bezier2 = {
+  });
+  let bezier2 = new QuadraticBezier({
     start: midPt,
     end,
     controlPoint: Vec2.create(
       end.x * (1.0 - strength) + midPt.x * strength,
       end.y,
     ),
-  };
+  });
   return {
     beziers: [
       bezier1,
       bezier2,
     ],
-    pathString:
-      `M ${
-        start.x
-      } ${
-        start.y
-      } Q ${
-        bezier1.controlPoint.x
-      } ${
-        bezier1.controlPoint.y
-      } ${
-        midPt.x
-      } ${
-        midPt.y
-      } Q`,
   };
 }
 
