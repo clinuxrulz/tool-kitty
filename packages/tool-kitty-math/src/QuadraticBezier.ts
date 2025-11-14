@@ -89,21 +89,18 @@ export class QuadraticBezier {
     return Math.sqrt(res);
   }
 
-  svgPathString(params: {
-    includeStartPoint?: boolean,
+  svgPathString(params?: {
+    invertY?: boolean
   }): string {
-    return `${
-      (params.includeStartPoint ?? false) ?
-        `M ${this.start.x} ${this.start.y} ` :
-        ""
-    }Q ${
+    let yScale = (params?.invertY ?? false) ? -1.0 : 1.0;
+    return `M ${this.start.x} ${this.start.y*yScale} Q ${
       this.controlPoint.x
     } ${
-      this.controlPoint.y
+      this.controlPoint.y*yScale
     } ${
       this.end.x
     } ${
-      this.end.y
+      this.end.y*yScale
     }`;
   }
 }

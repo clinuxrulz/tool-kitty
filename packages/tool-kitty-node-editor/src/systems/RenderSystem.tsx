@@ -92,7 +92,17 @@ export class RenderSystem<TYPE_EXT,INST_EXT> {
         )}
       </For>
       <For each={edges()}>
-        {(edge) => undefined}
+        {(edge) =>
+          edge.beziers.map((bezier) => (
+            <path
+              d={bezier.svgPathString({ invertY: true, })}
+              fill="none"
+              stroke="green"
+              stroke-width={2.0}
+              vector-effect="non-scaling-stroke"
+            />
+          ))
+        }
       </For>
       <For each={params.nodes()}>
         {(node) => (
