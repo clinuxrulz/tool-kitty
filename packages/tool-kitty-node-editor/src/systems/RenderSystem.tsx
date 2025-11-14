@@ -3,7 +3,7 @@ import { NodesSystemNode } from "./NodesSystem";
 import { QuadraticBezier, Vec2 } from "tool-kitty-math";
 import { ReactiveSet } from "@solid-primitives/set";
 import { render } from "solid-js/web";
-import { createJoin, createJoinDefined, whenDefined } from "tool-kitty-util";
+import { createJoin, createJoinDefined, opToArr, whenDefined } from "tool-kitty-util";
 
 export class RenderSystem<TYPE_EXT,INST_EXT> {
   Render: Component;
@@ -74,6 +74,9 @@ export class RenderSystem<TYPE_EXT,INST_EXT> {
         },
       )),
     ));
+    let edges = createMemo(() =>
+      edges_().flatMap((x) => x().flatMap((x) => opToArr(x())))
+    );
     this.Render = () => (<>
       <For each={params.nodes()}>
         {(node) => (
@@ -87,6 +90,9 @@ export class RenderSystem<TYPE_EXT,INST_EXT> {
             }
           />
         )}
+      </For>
+      <For each={edges()}>
+        {(edge) => undefined}
       </For>
       <For each={params.nodes()}>
         {(node) => (
