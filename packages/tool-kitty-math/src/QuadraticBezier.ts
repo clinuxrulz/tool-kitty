@@ -1,4 +1,5 @@
 import { Vec2 } from "./Vec2";
+import { Vec3 } from "./Vec3";
 
 export class QuadraticBezier {
   readonly start: Vec2;
@@ -39,67 +40,45 @@ export class QuadraticBezier {
           Math.sign(x.x)*Math.pow(Math.abs(x.x), 1.0 / 3.0),
           Math.sign(x.y)*Math.pow(Math.abs(x.y), 1.0 / 3.0),
         );
-        let t = clamp( uv.x+uv.y-kx, 0.0, 1.0 );
+        let t = clamp(uv.x+uv.y-kx, 0.0, 1.0 );
         res = dot2(d.add(c.add(b.multScalar(t)).multScalar(t)));
     } else {
         let z = Math.sqrt(-p);
-        //float z = sqrt(-p);
-        float v = acos( q/(p*z*2.0) ) / 3.0;
-        float m = cos(v);
-        float n = sin(v)*1.732050808;
-        vec3  t = clamp(vec3(m+m,-n-m,n-m)*z-kx,0.0,1.0);
-        res = min( dot2(d+(c+b*t.x)*t.x),
-                   dot2(d+(c+b*t.y)*t.y) );
-        // the third root cannot be the closest
-        // res = min(res,dot2(d+(c+b*t.z)*t.z));
+        let v = Math.acos(q / (p*z*2.0) / 3.0);
+        let m = Math.cos(v);
+        let n = Math.sin(v) * 1.732050808;
+        let t = clamp(
+          Vec3.create(
+            m+m,-n-m,n-m
+          ).scale(z).sub(Vec3.create(kx, kx, kx)),
+          0.0,
+          1.0,
+        );
+        res = Math.min(
+          dot2(d.add(c.add(b.multScalar(t.x)).multScalar(t.x))),
+          dot2(d.add(c.add(b.multScalar(t.y)).multScalar(t.y))),
+        );
     }
     return Math.sqrt(res);
   }
 }
-/*
-float sdBezier( in vec2 pos, in vec2 A, in vec2 B, in vec2 C )
-{    
-    vec2 a = B - A;
-    vec2 b = A - 2.0*B + C;
-    vec2 c = a * 2.0;
-    vec2 d = A - pos;
-    float kk = 1.0/dot(b,b);
-    float kx = kk * dot(a,b);
-    float ky = kk * (2.0*dot(a,a)+dot(d,b)) / 3.0;
-    float kz = kk * dot(d,a);      
-    float res = 0.0;
-    float p = ky - kx*kx;
-    float p3 = p*p*p;
-    float q = kx*(2.0*kx*kx-3.0*ky) + kz;
-    float h = q*q + 4.0*p3;
-    if( h >= 0.0) 
-    { 
-        h = sqrt(h);
-        vec2 x = (vec2(h,-h)-q)/2.0;
-        vec2 uv = sign(x)*pow(abs(x), vec2(1.0/3.0));
-        float t = clamp( uv.x+uv.y-kx, 0.0, 1.0 );
-        res = dot2(d + (c + b*t)*t);
-    }
-    else
-    {
-        float z = sqrt(-p);
-        float v = acos( q/(p*z*2.0) ) / 3.0;
-        float m = cos(v);
-        float n = sin(v)*1.732050808;
-        vec3  t = clamp(vec3(m+m,-n-m,n-m)*z-kx,0.0,1.0);
-        res = min( dot2(d+(c+b*t.x)*t.x),
-                   dot2(d+(c+b*t.y)*t.y) );
-        // the third root cannot be the closest
-        // res = min(res,dot2(d+(c+b*t.z)*t.z));
-    }
-    return sqrt( res );
-}
-*/
 
 function dot2(a: Vec2) {
   return a.dot(a);
 }
 
-function clamp(x: number, a: number, b: number): number {
-  return Math.min(Math.max(x, Math.min(a, b)), Math.max(a, b));
+function clamp(x: number, a: number, b: number): number;
+function clamp(x: Vec3, a: number, b: number): Vec3;
+function clamp(x: number | Vec3, a: number, b: number): number | Vec3 {
+  let min_ab = Math.min(a, b);
+  let max_ab = Math.max(a, b);
+  if (x instanceof Vec3) {
+    return Vec3.create(
+      Math.min(Math.max(x.x, min_ab), max_ab),
+      Math.min(Math.max(x.y, min_ab), max_ab),
+      Math.min(Math.max(x.z, min_ab), max_ab),
+    );
+  } else {
+    return Math.min(Math.max(x, min_ab), max_ab);
+  }
 }
