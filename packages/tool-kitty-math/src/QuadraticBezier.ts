@@ -88,6 +88,24 @@ export class QuadraticBezier {
     }
     return Math.sqrt(res);
   }
+
+  svgPathString(params: {
+    includeStartPoint?: boolean,
+  }): string {
+    return `${
+      (params.includeStartPoint ?? false) ?
+        `M ${this.start.x} ${this.start.y} ` :
+        ""
+    }Q ${
+      this.controlPoint.x
+    } ${
+      this.controlPoint.y
+    } ${
+      this.end.x
+    } ${
+      this.end.y
+    }`;
+  }
 }
 
 function dot2(a: Vec2) {
