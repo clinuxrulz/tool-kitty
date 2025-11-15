@@ -104,65 +104,6 @@ export class RenderSystem<TYPE_EXT,INST_EXT> {
           ))
         }
       </For>
-      <For each={params.nodes()}>
-        {(node) => (
-          <For each={node.node.inputPins?.() ?? []}>
-            {(inputPin) => (
-              <Show when={inputPin.source()}>
-                {(source) => {
-                  let sourceNode = createMemo(() => params.lookupNodeById(source().target));
-                  let fromPt = createMemo(() => {
-                    let sourceNode2 = sourceNode();
-                    if (sourceNode2 == undefined) {
-                      return undefined;
-                    }
-                    let pt = sourceNode2.outputPinPositionMap()?.get(source().pin);
-                    if (pt == undefined) {
-                      return undefined;
-                    }
-                    return sourceNode2.space().pointFromSpace(pt);
-                  });
-                  let toPt = createMemo(() => {
-                    let pt = node.inputPinPositionMap()?.get(inputPin.name);
-                    if (pt == undefined) {
-                      return undefined;
-                    }
-                    return node.space().pointFromSpace(pt);
-                  });
-                  return (
-                    <Show when={fromPt()}>
-                      {(fromPt) => (
-                        <Show when={toPt()}>
-                          {(toPt) => {
-                            let d = createMemo(() =>
-                              createSBezierPath(
-                                fromPt().x,
-                                -fromPt().y,
-                                toPt().x,
-                                -toPt().y,
-                                0.0,
-                              )
-                            );
-                            return (
-                              <path
-                                d={d()}
-                                fill="none"
-                                stroke="blue"
-                                stroke-width={2.0}
-                                vector-effect="non-scaling-stroke"
-                              />
-                            );
-                          }}
-                        </Show>
-                      )}
-                    </Show>
-                  );
-                }}
-              </Show>
-            )}
-          </For>
-        )}
-      </For>
     </>);
   }
 }
