@@ -1,5 +1,5 @@
 import { Accessor, Component, createComputed, createMemo, createRoot, For, JSX, mapArray, onCleanup, onMount, Show } from "solid-js";
-import { NodesSystemNode } from "./NodesSystem";
+import { NodesSystem, NodesSystemNode } from "./NodesSystem";
 import { QuadraticBezier, Vec2 } from "tool-kitty-math";
 import { ReactiveSet } from "@solid-primitives/set";
 import { render } from "solid-js/web";
@@ -9,76 +9,28 @@ export class RenderSystem<TYPE_EXT,INST_EXT> {
   Render: Component;
 
   constructor(params: {
-    nodes: Accessor<NodesSystemNode<TYPE_EXT,INST_EXT>[]>,
+    mousePos: Accessor<Vec2 | undefined>,
+    screenPtToWorldPt: (pt: Vec2) => Vec2 | undefined,
+    scale: Accessor<number>,
+    nodesSystem: NodesSystem<TYPE_EXT,INST_EXT>,
     lookupNodeById: (nodeId: string) => NodesSystemNode<TYPE_EXT,INST_EXT> | undefined,
     highlightedEntitySet: ReactiveSet<string>,
     selectedEntitySet: ReactiveSet<string>,
+    edgeUnderMouse: Accessor<{
+      id: `${string}-${string}-${string}-${string}-${string}`;
+      source: {
+          target: string;
+          pin: string;
+      };
+      sink: {
+          target: string;
+          pin: string;
+      };
+      beziers: QuadraticBezier[];
+    } | undefined>,
   }) {
-    let edges_ = createMemo(mapArray(
-      params.nodes,
-      (node) => createMemo(mapArray(
-        () => node.node.inputPins?.() ?? [],
-        (inputPin) => {
-          return createJoinDefined(whenDefined(
-            () => inputPin.source(),
-            (source) => {
-              return createJoinDefined(whenDefined(
-                createMemo(() => params.lookupNodeById(source().target)),
-                (sourceNode) => {
-                  let fromPt = createMemo(() => {
-                    let sourceNode2 = sourceNode();
-                    if (sourceNode2 == undefined) {
-                      return undefined;
-                    }
-                    let pt = sourceNode2.outputPinPositionMap()?.get(source().pin);
-                    if (pt == undefined) {
-                      return undefined;
-                    }
-                    return sourceNode2.space().pointFromSpace(pt);
-                  });
-                  return createJoinDefined(whenDefined(
-                    fromPt,
-                    (fromPt) => {
-                      let toPt = createMemo(() => {
-                        let pt = node.inputPinPositionMap()?.get(inputPin.name);
-                        if (pt == undefined) {
-                          return undefined;
-                        }
-                        return node.space().pointFromSpace(pt);
-                      });
-                      return createJoinDefined(whenDefined(
-                        toPt,
-                        (toPt) => {
-                          return createMemo(() => {
-                            let { beziers } = calcHorizontalSBezierPaths(
-                              fromPt(),
-                              toPt(),
-                            );
-                            return {
-                              source: source(),
-                              sink: {
-                                target: node.node.nodeParams.entity,
-                                pin: inputPin.name,
-                              },
-                              beziers,
-                            };
-                          });
-                        },
-                      ));
-                    },
-                  ))
-                },
-              ));
-            },
-          ));
-        },
-      )),
-    ));
-    let edges = createMemo(() =>
-      edges_().flatMap((x) => x().flatMap((x) => opToArr(x())))
-    );
     this.Render = () => (<>
-      <For each={params.nodes()}>
+      <For each={params.nodesSystem.nodes()}>
         {(node) => (
           <RenderNode
             node={node}
@@ -91,18 +43,23 @@ export class RenderSystem<TYPE_EXT,INST_EXT> {
           />
         )}
       </For>
-      <For each={edges()}>
-        {(edge) =>
-          edge.beziers.map((bezier) => (
-            <path
-              d={bezier.svgPathString({ invertY: true, })}
-              fill="none"
-              stroke="green"
-              stroke-width={2.0}
-              vector-effect="non-scaling-stroke"
-            />
-          ))
-        }
+      <For each={params.nodesSystem.edges()}>
+        {(edge) => {
+          let highlighted = createMemo(() =>
+            params.edgeUnderMouse()?.id == edge.id
+          );
+          return (
+            edge.beziers.map((bezier) => (
+              <path
+                d={bezier.svgPathString({ invertY: true, })}
+                fill="none"
+                stroke={highlighted() ? "green" : "blue"}
+                stroke-width={2.0}
+                vector-effect="non-scaling-stroke"
+              />
+            ))
+          );
+        }}
       </For>
     </>);
   }

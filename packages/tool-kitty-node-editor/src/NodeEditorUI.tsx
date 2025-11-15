@@ -115,17 +115,22 @@ function NodeEditorUI<TYPE_EXT,INST_EXT>(props_:
   });
   let pickingSystem = new PickingSystem({
     mousePos: () => state.mousePos,
+    scale: () => state.scale,
     screenPtToWorldPt,
     worldPtToScreenPt,
-    nodes: () => nodesSystem.nodes(),
+    nodesSystem,
   });
   let highlightedEntitySet = new ReactiveSet<string>();
   let selectedEntitySet = new ReactiveSet<string>();
   let renderSystem = new RenderSystem({
-    nodes: () => nodesSystem.nodes(),
+    mousePos: () => state.mousePos,
+    screenPtToWorldPt,
+    scale: () => state.scale,
+    nodesSystem,
     lookupNodeById: (nodeId) => nodesSystem.lookupNodeById(nodeId),
     highlightedEntitySet,
     selectedEntitySet,
+    edgeUnderMouse: () => pickingSystem.edgeUnderMouse(),
   });
   let modeParams: ModeParams<TYPE_EXT,INST_EXT> = {
     undoManager,

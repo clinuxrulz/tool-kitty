@@ -1,12 +1,13 @@
 import { Accessor, createComputed, createMemo, createSignal, mapArray, onCleanup, untrack } from "solid-js";
 import { Node } from "../Node";
-import { Transform2D } from "tool-kitty-math";
+import { QuadraticBezier, Transform2D } from "tool-kitty-math";
 import { EcsComponent, IEcsWorld } from "tool-kitty-ecs";
 import { transform2DComponentType } from "tool-kitty-math-ecs";
 import { Vec2 } from "tool-kitty-math";
-import { opToArr } from "tool-kitty-util";
+import { createJoinDefined, opToArr, whenDefined } from "tool-kitty-util";
 import { ReactiveMap } from "@solid-primitives/map";
 import { NodeRegistry } from "../NodeRegistry";
+import { calcHorizontalSBezierPaths } from "./RenderSystem";
 
 export type NodesSystemNode<TYPE_EXT,INST_EXT> = {
   node: Node<TYPE_EXT,INST_EXT,any>,
@@ -22,6 +23,18 @@ export type NodesSystemNode<TYPE_EXT,INST_EXT> = {
 
 export class NodesSystem<TYPE_EXT,INST_EXT> {
   nodes: Accessor<NodesSystemNode<TYPE_EXT,INST_EXT>[]>;
+  edges: Accessor<{
+    id: `${string}-${string}-${string}-${string}-${string}`;
+    source: {
+        target: string;
+        pin: string;
+    };
+    sink: {
+        target: string;
+        pin: string;
+    };
+    beziers: QuadraticBezier[];
+  }[]>;
   lookupNodeById: (nodeId: string) => NodesSystemNode<TYPE_EXT,INST_EXT> | undefined;
   disablePan: Accessor<boolean>;
 
@@ -116,7 +129,72 @@ export class NodesSystem<TYPE_EXT,INST_EXT> {
       firewall();
       return nodeIdTToNodeMap.get(nodeId);
     };
+    let edges_ = createMemo(mapArray(
+      nodes,
+      (node) => createMemo(mapArray(
+        () => node.node.inputPins?.() ?? [],
+        (inputPin) => {
+          return createJoinDefined(whenDefined(
+            () => inputPin.source(),
+            (source) => {
+              return createJoinDefined(whenDefined(
+                createMemo(() => lookupNodeById(source().target)),
+                (sourceNode) => {
+                  let fromPt = createMemo(() => {
+                    let sourceNode2 = sourceNode();
+                    if (sourceNode2 == undefined) {
+                      return undefined;
+                    }
+                    let pt = sourceNode2.outputPinPositionMap()?.get(source().pin);
+                    if (pt == undefined) {
+                      return undefined;
+                    }
+                    return sourceNode2.space().pointFromSpace(pt);
+                  });
+                  return createJoinDefined(whenDefined(
+                    fromPt,
+                    (fromPt) => {
+                      let toPt = createMemo(() => {
+                        let pt = node.inputPinPositionMap()?.get(inputPin.name);
+                        if (pt == undefined) {
+                          return undefined;
+                        }
+                        return node.space().pointFromSpace(pt);
+                      });
+                      return createJoinDefined(whenDefined(
+                        toPt,
+                        (toPt) => {
+                          return createMemo(() => {
+                            let { beziers } = calcHorizontalSBezierPaths(
+                              fromPt(),
+                              toPt(),
+                            );
+                            return {
+                              id: crypto.randomUUID(),
+                              source: source(),
+                              sink: {
+                                target: node.node.nodeParams.entity,
+                                pin: inputPin.name,
+                              },
+                              beziers,
+                            };
+                          });
+                        },
+                      ));
+                    },
+                  ))
+                },
+              ));
+            },
+          ));
+        },
+      )),
+    ));
+    let edges = createMemo(() =>
+      edges_().flatMap((x) => x().flatMap((x) => opToArr(x())))
+    );
     this.nodes = nodes;
+    this.edges = edges;
     this.lookupNodeById = lookupNodeById;
     this.disablePan = createMemo(() => {
       for (let node of nodes()) {
