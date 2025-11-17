@@ -1,20 +1,36 @@
-import { Accessor, Component, createComputed, createMemo, createRoot, For, JSX, mapArray, onCleanup, onMount, Show } from "solid-js";
-import { NodesSystemNode } from "./NodesSystem";
-import { Vec2 } from "tool-kitty-math";
+import { Accessor, Component, createComputed, createEffect, createMemo, createRoot, For, JSX, mapArray, onCleanup, onMount, Show } from "solid-js";
+import { NodesSystem, NodesSystemNode } from "./NodesSystem";
+import { QuadraticBezier, Vec2 } from "tool-kitty-math";
 import { ReactiveSet } from "@solid-primitives/set";
 import { render } from "solid-js/web";
+import { createJoin, createJoinDefined, opToArr, whenDefined } from "tool-kitty-util";
 
 export class RenderSystem<TYPE_EXT,INST_EXT> {
   Render: Component;
 
   constructor(params: {
-    nodes: Accessor<NodesSystemNode<TYPE_EXT,INST_EXT>[]>,
+    mousePos: Accessor<Vec2 | undefined>,
+    screenPtToWorldPt: (pt: Vec2) => Vec2 | undefined,
+    scale: Accessor<number>,
+    nodesSystem: NodesSystem<TYPE_EXT,INST_EXT>,
     lookupNodeById: (nodeId: string) => NodesSystemNode<TYPE_EXT,INST_EXT> | undefined,
     highlightedEntitySet: ReactiveSet<string>,
     selectedEntitySet: ReactiveSet<string>,
+    edgeUnderMouse: Accessor<{
+      id: `${string}-${string}-${string}-${string}-${string}`;
+      source: {
+          target: string;
+          pin: string;
+      };
+      sink: {
+          target: string;
+          pin: string;
+      };
+      beziers: QuadraticBezier[];
+    } | undefined>,
   }) {
     this.Render = () => (<>
-      <For each={params.nodes()}>
+      <For each={params.nodesSystem.nodes()}>
         {(node) => (
           <RenderNode
             node={node}
@@ -27,64 +43,23 @@ export class RenderSystem<TYPE_EXT,INST_EXT> {
           />
         )}
       </For>
-      <For each={params.nodes()}>
-        {(node) => (
-          <For each={node.node.inputPins?.() ?? []}>
-            {(inputPin) => (
-              <Show when={inputPin.source()}>
-                {(source) => {
-                  let sourceNode = createMemo(() => params.lookupNodeById(source().target));
-                  let fromPt = createMemo(() => {
-                    let sourceNode2 = sourceNode();
-                    if (sourceNode2 == undefined) {
-                      return undefined;
-                    }
-                    let pt = sourceNode2.outputPinPositionMap()?.get(source().pin);
-                    if (pt == undefined) {
-                      return undefined;
-                    }
-                    return sourceNode2.space().pointFromSpace(pt);
-                  });
-                  let toPt = createMemo(() => {
-                    let pt = node.inputPinPositionMap()?.get(inputPin.name);
-                    if (pt == undefined) {
-                      return undefined;
-                    }
-                    return node.space().pointFromSpace(pt);
-                  });
-                  return (
-                    <Show when={fromPt()}>
-                      {(fromPt) => (
-                        <Show when={toPt()}>
-                          {(toPt) => {
-                            let d = createMemo(() =>
-                              createSBezierPath(
-                                fromPt().x,
-                                -fromPt().y,
-                                toPt().x,
-                                -toPt().y,
-                                0.0,
-                              )
-                            );
-                            return (
-                              <path
-                                d={d()}
-                                fill="none"
-                                stroke="blue"
-                                stroke-width={2.0}
-                                vector-effect="non-scaling-stroke"
-                              />
-                            );
-                          }}
-                        </Show>
-                      )}
-                    </Show>
-                  );
-                }}
-              </Show>
-            )}
-          </For>
-        )}
+      <For each={params.nodesSystem.edges()}>
+        {(edge) => {
+          let highlighted = createMemo(() =>
+            params.edgeUnderMouse()?.id == edge.id
+          );
+          return (
+            edge.beziers.map((bezier) => (
+              <path
+                d={bezier.svgPathString({ invertY: true, })}
+                fill="none"
+                stroke={highlighted() ? "green" : "blue"}
+                stroke-width={2.0}
+                vector-effect="non-scaling-stroke"
+              />
+            ))
+          );
+        }}
       </For>
     </>);
   }
@@ -447,6 +422,34 @@ const createMeasurementSvg = (() => {
     return svg;
   };
 })();
+
+export function calcHorizontalSBezierPaths(start: Vec2, end: Vec2, strength: number = 0.5): {
+  beziers: QuadraticBezier[],
+} {
+  let midPt = start.add(end).multScalar(0.5);
+  let bezier1 = new QuadraticBezier({
+    start,
+    end: midPt,
+    controlPoint: Vec2.create(
+      start.x * (1.0 - strength) + midPt.x * strength,
+      start.y,
+    ),
+  });
+  let bezier2 = new QuadraticBezier({
+    start: midPt,
+    end,
+    controlPoint: Vec2.create(
+      end.x * (1.0 - strength) + midPt.x * strength,
+      end.y,
+    ),
+  });
+  return {
+    beziers: [
+      bezier1,
+      bezier2,
+    ],
+  };
+}
 
 export function createSBezierPath(startX: number, startY: number, endX: number, endY: number, strength: number = 0.5) {
   // Calculate the midpoint

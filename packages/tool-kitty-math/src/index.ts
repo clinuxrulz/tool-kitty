@@ -1,5 +1,6 @@
 export * from "./Complex";
 export * from "./Plane3D";
+export * from "./QuadraticBezier";
 export * from "./Quaternion";
 export * from "./Ray3D";
 export * from "./Transform2D";

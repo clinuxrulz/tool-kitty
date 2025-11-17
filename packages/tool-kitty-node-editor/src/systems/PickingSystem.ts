@@ -1,12 +1,24 @@
 import { Accessor, createMemo } from "solid-js";
-import { NodesSystemNode } from "./NodesSystem";
-import { Vec2 } from "tool-kitty-math";
+import { NodesSystem, NodesSystemNode } from "./NodesSystem";
+import { QuadraticBezier, Vec2 } from "tool-kitty-math";
 
 const SNAP_DIST = 20;
 const SNAP_DIST_SQUARED = SNAP_DIST * SNAP_DIST;
 
 export class PickingSystem<TYPE_EXT,INST_EXT> {
   nodeUnderMouseById: Accessor<string | undefined>;
+  edgeUnderMouse: Accessor<{
+    id: `${string}-${string}-${string}-${string}-${string}`;
+    source: {
+        target: string;
+        pin: string;
+    };
+    sink: {
+        target: string;
+        pin: string;
+    };
+    beziers: QuadraticBezier[];
+  } | undefined>;
   pinUnderMouse: Accessor<{
     type: "Input";
     nodeId: string,
@@ -19,10 +31,37 @@ export class PickingSystem<TYPE_EXT,INST_EXT> {
 
   constructor(params: {
     mousePos: Accessor<Vec2 | undefined>,
+    scale: Accessor<number>,
     screenPtToWorldPt: (pt: Vec2) => Vec2 | undefined,
     worldPtToScreenPt: (pt: Vec2) => Vec2 | undefined,
-    nodes: Accessor<NodesSystemNode<TYPE_EXT,INST_EXT>[]>,
+    nodesSystem: NodesSystem<TYPE_EXT,INST_EXT>,
   }) {
+    let edgeUnderMouse = createMemo(() => {
+      let mousePos = params.mousePos();
+      if (mousePos == undefined) {
+        return;
+      }
+      let pt = params.screenPtToWorldPt(mousePos);
+      if (pt == undefined) {
+        return;
+      }
+      let scale = params.scale();
+      let closestDist: number | undefined = undefined;
+      let closetsEdge: ReturnType<typeof params.nodesSystem.edges>[number] | undefined = undefined;
+      for (let edge of params.nodesSystem.edges()) {
+        for (let bezier of edge.beziers) {
+          let dist = bezier.sdfWithLimit(pt, 10.0 / scale);
+          if (dist == undefined) {
+            continue;
+          }
+          if (closestDist == undefined || dist < closestDist) {
+            closestDist = dist;
+            closetsEdge = edge;
+          }
+        }
+      }
+      return closetsEdge;
+    });
     let nodeUnderMouse = createMemo(() => {
       let mousePos = params.mousePos();
       if (mousePos == undefined) {
@@ -32,7 +71,7 @@ export class PickingSystem<TYPE_EXT,INST_EXT> {
       if (pt == undefined) {
         return undefined;
       }
-      for (let node of params.nodes()) {
+      for (let node of params.nodesSystem.nodes()) {
         let renderSize = node.renderSize();
         if (renderSize == undefined) {
           continue;
@@ -53,7 +92,7 @@ export class PickingSystem<TYPE_EXT,INST_EXT> {
       }
       let closest: { type: "Input" | "Output", nodeId: string, name: string } | undefined = undefined;
       let closestDist: number | undefined = undefined;
-      for (let node of params.nodes()) {
+      for (let node of params.nodesSystem.nodes()) {
         let inputPinPositionsMap = node.inputPinPositionMap();
         if (inputPinPositionsMap != undefined) {
           for (let [ name, pos ] of inputPinPositionsMap.entries()) {
@@ -94,6 +133,7 @@ export class PickingSystem<TYPE_EXT,INST_EXT> {
       return closest;
     });
     this.nodeUnderMouseById = nodeUnderMouseById;
+    this.edgeUnderMouse = edgeUnderMouse;
     this.pinUnderMouse = pinUnderMouse;
   }
 }

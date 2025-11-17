@@ -71,9 +71,10 @@ export class AddNodeMode<TYPE_EXT,INST_EXT> implements Mode {
     });
     let pickingSystem = new PickingSystem({
       mousePos: () => state.formMousePos,
+      scale: () => state.scale,
       screenPtToWorldPt,
       worldPtToScreenPt,
-      nodes: () => nodesSystem.nodes(),
+      nodesSystem,
     });
     let nodeUnderMouseById = () => pickingSystem.nodeUnderMouseById();
     let highlightedEntitySet = new ReactiveSet<string>();
@@ -88,10 +89,14 @@ export class AddNodeMode<TYPE_EXT,INST_EXT> implements Mode {
       }
     });
     let renderSystem = new RenderSystem({
-      nodes: () => nodesSystem.nodes(),
+      mousePos: () => undefined,
+      scale: () => 1.0,
+      screenPtToWorldPt: () => undefined,
+      nodesSystem,
       lookupNodeById: (nodeId) => nodesSystem.lookupNodeById(nodeId),
       highlightedEntitySet,
       selectedEntitySet,
+      edgeUnderMouse: () => undefined,
     });
     let nodePositions = createMemo(() => {
       let result: {
@@ -275,10 +280,14 @@ export class AddNodeMode<TYPE_EXT,INST_EXT> implements Mode {
                 world: () => dragWorld,
               });
               let dragRenderSystem = new RenderSystem({
-                nodes: () => dragNodesSystem.nodes(),
+                mousePos: () => undefined,
+                scale: () => 1.0,
+                screenPtToWorldPt: () => undefined,
+                nodesSystem: dragNodesSystem,
                 lookupNodeById: (nodeId) => dragNodesSystem.lookupNodeById(nodeId),
                 highlightedEntitySet: new ReactiveSet([ dragEntity, ]),
                 selectedEntitySet: new ReactiveSet(),
+                edgeUnderMouse: () => undefined,
               });
               return (
                 <div
